@@ -176,7 +176,10 @@ static void CG_ClipMoveToEntities ( const vec3_t start, const vec3_t mins,
         *tr = trace;
     }
     else if( trace.startsolid )
+    {
       tr->startsolid = qtrue;
+      tr->entityNum = ent->number;
+    }
 
     if( tr->allsolid )
       return;
