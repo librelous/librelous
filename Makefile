@@ -17,11 +17,21 @@ ifeq ($(COMPILE_PLATFORM),darwin)
   COMPILE_ARCH=$(shell uname -p | sed -e s/i.86/x86/)
 endif
 
-BUILD_CLIENT     =
-BUILD_CLIENT_SMP =
-BUILD_SERVER     =
-BUILD_GAME_SO    =
-BUILD_GAME_QVM   =
+ifndef BUILD_CLIENT
+  BUILD_CLIENT     =
+endif
+ifndef BUILD_CLIENT_SMP
+  BUILD_CLIENT_SMP =
+endif
+ifndef BUILD_SERVER
+  BUILD_SERVER     =
+endif
+ifndef BUILD_GAME_SO
+  BUILD_GAME_SO    =
+endif
+ifndef BUILD_GAME_QVM
+  BUILD_GAME_QVM   =
+endif
 
 ifneq ($(PLATFORM),darwin)
   BUILD_CLIENT_SMP = 0
@@ -275,57 +285,13 @@ else # ifeq Linux
 
 ifeq ($(PLATFORM),darwin)
   HAVE_VM_COMPILED=true
-  BASE_CFLAGS=
   CLIENT_LDFLAGS=
-  LDFLAGS=
   OPTIMIZE=
-  ifeq ($(BUILD_MACOSX_UB),ppc)
-    CC=gcc-3.3
-    BASE_CFLAGS += -arch ppc -DSMP \
-      -DMAC_OS_X_VERSION_MIN_REQUIRED=1020 -nostdinc \
-      -F/Developer/SDKs/MacOSX10.2.8.sdk/System/Library/Frameworks \
-      -I/Developer/SDKs/MacOSX10.2.8.sdk/usr/include/gcc/darwin/3.3 \
-      -isystem /Developer/SDKs/MacOSX10.2.8.sdk/usr/include
-    # when using the 10.2 SDK we are not allowed the two-level namespace so
-    # in order to get the OpenAL dlopen() stuff to work without major
-    # modifications, the controversial -m linker flag must be used.  this
-    # throws a ton of multiply defined errors which cannot be suppressed.
-    LDFLAGS += -arch ppc \
-      -L/Developer/SDKs/MacOSX10.2.8.sdk/usr/lib/gcc/darwin/3.3 \
-      -F/Developer/SDKs/MacOSX10.2.8.sdk/System/Library/Frameworks \
-      -Wl,-syslibroot,/Developer/SDKs/MacOSX10.2.8.sdk,-m
-    ARCH=ppc
-
-    # OS X 10.2 sdk lacks dlopen() so ded would need libSDL anyway
-    BUILD_SERVER=0
-
-    # because of a problem with linking on 10.2 this will generate multiply
-    # defined symbol errors.  The errors can be turned into warnings with
-    # the -m linker flag, but you can't shut up the warnings
-    USE_OPENAL_DLOPEN=1
-  else
-  ifeq ($(BUILD_MACOSX_UB),x86)
-    CC=gcc-4.0
-    BASE_CFLAGS += -arch i386 -DSMP \
-      -mmacosx-version-min=10.4 \
-      -DMAC_OS_X_VERSION_MIN_REQUIRED=1040 -nostdinc \
-      -F/Developer/SDKs/MacOSX10.4u.sdk/System/Library/Frameworks \
-      -I/Developer/SDKs/MacOSX10.4u.sdk/usr/lib/gcc/i686-apple-darwin8/4.0.1/include \
-      -isystem /Developer/SDKs/MacOSX10.4u.sdk/usr/include
-    LDFLAGS = -arch i386 -mmacosx-version-min=10.4 \
-      -L/Developer/SDKs/MacOSX10.4u.sdk/usr/lib/gcc/i686-apple-darwin8/4.0.1 \
-      -F/Developer/SDKs/MacOSX10.4u.sdk/System/Library/Frameworks \
-      -Wl,-syslibroot,/Developer/SDKs/MacOSX10.4u.sdk
-    ARCH=x86
-    BUILD_SERVER=0
-  else
-    # for whatever reason using the headers in the MacOSX SDKs tend to throw
-    # errors even though they are identical to the system ones which don't
-    # therefore we shut up warning flags when running the universal build
-    # script as much as possible.
-    BASE_CFLAGS += -Wall -Wimplicit -Wstrict-prototypes
-  endif
-  endif
+  
+  # building the QVMs on MacOSX is broken, atm.
+  BUILD_GAME_QVM=0
+  
+  BASE_CFLAGS = -Wall -Wimplicit -Wstrict-prototypes
 
   ifeq ($(ARCH),ppc)
     OPTIMIZE += -faltivec -O3
@@ -338,9 +304,6 @@ ifeq ($(PLATFORM),darwin)
   endif
 
   BASE_CFLAGS += -fno-strict-aliasing -DMACOS_X -fno-common -pipe
-
-  # Always include debug symbols...you can strip the binary later...
-  BASE_CFLAGS += -gfull
 
   ifeq ($(USE_OPENAL),1)
     BASE_CFLAGS += -DUSE_OPENAL
@@ -877,6 +840,12 @@ targets: makedirs
 	@echo ""
 	@echo "  CFLAGS:"
 	@for i in $(CFLAGS); \
+	do \
+		echo "    $$i"; \
+	done
+	@echo ""
+	@echo "  LDFLAGS:"
+	@for i in $(LDFLAGS); \
 	do \
 		echo "    $$i"; \
 	done
