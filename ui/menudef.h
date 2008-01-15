@@ -80,6 +80,8 @@
 #define FEEDER_TREMHUMANBUILD             19    // human buildables
 #define FEEDER_IGNORE_LIST                20    // ignored players
 
+#define FEEDER_RESOLUTIONS                21    // display resolutions
+
 // display flags
 #define UI_SHOW_FAVORITESERVERS           0x00000001
 #define UI_SHOW_NOTFAVORITESERVERS        0x00000002
