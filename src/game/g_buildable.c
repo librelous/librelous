@@ -198,7 +198,7 @@ static qboolean G_FindPower( gentity_t *self )
       distance = VectorLength( temp_v );
 
       // Always prefer a reactor if there is one in range
-      if( ent->s.modelindex == BA_H_REACTOR &&
+      if( ent->s.modelindex == BA_H_REACTOR && ent->powered &&
           distance <= REACTOR_BASESIZE )
       {
         self->parentNode = ent;
@@ -1665,13 +1665,14 @@ void HReactor_Think( gentity_t *self )
   vec3_t    mins, maxs;
   int       i, num;
   gentity_t *enemy, *tent;
+  qboolean  attack = qfalse;
 
   VectorAdd( self->s.origin, range, maxs );
   VectorSubtract( self->s.origin, range, mins );
 
   if( self->spawned && ( self->health > 0 ) )
   {
-    //do some damage
+    //detect alien targets and draw tesla trails
     num = trap_EntitiesInBox( mins, maxs, entityList, MAX_GENTITIES );
     for( i = 0; i < num; i++ )
     {
@@ -1680,8 +1681,7 @@ void HReactor_Think( gentity_t *self )
       if( enemy->client && enemy->client->ps.stats[ STAT_PTEAM ] == PTE_ALIENS )
       {
         self->timestamp = level.time;
-        G_SelectiveRadiusDamage( self->s.pos.trBase, self, REACTOR_ATTACK_DAMAGE,
-          REACTOR_ATTACK_RANGE, self, MOD_REACTOR, PTE_HUMANS );
+        attack = qtrue;
 
         tent = G_TempEntity( enemy->s.pos.trBase, EV_TESLATRAIL );
 
@@ -1691,6 +1691,11 @@ void HReactor_Think( gentity_t *self )
         tent->s.clientNum = enemy->s.number; //dest
       }
     }
+
+    //do some damage
+    if( attack )
+      G_SelectiveRadiusDamage( self->s.pos.trBase, self, REACTOR_ATTACK_DAMAGE,
+        REACTOR_ATTACK_RANGE, self, MOD_REACTOR, PTE_HUMANS );
 
     //reactor under attack
     if( self->health < self->lastHealth &&
