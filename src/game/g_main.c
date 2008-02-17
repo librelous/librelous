@@ -218,14 +218,14 @@ static cvarTable_t   gameCvarTable[ ] =
   { &g_alienMaxStage, "g_alienMaxStage", DEFAULT_ALIEN_MAX_STAGE, 0, 0, qfalse  },
   { &g_alienStage2Threshold, "g_alienStage2Threshold", DEFAULT_ALIEN_STAGE2_THRESH, 0, 0, qfalse  },
   { &g_alienStage3Threshold, "g_alienStage3Threshold", DEFAULT_ALIEN_STAGE3_THRESH, 0, 0, qfalse  },
-  
+
   { &g_unlagged, "g_unlagged", "1", CVAR_SERVERINFO | CVAR_ARCHIVE, 0, qfalse  },
 
   { &g_disabledEquipment, "g_disabledEquipment", "", CVAR_ROM, 0, qfalse  },
   { &g_disabledClasses, "g_disabledClasses", "", CVAR_ROM, 0, qfalse  },
   { &g_disabledBuildables, "g_disabledBuildables", "", CVAR_ROM, 0, qfalse  },
 
-  { &g_chatTeamPrefix, "g_chatTeamPrefix", "0", CVAR_ARCHIVE  },
+  { &g_chatTeamPrefix, "g_chatTeamPrefix", "0", CVAR_ARCHIVE, 0, qfalse  },
 
   { &g_markDeconstruct, "g_markDeconstruct", "1", CVAR_SERVERINFO | CVAR_ARCHIVE, 0, qfalse  },
 
@@ -245,11 +245,11 @@ static cvarTable_t   gameCvarTable[ ] =
   { &g_adminParseSay, "g_adminParseSay", "1", CVAR_ARCHIVE, 0, qfalse  },
   { &g_adminNameProtect, "g_adminNameProtect", "1", CVAR_ARCHIVE, 0, qfalse  },
   { &g_adminTempBan, "g_adminTempBan", "120", CVAR_ARCHIVE, 0, qfalse  },
-  
+
   { &g_privateMessages, "g_privateMessages", "1", CVAR_ARCHIVE, 0, qfalse  },
-  
+
   { &g_tag, "g_tag", "main", CVAR_INIT, 0, qfalse },
-  
+
   { &g_rankings, "g_rankings", "0", 0, 0, qfalse}
 };
 
@@ -502,7 +502,7 @@ void G_MapConfigs( const char *mapname )
 
   trap_SendConsoleCommand( EXEC_APPEND,
     va( "exec \"%s/default.cfg\"\n", g_mapConfigs.string ) );
-  
+
   trap_SendConsoleCommand( EXEC_APPEND,
     va( "exec \"%s/%s.cfg\"\n", g_mapConfigs.string, mapname ) );
 
@@ -572,9 +572,7 @@ void G_InitGame( int levelTime, int randomSeed, int restart )
   // we're done with g_mapConfigs, so reset this for the next map
   trap_Cvar_Set( "g_mapConfigsLoaded", "0" );
 
-  if ( g_admin.string[ 0 ] ) {
-    G_admin_readconfig( NULL, 0 );
-  }
+  G_admin_readconfig( NULL, 0 );
 
   // initialize all entities for this game
   memset( g_entities, 0, MAX_GENTITIES * sizeof( g_entities[ 0 ] ) );
@@ -741,10 +739,9 @@ int QDECL SortRanks( const void *a, const void *b )
   // then sort by score
   if( ca->ps.persistant[ PERS_SCORE ] > cb->ps.persistant[ PERS_SCORE ] )
     return -1;
-  else if( ca->ps.persistant[ PERS_SCORE ] < cb->ps.persistant[ PERS_SCORE ] )
+  if( ca->ps.persistant[ PERS_SCORE ] < cb->ps.persistant[ PERS_SCORE ] )
     return 1;
-  else
-    return 0;
+  return 0;
 }
 
 /*
@@ -805,8 +802,7 @@ int G_PopSpawnQueue( spawnQueue_t *sq )
 
     return clientNum;
   }
-  else
-    return -1;
+  return -1;
 }
 
 /*
@@ -1280,7 +1276,6 @@ void CalculateRanks( void )
   int       ff = 0;
 
   level.numConnectedClients = 0;
-  level.numNonSpectatorClients = 0;
   level.numPlayingClients = 0;
   level.numVotingClients = 0;   // don't count bots
   level.numAlienClients = 0;
@@ -1304,9 +1299,6 @@ void CalculateRanks( void )
       if( level.clients[ i ].pers.teamSelection != PTE_NONE )
       {
         level.numPlayingClients++;
-        if( level.clients[ i ].sess.sessionTeam != TEAM_SPECTATOR )
-          level.numNonSpectatorClients++;
-
         if( level.clients[ i ].pers.teamSelection == PTE_ALIENS )
         {
           level.numAlienClients++;
@@ -1322,6 +1314,8 @@ void CalculateRanks( void )
       }
     }
   }
+  level.numNonSpectatorClients = level.numLiveAlienClients +
+    level.numLiveHumanClients;
   level.numteamVotingClients[ 0 ] = level.numHumanClients;
   level.numteamVotingClients[ 1 ] = level.numAlienClients;
   P[ i + 1 ] = '\0';
@@ -2347,7 +2341,7 @@ void G_RunFrame( int levelTime )
       ClientEndFrame( ent );
   }
 
-  // save position information for all active clients 
+  // save position information for all active clients
   G_UnlaggedStore( );
 
   end = trap_Milliseconds();

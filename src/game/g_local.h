@@ -343,7 +343,6 @@ typedef struct
   int                 nameChanges;
 
   // used to save persistant[] values while in SPECTATOR_FOLLOW mode
-  int                 savedScore;
   int                 savedCredit;
 
   // votes

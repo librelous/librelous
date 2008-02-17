@@ -97,10 +97,9 @@ gentity_t *G_CheckSpawnPoint( int spawnNum, vec3_t origin, vec3_t normal,
 
       return NULL;
     }
-    else
-      return &g_entities[ tr.entityNum ];
+    return &g_entities[ tr.entityNum ];
   }
-  else if( spawn == BA_H_SPAWN )
+  if( spawn == BA_H_SPAWN )
   {
     BG_FindBBoxForClass( PCL_HUMAN, cmins, cmaxs, NULL, NULL, NULL );
 
@@ -121,8 +120,7 @@ gentity_t *G_CheckSpawnPoint( int spawnNum, vec3_t origin, vec3_t normal,
 
       return NULL;
     }
-    else
-      return &g_entities[ tr.entityNum ];
+    return &g_entities[ tr.entityNum ];
   }
 
   return NULL;
@@ -140,7 +138,7 @@ static int G_NumberOfDependants( gentity_t *self )
   int       i, n = 0;
   gentity_t *ent;
 
-  for ( i = 1, ent = g_entities + i; i < level.num_entities; i++, ent++ )
+  for( i = MAX_CLIENTS, ent = g_entities + i; i < level.num_entities; i++, ent++ )
   {
     if( ent->s.eType != ET_BUILDABLE )
       continue;
@@ -167,7 +165,7 @@ static qboolean G_FindPower( gentity_t *self )
   gentity_t *ent;
   gentity_t *closestPower = NULL;
   int       distance = 0;
-  int       minDistance = 10000;
+  int       minDistance = REPEATER_BASESIZE + 1;
   vec3_t    temp_v;
 
   if( self->biteam != BIT_HUMANS )
@@ -185,27 +183,25 @@ static qboolean G_FindPower( gentity_t *self )
   self->parentNode = NULL;
 
   //iterate through entities
-  for( i = 1, ent = g_entities + i; i < level.num_entities; i++, ent++ )
+  for( i = MAX_CLIENTS, ent = g_entities + i; i < level.num_entities; i++, ent++ )
   {
     if( ent->s.eType != ET_BUILDABLE )
       continue;
 
     //if entity is a power item calculate the distance to it
     if( ( ent->s.modelindex == BA_H_REACTOR || ent->s.modelindex == BA_H_REPEATER ) &&
-        ent->spawned )
+        ent->spawned && ent->powered )
     {
       VectorSubtract( self->s.origin, ent->s.origin, temp_v );
       distance = VectorLength( temp_v );
 
       // Always prefer a reactor if there is one in range
-      if( ent->s.modelindex == BA_H_REACTOR && ent->powered &&
-          distance <= REACTOR_BASESIZE )
+      if( ent->s.modelindex == BA_H_REACTOR && distance <= REACTOR_BASESIZE )
       {
         self->parentNode = ent;
         return qtrue;
       }
-      else if( distance < minDistance && ent->powered &&
-               distance <= REPEATER_BASESIZE )
+      if( distance < minDistance )
       {
         closestPower = ent;
         minDistance = distance;
@@ -219,8 +215,7 @@ static qboolean G_FindPower( gentity_t *self )
     self->parentNode = closestPower;
     return qtrue;
   }
-  else
-    return qfalse;
+  return qfalse;
 }
 
 /*
@@ -242,8 +237,7 @@ static gentity_t *G_PowerEntityForPoint( vec3_t origin )
 
   if( G_FindPower( &dummy ) )
     return dummy.parentNode;
-  else
-    return NULL;
+  return NULL;
 }
 
 /*
@@ -260,8 +254,7 @@ buildable_t G_IsPowered( vec3_t origin )
 
   if( ent )
     return ent->s.modelindex;
-  else
-    return BA_NONE;
+  return BA_NONE;
 }
 
 /*
@@ -292,7 +285,7 @@ static qboolean G_FindDCC( gentity_t *self )
   self->dccNode = NULL;
 
   //iterate through entities
-  for( i = 1, ent = g_entities + i; i < level.num_entities; i++, ent++ )
+  for( i = MAX_CLIENTS, ent = g_entities + i; i < level.num_entities; i++, ent++ )
   {
     if( ent->s.eType != ET_BUILDABLE )
       continue;
@@ -311,13 +304,10 @@ static qboolean G_FindDCC( gentity_t *self )
     }
   }
 
-  //if there was no nearby DCC give up
-  if( !foundDCC )
-    return qfalse;
+  if( foundDCC )
+    self->dccNode = closestDCC;
 
-  self->dccNode = closestDCC;
-
-  return qtrue;
+  return foundDCC;
 }
 
 /*
@@ -362,7 +352,7 @@ static qboolean G_FindOvermind( gentity_t *self )
   self->overmindNode = NULL;
 
   //iterate through entities
-  for( i = 1, ent = g_entities + i; i < level.num_entities; i++, ent++ )
+  for( i = MAX_CLIENTS, ent = g_entities + i; i < level.num_entities; i++, ent++ )
   {
     if( ent->s.eType != ET_BUILDABLE )
       continue;
@@ -420,7 +410,7 @@ static qboolean G_FindCreep( gentity_t *self )
   //if self does not have a parentNode or it's parentNode is invalid find a new one
   if( ( self->parentNode == NULL ) || !self->parentNode->inuse )
   {
-    for ( i = 1, ent = g_entities + i; i < level.num_entities; i++, ent++ )
+    for( i = MAX_CLIENTS, ent = g_entities + i; i < level.num_entities; i++, ent++ )
     {
       if( ent->s.eType != ET_BUILDABLE )
         continue;
@@ -443,8 +433,7 @@ static qboolean G_FindCreep( gentity_t *self )
       self->parentNode = closestSpawn;
       return qtrue;
     }
-    else
-      return qfalse;
+    return qfalse;
   }
 
   //if we haven't returned by now then we must already have a valid parent
@@ -754,11 +743,9 @@ Think function for Alien Overmind
 */
 void AOvermind_Think( gentity_t *self )
 {
-  int       entityList[ MAX_GENTITIES ];
-  vec3_t    range = { OVERMIND_ATTACK_RANGE, OVERMIND_ATTACK_RANGE, OVERMIND_ATTACK_RANGE };
-  vec3_t    mins, maxs;
-  int       i, num;
-  gentity_t *enemy;
+  vec3_t range = { OVERMIND_ATTACK_RANGE, OVERMIND_ATTACK_RANGE, OVERMIND_ATTACK_RANGE };
+  vec3_t mins, maxs;
+  int    i;
 
   VectorAdd( self->s.origin, range, maxs );
   VectorSubtract( self->s.origin, range, mins );
@@ -766,18 +753,11 @@ void AOvermind_Think( gentity_t *self )
   if( self->spawned && ( self->health > 0 ) )
   {
     //do some damage
-    num = trap_EntitiesInBox( mins, maxs, entityList, MAX_GENTITIES );
-    for( i = 0; i < num; i++ )
+    if( G_SelectiveRadiusDamage( self->s.pos.trBase, self, self->splashDamage,
+          self->splashRadius, self, MOD_OVERMIND, PTE_ALIENS ) )
     {
-      enemy = &g_entities[ entityList[ i ] ];
-
-      if( enemy->client && enemy->client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS )
-      {
-        self->timestamp = level.time;
-        G_SelectiveRadiusDamage( self->s.pos.trBase, self, self->splashDamage,
-          self->splashRadius, self, MOD_OVERMIND, PTE_ALIENS );
-        G_SetBuildableAnim( self, BANIM_ATTACK1, qfalse );
-      }
+      self->timestamp = level.time;
+      G_SetBuildableAnim( self, BANIM_ATTACK1, qfalse );
     }
 
     // just in case an egg finishes building after we tell overmind to stfu
@@ -1184,10 +1164,7 @@ qboolean AHovel_Blocked( gentity_t *hovel, gentity_t *player, qboolean provideEx
     SetClientViewAngle( player, angles );
   }
 
-  if( tr.fraction < 1.0f )
-    return qtrue;
-  else
-    return qfalse;
+  return ( tr.fraction < 1.0f );
 }
 
 /*
@@ -1665,13 +1642,16 @@ void HReactor_Think( gentity_t *self )
   vec3_t    mins, maxs;
   int       i, num;
   gentity_t *enemy, *tent;
-  qboolean  attack = qfalse;
 
   VectorAdd( self->s.origin, range, maxs );
   VectorSubtract( self->s.origin, range, mins );
 
-  if( self->spawned && ( self->health > 0 ) )
+  //do some damage
+  if( self->spawned && ( self->health > 0 ) &&
+    G_SelectiveRadiusDamage( self->s.pos.trBase, self, REACTOR_ATTACK_DAMAGE,
+      REACTOR_ATTACK_RANGE, self, MOD_REACTOR, PTE_HUMANS ) )
   {
+    self->timestamp = level.time;
     //detect alien targets and draw tesla trails
     num = trap_EntitiesInBox( mins, maxs, entityList, MAX_GENTITIES );
     for( i = 0; i < num; i++ )
@@ -1680,9 +1660,6 @@ void HReactor_Think( gentity_t *self )
 
       if( enemy->client && enemy->client->ps.stats[ STAT_PTEAM ] == PTE_ALIENS )
       {
-        self->timestamp = level.time;
-        attack = qtrue;
-
         tent = G_TempEntity( enemy->s.pos.trBase, EV_TESLATRAIL );
 
         VectorCopy( self->s.pos.trBase, tent->s.origin2 );
@@ -1691,11 +1668,6 @@ void HReactor_Think( gentity_t *self )
         tent->s.clientNum = enemy->s.number; //dest
       }
     }
-
-    //do some damage
-    if( attack )
-      G_SelectiveRadiusDamage( self->s.pos.trBase, self, REACTOR_ATTACK_DAMAGE,
-        REACTOR_ATTACK_RANGE, self, MOD_REACTOR, PTE_HUMANS );
 
     //reactor under attack
     if( self->health < self->lastHealth &&
@@ -2660,7 +2632,7 @@ static int G_CompareBuildablesForRemoval( const void *a, const void *b )
       buildableB->s.modelindex, buildableB->s.origin );
   if( aMatches && !bMatches )
     return -1;
-  else if( !aMatches && bMatches )
+  if( !aMatches && bMatches )
     return 1;
 
   // If one matches the thing we're building, prefer it
@@ -2668,7 +2640,7 @@ static int G_CompareBuildablesForRemoval( const void *a, const void *b )
   bMatches = ( buildableB->s.modelindex == cmpBuildable );
   if( aMatches && !bMatches )
     return -1;
-  else if( !aMatches && bMatches )
+  if( !aMatches && bMatches )
     return 1;
 
   // They're the same type
@@ -2681,7 +2653,7 @@ static int G_CompareBuildablesForRemoval( const void *a, const void *b )
     bMatches = ( powerEntity == buildableB );
     if( aMatches && !bMatches )
       return -1;
-    else if( !aMatches && bMatches )
+    if( !aMatches && bMatches )
       return 1;
 
     // Pick the one marked earliest
@@ -2780,7 +2752,7 @@ static itemBuildError_t G_SufficientBPAvailable( buildable_t     buildable,
       return bpError;
 
     // Check for buildable<->buildable collisions
-    for( i = 1, ent = g_entities + i; i < level.num_entities; i++, ent++ )
+    for( i = MAX_CLIENTS, ent = g_entities + i; i < level.num_entities; i++, ent++ )
     {
       if( ent->s.eType != ET_BUILDABLE )
         continue;
@@ -2798,7 +2770,7 @@ static itemBuildError_t G_SufficientBPAvailable( buildable_t     buildable,
   level.numBuildablesForRemoval = 0;
 
   // Build a list of buildable entities
-  for( i = 1, ent = g_entities + i; i < level.num_entities; i++, ent++ )
+  for( i = MAX_CLIENTS, ent = g_entities + i; i < level.num_entities; i++, ent++ )
   {
     if( ent->s.eType != ET_BUILDABLE )
       continue;
@@ -2919,8 +2891,7 @@ static itemBuildError_t G_SufficientBPAvailable( buildable_t     buildable,
   // Not enough points yielded
   if( pointsYielded < buildPoints )
     return bpError;
-  else
-    return IBE_NONE;
+  return IBE_NONE;
 }
 
 /*
@@ -3146,9 +3117,9 @@ static gentity_t *G_Build( gentity_t *builder, buildable_t buildable, vec3_t ori
   {
     // initial base layout created by server
 
-    if( builder->s.origin2[ 0 ]
-      || builder->s.origin2[ 1 ]
-      || builder->s.origin2[ 2 ] )
+    if( builder->s.origin2[ 0 ] ||
+        builder->s.origin2[ 1 ] ||
+        builder->s.origin2[ 2 ] )
     {
       VectorCopy( builder->s.origin2, normal );
     }
@@ -3554,7 +3525,7 @@ void G_LayoutSave( char *name )
     return;
   }
 
-  G_Printf("layoutsave: saving layout to %s\n", fileName );
+  G_Printf( "layoutsave: saving layout to %s\n", fileName );
 
   for( i = MAX_CLIENTS; i < level.num_entities; i++ )
   {
@@ -3664,15 +3635,17 @@ void G_LayoutSelect( void )
   Q_strncpyz( layouts2, layouts, sizeof( layouts2 ) );
   l = &layouts2[ 0 ];
   layouts[ 0 ] = '\0';
-  s = COM_ParseExt( &l, qfalse );
-  while( *s )
+  while( 1 )
   {
+    s = COM_ParseExt( &l, qfalse );
+    if( !*s )
+      break;
+
     if( !Q_stricmp( s, "*BUILTIN*" ) )
     {
       Q_strcat( layouts, sizeof( layouts ), s );
       Q_strcat( layouts, sizeof( layouts ), " " );
       cnt++;
-      s = COM_ParseExt( &l, qfalse );
       continue;
     }
 
@@ -3685,7 +3658,6 @@ void G_LayoutSelect( void )
     }
     else
       G_Printf( S_COLOR_YELLOW "WARNING: layout \"%s\" does not exist\n", s );
-    s = COM_ParseExt( &l, qfalse );
   }
   if( !cnt )
   {
@@ -3698,16 +3670,18 @@ void G_LayoutSelect( void )
 
   Q_strncpyz( layouts2, layouts, sizeof( layouts2 ) );
   l = &layouts2[ 0 ];
-  s = COM_ParseExt( &l, qfalse );
-  while( *s )
+  while( 1 )
   {
+    s = COM_ParseExt( &l, qfalse );
+    if( !*s )
+      break;
+
     Q_strncpyz( level.layout, s, sizeof( level.layout ) );
     cnt++;
     if( cnt >= layoutNum )
       break;
-    s = COM_ParseExt( &l, qfalse );
   }
-  G_Printf("using layout \"%s\" from list ( %s)\n", level.layout, layouts );
+  G_Printf( "using layout \"%s\" from list (%s)\n", level.layout, layouts );
 }
 
 /*
