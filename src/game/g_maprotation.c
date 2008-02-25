@@ -776,8 +776,10 @@ void G_InitMapRotations( void )
 
   //load the file if it exists
   if( trap_FS_FOpenFile( fileName, NULL, FS_READ ) )
+  {
     if( !G_ParseMapRotationFile( fileName ) )
       G_Printf( S_COLOR_RED "ERROR: failed to parse %s file\n", fileName );
+  }
   else
     G_Printf( "%s file not found.\n", fileName );
 
