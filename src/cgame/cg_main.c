@@ -1752,7 +1752,7 @@ void CG_Init( int serverMessageNum, int serverCommandSequence, int clientNum )
   BG_InitAllowedGameElements( );
 
   // Dynamic memory
-  CG_InitMemory( );
+  BG_InitMemory( );
 
   CG_RegisterCvars( );
 

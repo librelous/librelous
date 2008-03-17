@@ -983,15 +983,6 @@ void      TeamplayInfoMessage( gentity_t *ent );
 void      CheckTeamStatus( void );
 
 //
-// g_mem.c
-//
-void *G_Alloc( int size );
-void G_InitMemory( void );
-void G_Free( void *ptr );
-void G_DefragmentMemory( void );
-void Svcmd_GameMem_f( void );
-
-//
 // g_session.c
 //
 void G_ReadSessionData( gclient_t *client );
@@ -1117,7 +1108,6 @@ extern  vmCvar_t  g_knockback;
 extern  vmCvar_t  g_quadfactor;
 extern  vmCvar_t  g_inactivity;
 extern  vmCvar_t  g_debugMove;
-extern  vmCvar_t  g_debugAlloc;
 extern  vmCvar_t  g_debugDamage;
 extern  vmCvar_t  g_weaponRespawn;
 extern  vmCvar_t  g_weaponTeamRespawn;
