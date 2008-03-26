@@ -5741,7 +5741,7 @@ void Item_ListBox_Paint( itemDef_t *item )
               DC->drawHandlePic( x + columnPos, y + ( ( listPtr->elementHeight - height ) / 2.0f ),
                   width, height, optionalImage );
             }
-            else if( text )
+            else if( text[ 0 ] )
             {
               int alignOffset = 0.0f, tw;
 
@@ -5793,7 +5793,7 @@ void Item_ListBox_Paint( itemDef_t *item )
 
           if( optionalImage >= 0 )
             DC->drawHandlePic( x + offset, y, listPtr->elementHeight, listPtr->elementHeight, optionalImage );
-          else if( text )
+          else if( text[ 0 ] )
           {
             UI_Text_Paint( x + offset, y + m + ( ( listPtr->elementHeight - m ) / 2.0f ),
                 item->textscale, item->window.foreColor, text, 0,
