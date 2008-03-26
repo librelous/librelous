@@ -517,13 +517,13 @@ G_LeaveTeam
 */
 void G_LeaveTeam( gentity_t *self )
 {
-  pTeam_t   team = self->client->pers.teamSelection;
+  team_t    team = self->client->pers.teamSelection;
   gentity_t *ent;
   int       i;
 
-  if( team == PTE_ALIENS )
+  if( team == TEAM_ALIENS )
     G_RemoveFromSpawnQueue( &level.alienSpawnQueue, self->client->ps.clientNum );
-  else if( team == PTE_HUMANS )
+  else if( team == TEAM_HUMANS )
     G_RemoveFromSpawnQueue( &level.humanSpawnQueue, self->client->ps.clientNum );
   else
     return;
@@ -539,8 +539,7 @@ void G_LeaveTeam( gentity_t *self )
     if( ent->client && ent->client->pers.connected == CON_CONNECTED )
     {
       // stop following clients
-      if( ent->client->sess.sessionTeam == TEAM_SPECTATOR &&
-          ent->client->sess.spectatorState == SPECTATOR_FOLLOW &&
+      if( ent->client->sess.spectatorState == SPECTATOR_FOLLOW &&
           ent->client->sess.spectatorClient == self->client->ps.clientNum )
       {
         if( !G_FollowNewClient( ent, 1 ) )
@@ -564,9 +563,9 @@ void G_LeaveTeam( gentity_t *self )
 G_ChangeTeam
 =================
 */
-void G_ChangeTeam( gentity_t *ent, pTeam_t newTeam )
+void G_ChangeTeam( gentity_t *ent, team_t newTeam )
 {
-  pTeam_t oldTeam = ent->client->pers.teamSelection;
+  team_t  oldTeam = ent->client->pers.teamSelection;
 
   if( oldTeam == newTeam )
     return;
@@ -577,28 +576,28 @@ void G_ChangeTeam( gentity_t *ent, pTeam_t newTeam )
   // under certain circumstances, clients can keep their kills and credits
   // when switching teams
   if( G_admin_permission( ent, ADMF_TEAMCHANGEFREE ) ||
-    ( ( oldTeam == PTE_HUMANS || oldTeam == PTE_ALIENS ) &&
+    ( ( oldTeam == TEAM_HUMANS || oldTeam == TEAM_ALIENS ) &&
       ( level.time - ent->client->pers.teamChangeTime ) > 60000 ) )
   {
-    if( oldTeam == PTE_NONE )
+    if( oldTeam == TEAM_NONE )
     {
       // ps.persistant[] from a spectator cannot be trusted
       ent->client->ps.persistant[ PERS_CREDIT ] = ent->client->pers.savedCredit;
     }
-    else if( oldTeam == PTE_ALIENS )
+    else if( oldTeam == TEAM_ALIENS )
     {
       // always save in human credtis
       ent->client->ps.persistant[ PERS_CREDIT ] *=
         (float)FREEKILL_HUMAN / FREEKILL_ALIEN;
     }
 
-    if( newTeam == PTE_NONE )
+    if( newTeam == TEAM_NONE )
     {
       // save values before the client enters the spectator team and their
       // ps.persistant[] values become trashed
       ent->client->pers.savedCredit = ent->client->ps.persistant[ PERS_CREDIT ];
     }
-    else if( newTeam == PTE_ALIENS )
+    else if( newTeam == TEAM_ALIENS )
     {
       // convert to alien currency
       ent->client->ps.persistant[ PERS_CREDIT ] *=
@@ -629,8 +628,8 @@ Cmd_Team_f
 */
 void Cmd_Team_f( gentity_t *ent )
 {
-  pTeam_t team;
-  pTeam_t oldteam = ent->client->pers.teamSelection;
+  team_t  team;
+  team_t  oldteam = ent->client->pers.teamSelection;
   char    s[ MAX_TOKEN_CHARS ];
   qboolean force = G_admin_permission(ent, ADMF_FORCETEAMCHANGE);
   int     aliens = level.numAlienClients;
@@ -640,9 +639,9 @@ void Cmd_Team_f( gentity_t *ent )
   if( level.time - ent->client->pers.teamChangeTime < 1000 )
     return;
 
-  if( oldteam == PTE_ALIENS )
+  if( oldteam == TEAM_ALIENS )
     aliens--;
-  else if( oldteam == PTE_HUMANS )
+  else if( oldteam == TEAM_HUMANS )
     humans--;
 
   trap_Argv( 1, s, sizeof( s ) );
@@ -655,8 +654,8 @@ void Cmd_Team_f( gentity_t *ent )
   }
 
   if( !Q_stricmp( s, "spectate" ) )
-    team = PTE_NONE;
-  else if( !force && oldteam == PTE_NONE && g_maxGameClients.integer &&
+    team = TEAM_NONE;
+  else if( !force && oldteam == TEAM_NONE && g_maxGameClients.integer &&
            level.numPlayingClients >= g_maxGameClients.integer )
   {
     trap_SendServerCommand( ent-g_entities, va( "print \"The maximum number of "
@@ -685,7 +684,7 @@ void Cmd_Team_f( gentity_t *ent )
       return;
     }
 
-    team = PTE_ALIENS;
+    team = TEAM_ALIENS;
   }
   else if( !Q_stricmp( s, "humans" ) )
   {
@@ -708,23 +707,23 @@ void Cmd_Team_f( gentity_t *ent )
       return;
     }
 
-    team = PTE_HUMANS;
+    team = TEAM_HUMANS;
   }
   else if( !Q_stricmp( s, "auto" ) )
   {
     if( level.humanTeamLocked && level.alienTeamLocked )
-      team = PTE_NONE;
+      team = TEAM_NONE;
     else if( humans > aliens )
-      team = PTE_ALIENS;
+      team = TEAM_ALIENS;
     else if( humans < aliens )
-      team = PTE_HUMANS;
+      team = TEAM_HUMANS;
     else
-      team = PTE_ALIENS + ( rand( ) % 2 );
+      team = TEAM_ALIENS + ( rand( ) % 2 );
 
-    if( team == PTE_ALIENS && level.alienTeamLocked )
-      team = PTE_HUMANS;
-    else if( team == PTE_HUMANS && level.humanTeamLocked )
-      team = PTE_ALIENS;
+    if( team == TEAM_ALIENS && level.alienTeamLocked )
+      team = TEAM_HUMANS;
+    else if( team == TEAM_HUMANS && level.humanTeamLocked )
+      team = TEAM_ALIENS;
   }
   else
   {
@@ -737,14 +736,14 @@ void Cmd_Team_f( gentity_t *ent )
     return;
 
   //guard against build timer exploit
-  if( oldteam != PTE_NONE &&
-     ( ent->client->ps.stats[ STAT_PCLASS ] == PCL_ALIEN_BUILDER0 ||
-       ent->client->ps.stats[ STAT_PCLASS ] == PCL_ALIEN_BUILDER0_UPG ||
+  if( oldteam != TEAM_NONE &&
+     ( ent->client->ps.stats[ STAT_CLASS ] == PCL_ALIEN_BUILDER0 ||
+       ent->client->ps.stats[ STAT_CLASS ] == PCL_ALIEN_BUILDER0_UPG ||
        BG_InventoryContainsWeapon( WP_HBUILD, ent->client->ps.stats ) ||
        BG_InventoryContainsWeapon( WP_HBUILD2, ent->client->ps.stats ) ) &&
       ent->client->ps.stats[ STAT_MISC ] > 0 )
   {
-    if( ent->client->pers.teamSelection == PTE_ALIENS )
+    if( ent->client->pers.teamSelection == TEAM_ALIENS )
       G_TriggerMenu( ent->client->ps.clientNum, MN_A_TEAMCHANGEBUILDTIMER );
     else
       G_TriggerMenu( ent->client->ps.clientNum, MN_H_TEAMCHANGEBUILDTIMER );
@@ -754,9 +753,9 @@ void Cmd_Team_f( gentity_t *ent )
 
   G_ChangeTeam( ent, team );
 
-  if( team == PTE_ALIENS )
+  if( team == TEAM_ALIENS )
     trap_SendServerCommand( -1, va( "print \"%s" S_COLOR_WHITE " joined the aliens\n\"", ent->client->pers.netname ) );
-  else if( team == PTE_HUMANS )
+  else if( team == TEAM_HUMANS )
     trap_SendServerCommand( -1, va( "print \"%s" S_COLOR_WHITE " joined the humans\n\"", ent->client->pers.netname ) );
 }
 
@@ -784,7 +783,7 @@ static void G_SayTo( gentity_t *ent, gentity_t *other, int mode, int color, cons
 
   if( mode == SAY_TEAM && !OnSameTeam( ent, other ) )
   {
-    if( other->client->pers.teamSelection != PTE_NONE )
+    if( other->client->pers.teamSelection != TEAM_NONE )
       return;
 
     if( !G_admin_permission( other, ADMF_SPEC_ALLCHAT ) )
@@ -820,15 +819,15 @@ void G_Say( gentity_t *ent, gentity_t *target, int mode, const char *chatText )
     switch( ent->client->pers.teamSelection )
     {
       default:
-      case PTE_NONE:
+      case TEAM_NONE:
         prefix = "[S] ";
         break;
 
-      case PTE_ALIENS:
+      case TEAM_ALIENS:
         prefix = "[A] ";
         break;
 
-      case PTE_HUMANS:
+      case TEAM_HUMANS:
         prefix = "[H] ";
     }
   }
@@ -1220,7 +1219,7 @@ void Cmd_CallTeamVote_f( gentity_t *ent )
 
   team = ent->client->pers.teamSelection;
 
-  if( team == PTE_ALIENS )
+  if( team == TEAM_ALIENS )
     cs_offset = 1;
 
   if( !g_allowVote.integer )
@@ -1392,7 +1391,7 @@ void Cmd_CallTeamVote_f( gentity_t *ent )
 
   for( i = 0; i < level.maxclients; i++ )
   {
-    if( level.clients[ i ].ps.stats[ STAT_PTEAM ] == team )
+    if( level.clients[ i ].ps.stats[ STAT_TEAM ] == team )
       level.clients[ i ].ps.eFlags &= ~EF_TEAMVOTED;
   }
 
@@ -1417,7 +1416,7 @@ void Cmd_TeamVote_f( gentity_t *ent )
   int     cs_offset = 0;
   char    msg[ 64 ];
 
-  if( ent->client->pers.teamSelection == PTE_ALIENS )
+  if( ent->client->pers.teamSelection == TEAM_ALIENS )
     cs_offset = 1;
 
   if( !level.teamVoteTime[ cs_offset ] )
@@ -1476,8 +1475,7 @@ void Cmd_SetViewpos_f( gentity_t *ent )
 
 #define AS_OVER_RT3         ((ALIENSENSE_RANGE*0.5f)/M_ROOT3)
 
-static qboolean G_RoomForClassChange( gentity_t *ent, pClass_t class,
-  vec3_t newOrigin )
+static qboolean G_RoomForClassChange( gentity_t *ent, class_t class, vec3_t newOrigin )
 {
   vec3_t    fromMins, fromMaxs;
   vec3_t    toMins, toMaxs;
@@ -1485,7 +1483,7 @@ static qboolean G_RoomForClassChange( gentity_t *ent, pClass_t class,
   trace_t   tr;
   float     nudgeHeight;
   float     maxHorizGrowth;
-  pClass_t  oldClass = ent->client->ps.stats[ STAT_PCLASS ];
+  class_t   oldClass = ent->client->ps.stats[ STAT_CLASS ];
 
   BG_FindBBoxForClass( oldClass, fromMins, fromMaxs, NULL, NULL, NULL );
   BG_FindBBoxForClass( class, toMins, toMaxs, NULL, NULL, NULL );
@@ -1547,8 +1545,8 @@ void Cmd_Class_f( gentity_t *ent )
   vec3_t    infestOrigin;
   int       allowedClasses[ PCL_NUM_CLASSES ];
   int       numClasses = 0;
-  pClass_t  currentClass = ent->client->ps.stats[ STAT_PCLASS ];
-  pClass_t  newClass;
+  class_t   currentClass = ent->client->ps.stats[ STAT_CLASS ];
+  class_t   newClass;
   int       numLevels;
   int       entityList[ MAX_GENTITIES ];
   vec3_t    range = { AS_OVER_RT3, AS_OVER_RT3, AS_OVER_RT3 };
@@ -1572,7 +1570,7 @@ void Cmd_Class_f( gentity_t *ent )
   if( BG_ClassIsAllowed( PCL_ALIEN_LEVEL0 ) )
     allowedClasses[ numClasses++ ] = PCL_ALIEN_LEVEL0;
 
-  if( ent->client->pers.teamSelection == PTE_ALIENS &&
+  if( ent->client->pers.teamSelection == TEAM_ALIENS &&
       !( ent->client->ps.stats[ STAT_STATE ] & SS_INFESTING ) &&
       !( ent->client->ps.stats[ STAT_STATE ] & SS_HOVELING ) )
   {
@@ -1602,8 +1600,8 @@ void Cmd_Class_f( gentity_t *ent )
       {
         other = &g_entities[ entityList[ i ] ];
 
-        if( ( other->client && other->client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS ) ||
-            ( other->s.eType == ET_BUILDABLE && other->biteam == BIT_HUMANS ) )
+        if( ( other->client && other->client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS ) ||
+            ( other->s.eType == ET_BUILDABLE && other->buildableTeam == TEAM_HUMANS ) )
         {
           G_TriggerMenu( clientNum, MN_A_TOOCLOSE );
           return;
@@ -1672,7 +1670,7 @@ void Cmd_Class_f( gentity_t *ent )
             BG_ClassIsAllowed( newClass ) )
         {
           ent->client->pers.classSelection =
-            ent->client->ps.stats[ STAT_PCLASS ] = newClass;
+            ent->client->ps.stats[ STAT_CLASS ] = newClass;
           G_PushSpawnQueue( &level.alienSpawnQueue, clientNum );
           return;
         }
@@ -1680,7 +1678,7 @@ void Cmd_Class_f( gentity_t *ent )
       trap_SendServerCommand( ent-g_entities, "print \"You cannot spawn as this class\n\"" );
     }
   }
-  else if( ent->client->pers.teamSelection == PTE_HUMANS )
+  else if( ent->client->pers.teamSelection == TEAM_HUMANS )
   {
     //humans cannot use this command whilst alive
     if( ent->client->pers.classSelection != PCL_NONE )
@@ -1690,7 +1688,7 @@ void Cmd_Class_f( gentity_t *ent )
     }
 
     ent->client->pers.classSelection =
-      ent->client->ps.stats[ STAT_PCLASS ] = PCL_HUMAN;
+      ent->client->ps.stats[ STAT_CLASS ] = PCL_HUMAN;
 
     //set the item to spawn with
     if( !Q_stricmp( s, BG_FindNameForWeapon( WP_MACHINEGUN ) ) && BG_WeaponIsAllowed( WP_MACHINEGUN ) )
@@ -1749,7 +1747,7 @@ void Cmd_Destroy_f( gentity_t *ent )
 
     if( tr.fraction < 1.0f &&
         ( traceEnt->s.eType == ET_BUILDABLE ) &&
-        ( traceEnt->biteam == ent->client->pers.teamSelection ) &&
+        ( traceEnt->buildableTeam == ent->client->pers.teamSelection ) &&
         ( ( ent->client->ps.weapon >= WP_ABUILD ) &&
           ( ent->client->ps.weapon <= WP_HBUILD ) ) )
     {
@@ -1763,13 +1761,13 @@ void Cmd_Destroy_f( gentity_t *ent )
       // Prevent destruction of the last spawn
       if( !g_markDeconstruct.integer && !g_cheats.integer )
       {
-        if( ent->client->pers.teamSelection == PTE_ALIENS &&
+        if( ent->client->pers.teamSelection == TEAM_ALIENS &&
             traceEnt->s.modelindex == BA_A_SPAWN )
         {
           if( level.numAlienSpawns <= 1 )
             return;
         }
-        else if( ent->client->pers.teamSelection == PTE_HUMANS &&
+        else if( ent->client->pers.teamSelection == TEAM_HUMANS &&
                  traceEnt->s.modelindex == BA_H_SPAWN )
         {
           if( level.numHumanSpawns <= 1 )
@@ -1997,7 +1995,7 @@ void Cmd_Buy_f( gentity_t *ent )
       return;
     }
 
-    if( BG_FindTeamForWeapon( weapon ) != WUT_HUMANS )
+    if( BG_FindTeamForWeapon( weapon ) != TEAM_HUMANS )
     {
       //shouldn't need a fancy dialog
       trap_SendServerCommand( ent-g_entities, "print \"You can't buy alien items\n\"" );
@@ -2060,7 +2058,7 @@ void Cmd_Buy_f( gentity_t *ent )
       return;
     }
 
-    if( BG_FindTeamForUpgrade( upgrade ) != WUT_HUMANS )
+    if( BG_FindTeamForUpgrade( upgrade ) != TEAM_HUMANS )
     {
       //shouldn't need a fancy dialog
       trap_SendServerCommand( ent-g_entities, "print \"You can't buy alien items\n\"" );
@@ -2095,7 +2093,7 @@ void Cmd_Buy_f( gentity_t *ent )
           return;
         }
         VectorCopy( newOrigin, ent->s.pos.trBase );
-        ent->client->ps.stats[ STAT_PCLASS ] = PCL_HUMAN_BSUIT;
+        ent->client->ps.stats[ STAT_CLASS ] = PCL_HUMAN_BSUIT;
         ent->client->ps.eFlags ^= EF_TELEPORT_BIT;
       }
 
@@ -2194,7 +2192,7 @@ void Cmd_Sell_f( gentity_t *ent )
           return;
         }
         VectorCopy( newOrigin, ent->s.pos.trBase );
-        ent->client->ps.stats[ STAT_PCLASS ] = PCL_HUMAN;
+        ent->client->ps.stats[ STAT_CLASS ] = PCL_HUMAN;
         ent->client->ps.eFlags ^= EF_TELEPORT_BIT;
       }
 
@@ -2254,7 +2252,7 @@ void Cmd_Sell_f( gentity_t *ent )
             continue;
           }
           VectorCopy( newOrigin, ent->s.pos.trBase );
-          ent->client->ps.stats[ STAT_PCLASS ] = PCL_HUMAN;
+          ent->client->ps.stats[ STAT_CLASS ] = PCL_HUMAN;
         }
 
         BG_RemoveUpgradeFromInventory( i, ent->client->ps.stats );
@@ -2300,7 +2298,7 @@ void Cmd_Build_f( gentity_t *ent )
   buildable_t   buildable;
   float         dist;
   vec3_t        origin;
-  pTeam_t       team;
+  team_t        team;
 
   if( ent->client->pers.denyBuild )
   {
@@ -2312,17 +2310,17 @@ void Cmd_Build_f( gentity_t *ent )
   trap_Argv( 1, s, sizeof( s ) );
 
   buildable = BG_FindBuildNumForName( s );
-  team = ent->client->ps.stats[ STAT_PTEAM ];
+  team = ent->client->ps.stats[ STAT_TEAM ];
 
   if( buildable != BA_NONE &&
       ( ( 1 << ent->client->ps.weapon ) & BG_FindBuildWeaponForBuildable( buildable ) ) &&
       !( ent->client->ps.stats[ STAT_STATE ] & SS_INFESTING ) &&
       !( ent->client->ps.stats[ STAT_STATE ] & SS_HOVELING ) &&
       BG_BuildableIsAllowed( buildable ) &&
-      ( ( team == PTE_ALIENS && BG_FindStagesForBuildable( buildable, g_alienStage.integer ) ) ||
-        ( team == PTE_HUMANS && BG_FindStagesForBuildable( buildable, g_humanStage.integer ) ) ) )
+      ( ( team == TEAM_ALIENS && BG_FindStagesForBuildable( buildable, g_alienStage.integer ) ) ||
+        ( team == TEAM_HUMANS && BG_FindStagesForBuildable( buildable, g_humanStage.integer ) ) ) )
   {
-    dist = BG_FindBuildDistForClass( ent->client->ps.stats[ STAT_PCLASS ] );
+    dist = BG_FindBuildDistForClass( ent->client->ps.stats[ STAT_CLASS ] );
 
     //these are the errors displayed when the builder first selects something to use
     switch( G_CanBuild( ent, buildable, dist, origin ) )
@@ -2418,12 +2416,11 @@ to free floating spectator mode
 */
 void G_StopFollowing( gentity_t *ent )
 {
-  ent->client->ps.persistant[ PERS_TEAM ] = TEAM_SPECTATOR;
-  ent->client->sess.sessionTeam = TEAM_SPECTATOR;
-  ent->client->sess.spectatorState = SPECTATOR_FREE;
+  ent->client->sess.spectatorState =
+    ent->client->ps.persistant[ PERS_SPECSTATE ] = SPECTATOR_FREE;
   ent->client->sess.spectatorClient = -1;
   ent->client->ps.pm_flags &= ~PMF_FOLLOW;
-  ent->client->ps.stats[ STAT_PTEAM ] = PTE_NONE;
+  ent->client->ps.stats[ STAT_TEAM ] = TEAM_NONE;
 
   ent->client->ps.stats[ STAT_STATE ] &= ~SS_WALLCLIMBING;
   ent->client->ps.stats[ STAT_STATE ] &= ~SS_WALLCLIMBINGCEILING;
@@ -2455,7 +2452,7 @@ qboolean G_FollowNewClient( gentity_t *ent, int dir )
   else if( dir == 0 )
     return qtrue;
 
-  if( ent->client->sess.sessionTeam != TEAM_SPECTATOR )
+  if( ent->client->sess.spectatorState == SPECTATOR_NOT )
     return qfalse;
 
   // select any if no target exists
@@ -2488,7 +2485,7 @@ qboolean G_FollowNewClient( gentity_t *ent, int dir )
       continue;
 
     // can't follow another spectator
-    if( level.clients[ clientnum ].sess.sessionTeam == TEAM_SPECTATOR )
+    if( level.clients[ clientnum ].sess.spectatorState != SPECTATOR_NOT )
       continue;
 
     // this is good, we can use it
@@ -2554,7 +2551,7 @@ void Cmd_Follow_f( gentity_t *ent )
       return;
 
     // can't follow another spectator
-    if( level.clients[ i ].pers.teamSelection == PTE_NONE )
+    if( level.clients[ i ].pers.teamSelection == TEAM_NONE )
       return;
 
     ent->client->sess.spectatorState = SPECTATOR_FOLLOW;
@@ -2610,7 +2607,7 @@ void Cmd_PTRCVerify_f( gentity_t *ent )
   if( connection && connection->clientNum == -1 )
   {
     // valid code
-    if( connection->clientTeam != PTE_NONE )
+    if( connection->clientTeam != TEAM_NONE )
       trap_SendServerCommand( ent->client->ps.clientNum, "ptrcconfirm" );
 
     // restore mapping
@@ -2844,14 +2841,14 @@ void ClientCommand( int clientNum )
     return;
 
   if( cmds[ i ].cmdFlags & CMD_TEAM &&
-      ent->client->pers.teamSelection == PTE_NONE )
+      ent->client->pers.teamSelection == TEAM_NONE )
   {
     trap_SendServerCommand( clientNum, "print \"Join a team first\n\"" );
     return;
   }
 
   if( cmds[ i ].cmdFlags & CMD_NOTEAM &&
-      ent->client->pers.teamSelection != PTE_NONE )
+      ent->client->pers.teamSelection != TEAM_NONE )
   {
     trap_SendServerCommand( clientNum,
       "print \"Cannot use this command when on a team\n\"" );
@@ -2859,7 +2856,7 @@ void ClientCommand( int clientNum )
   }
 
   if( cmds[ i ].cmdFlags & CMD_ALIEN &&
-      ent->client->pers.teamSelection != PTE_ALIENS )
+      ent->client->pers.teamSelection != TEAM_ALIENS )
   {
     trap_SendServerCommand( clientNum,
       "print \"Must be alien to use this command\n\"" );
@@ -2867,7 +2864,7 @@ void ClientCommand( int clientNum )
   }
 
   if( cmds[ i ].cmdFlags & CMD_HUMAN &&
-      ent->client->pers.teamSelection != PTE_HUMANS )
+      ent->client->pers.teamSelection != TEAM_HUMANS )
   {
     trap_SendServerCommand( clientNum,
       "print \"Must be human to use this command\n\"" );
@@ -2876,7 +2873,7 @@ void ClientCommand( int clientNum )
 
   if( cmds[ i ].cmdFlags & CMD_LIVING &&
     ( ent->client->ps.stats[ STAT_HEALTH ] <= 0 ||
-      ent->client->sess.sessionTeam == TEAM_SPECTATOR ) )
+      ent->client->sess.spectatorState != SPECTATOR_NOT ) )
   {
     trap_SendServerCommand( clientNum,
       "print \"Must be living to use this command\n\"" );

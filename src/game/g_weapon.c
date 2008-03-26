@@ -680,7 +680,7 @@ void teslaFire( gentity_t *ent )
   if( !traceEnt->client )
     return;
 
-  if( traceEnt->client && traceEnt->client->ps.stats[ STAT_PTEAM ] != PTE_ALIENS )
+  if( traceEnt->client && traceEnt->client->ps.stats[ STAT_TEAM ] != TEAM_ALIENS )
     return;
 
   //so the client side knows
@@ -735,7 +735,7 @@ void cancelBuildFire( gentity_t *ent )
   }
 
   //repair buildable
-  if( ent->client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS )
+  if( ent->client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS )
   {
     AngleVectors( ent->client->ps.viewangles, forward, NULL, NULL );
     VectorMA( ent->client->ps.origin, 100, forward, end );
@@ -745,7 +745,7 @@ void cancelBuildFire( gentity_t *ent )
 
     if( tr.fraction < 1.0 &&
         ( traceEnt->s.eType == ET_BUILDABLE ) &&
-        ( traceEnt->biteam == ent->client->ps.stats[ STAT_PTEAM ] ) &&
+        ( traceEnt->buildableTeam == ent->client->ps.stats[ STAT_TEAM ] ) &&
         ( ( ent->client->ps.weapon >= WP_HBUILD2 ) &&
           ( ent->client->ps.weapon <= WP_HBUILD ) ) &&
         traceEnt->spawned && traceEnt->health > 0 )
@@ -795,12 +795,12 @@ void buildFire( gentity_t *ent, dynMenu_t menu )
       {
         ent->client->ps.stats[ STAT_MISC ] = 0;
       }
-      else if( ent->client->ps.stats[ STAT_PTEAM ] == PTE_ALIENS && !G_IsOvermindBuilt( ) )
+      else if( ent->client->ps.stats[ STAT_TEAM ] == TEAM_ALIENS && !G_IsOvermindBuilt( ) )
       {
         ent->client->ps.stats[ STAT_MISC ] +=
           BG_FindBuildDelayForWeapon( ent->s.weapon ) * 2;
       }
-      else if( ent->client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS &&
+      else if( ent->client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS &&
                G_IsPowered( muzzle ) == BA_NONE &&
                ( ent->client->ps.stats[ STAT_BUILDABLE ] & ~SB_VALID_TOGGLEBIT ) != BA_H_REPEATER ) //hack
       {
@@ -877,7 +877,7 @@ qboolean CheckVenomAttack( gentity_t *ent )
 
   if( traceEnt->client )
   {
-    if( traceEnt->client->ps.stats[ STAT_PTEAM ] == PTE_ALIENS )
+    if( traceEnt->client->ps.stats[ STAT_TEAM ] == TEAM_ALIENS )
       return qfalse;
     if( traceEnt->client->ps.stats[ STAT_HEALTH ] <= 0 )
       return qfalse;
@@ -935,7 +935,7 @@ void CheckGrabAttack( gentity_t *ent )
 
   if( traceEnt->client )
   {
-    if( traceEnt->client->ps.stats[ STAT_PTEAM ] == PTE_ALIENS )
+    if( traceEnt->client->ps.stats[ STAT_TEAM ] == TEAM_ALIENS )
       return;
 
     if( traceEnt->client->ps.stats[ STAT_HEALTH ] <= 0 )
@@ -991,7 +991,7 @@ void poisonCloud( gentity_t *ent )
   {
     humanPlayer = &g_entities[ entityList[ i ] ];
 
-    if( humanPlayer->client && humanPlayer->client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS )
+    if( humanPlayer->client && humanPlayer->client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS )
     {
       if( BG_InventoryContainsUpgrade( UP_LIGHTARMOUR, humanPlayer->client->ps.stats ) )
         continue;
@@ -1054,9 +1054,9 @@ static gentity_t *G_FindNewZapTarget( gentity_t *ent )
   {
     enemy = &g_entities[ entityList[ i ] ];
 
-    if( ( ( enemy->client && enemy->client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS ) ||
+    if( ( ( enemy->client && enemy->client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS ) ||
         ( enemy->s.eType == ET_BUILDABLE &&
-          BG_FindTeamForBuildable( enemy->s.modelindex ) == BIT_HUMANS ) ) && enemy->health > 0 )
+          BG_FindTeamForBuildable( enemy->s.modelindex ) == TEAM_HUMANS ) ) && enemy->health > 0 )
     {
       qboolean foundOldTarget = qfalse;
 
@@ -1272,9 +1272,9 @@ void areaZapFire( gentity_t *ent )
   if( traceEnt == NULL )
     return;
 
-  if( ( ( traceEnt->client && traceEnt->client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS ) ||
+  if( ( ( traceEnt->client && traceEnt->client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS ) ||
       ( traceEnt->s.eType == ET_BUILDABLE &&
-        BG_FindTeamForBuildable( traceEnt->s.modelindex ) == BIT_HUMANS ) ) && traceEnt->health > 0 )
+        BG_FindTeamForBuildable( traceEnt->s.modelindex ) == TEAM_HUMANS ) ) && traceEnt->health > 0 )
   {
     G_CreateNewZap( ent, traceEnt );
   }

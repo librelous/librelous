@@ -202,11 +202,11 @@ static void G_ClientShove( gentity_t *ent, gentity_t *victim )
 
   // alien mass is directly related to their health points
   // human mass is 200, double for bsuit
-  if( ent->client->pers.teamSelection == PTE_ALIENS )
+  if( ent->client->pers.teamSelection == TEAM_ALIENS )
   {
     entMass = BG_FindHealthForClass( ent->client->pers.classSelection );
   }
-  else if( ent->client->pers.teamSelection == PTE_HUMANS )
+  else if( ent->client->pers.teamSelection == TEAM_HUMANS )
   {
     if( BG_InventoryContainsUpgrade( UP_BATTLESUIT, ent->client->ps.stats ) )
       entMass *= 2;
@@ -214,7 +214,7 @@ static void G_ClientShove( gentity_t *ent, gentity_t *victim )
   else
     return;
 
-  if( victim->client->pers.teamSelection == PTE_ALIENS )
+  if( victim->client->pers.teamSelection == TEAM_ALIENS )
   {
     vicMass = BG_FindHealthForClass( victim->client->pers.classSelection );
   }
@@ -315,7 +315,7 @@ void  G_TouchTriggers( gentity_t *ent )
   if( ent->client->ps.stats[ STAT_HEALTH ] <= 0 )
     return;
 
-  BG_FindBBoxForClass( ent->client->ps.stats[ STAT_PCLASS ],
+  BG_FindBBoxForClass( ent->client->ps.stats[ STAT_CLASS ],
                        pmins, pmaxs, NULL, NULL, NULL );
 
   VectorAdd( ent->client->ps.origin, pmins, mins );
@@ -341,7 +341,7 @@ void  G_TouchTriggers( gentity_t *ent )
       continue;
 
     // ignore most entities if a spectator
-    if( ( ent->client->sess.sessionTeam == TEAM_SPECTATOR ) ||
+    if( ( ent->client->sess.spectatorState != SPECTATOR_NOT ) ||
         ( ent->client->ps.stats[ STAT_STATE ] & SS_INFESTING ) ||
         ( ent->client->ps.stats[ STAT_STATE ] & SS_HOVELING ) )
     {
@@ -388,12 +388,12 @@ void SpectatorThink( gentity_t *ent, usercmd_t *ucmd )
     else
       client->ps.pm_type = PM_SPECTATOR;
 
-    client->ps.speed = BG_FindSpeedForClass( client->ps.stats[ STAT_PCLASS ] );
+    client->ps.speed = BG_FindSpeedForClass( client->ps.stats[ STAT_CLASS ] );
 
     client->ps.stats[ STAT_STAMINA ] = 0;
     client->ps.stats[ STAT_MISC ] = 0;
     client->ps.stats[ STAT_BUILDABLE ] = 0;
-    client->ps.stats[ STAT_PCLASS ] = PCL_NONE;
+    client->ps.stats[ STAT_CLASS ] = PCL_NONE;
     client->ps.weapon = WP_NONE;
 
     // set up for pmove
@@ -418,21 +418,21 @@ void SpectatorThink( gentity_t *ent, usercmd_t *ucmd )
       //if waiting in a queue remove from the queue
       if( client->ps.pm_flags & PMF_QUEUED )
       {
-        if( client->ps.stats[ STAT_PTEAM ] == PTE_ALIENS )
+        if( client->ps.stats[ STAT_TEAM ] == TEAM_ALIENS )
           G_RemoveFromSpawnQueue( &level.alienSpawnQueue, client->ps.clientNum );
-        else if( client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS )
+        else if( client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS )
           G_RemoveFromSpawnQueue( &level.humanSpawnQueue, client->ps.clientNum );
 
         client->pers.classSelection = PCL_NONE;
-        client->ps.stats[ STAT_PCLASS ] = PCL_NONE;
+        client->ps.stats[ STAT_CLASS ] = PCL_NONE;
       }
       else if( client->pers.classSelection == PCL_NONE )
       {
-        if( client->pers.teamSelection == PTE_NONE )
+        if( client->pers.teamSelection == TEAM_NONE )
           G_TriggerMenu( client->ps.clientNum, MN_TEAM );
-        else if( client->pers.teamSelection == PTE_ALIENS )
+        else if( client->pers.teamSelection == TEAM_ALIENS )
           G_TriggerMenu( client->ps.clientNum, MN_A_CLASS );
-        else if( client->pers.teamSelection == PTE_HUMANS )
+        else if( client->pers.teamSelection == TEAM_HUMANS )
           G_TriggerMenu( client->ps.clientNum, MN_H_SPAWN );
       }
     }
@@ -440,12 +440,12 @@ void SpectatorThink( gentity_t *ent, usercmd_t *ucmd )
     //set the queue position for the client side
     if( client->ps.pm_flags & PMF_QUEUED )
     {
-      if( client->ps.stats[ STAT_PTEAM ] == PTE_ALIENS )
+      if( client->ps.stats[ STAT_TEAM ] == TEAM_ALIENS )
       {
         client->ps.persistant[ PERS_QUEUEPOS ] =
           G_GetPosInSpawnQueue( &level.alienSpawnQueue, client->ps.clientNum );
       }
-      else if( client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS )
+      else if( client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS )
       {
         client->ps.persistant[ PERS_QUEUEPOS ] =
           G_GetPosInSpawnQueue( &level.humanSpawnQueue, client->ps.clientNum );
@@ -684,7 +684,7 @@ void ClientTimerActions( gentity_t *ent, int msec )
         //set validity bit on buildable
         if( ( client->ps.stats[ STAT_BUILDABLE ] & ~SB_VALID_TOGGLEBIT ) > BA_NONE )
         {
-          int     dist = BG_FindBuildDistForClass( ent->client->ps.stats[ STAT_PCLASS ] );
+          int     dist = BG_FindBuildDistForClass( ent->client->ps.stats[ STAT_CLASS ] );
           vec3_t  dummy;
 
           if( G_CanBuild( ent, client->ps.stats[ STAT_BUILDABLE ] & ~SB_VALID_TOGGLEBIT,
@@ -789,8 +789,8 @@ void ClientTimerActions( gentity_t *ent, int msec )
     }
 
     //replenish alien health
-    if( client->ps.stats[ STAT_PTEAM ] == PTE_ALIENS &&
-      level.surrenderTeam != PTE_ALIENS )
+    if( client->ps.stats[ STAT_TEAM ] == TEAM_ALIENS &&
+      level.surrenderTeam != TEAM_ALIENS )
     {
       int       entityList[ MAX_GENTITIES ];
       vec3_t    range = { LEVEL4_REGEN_RANGE, LEVEL4_REGEN_RANGE, LEVEL4_REGEN_RANGE };
@@ -807,8 +807,8 @@ void ClientTimerActions( gentity_t *ent, int msec )
       {
         boostEntity = &g_entities[ entityList[ i ] ];
 
-        if( boostEntity->client && boostEntity->client->ps.stats[ STAT_PTEAM ] == PTE_ALIENS &&
-            boostEntity->client->ps.stats[ STAT_PCLASS ] == PCL_ALIEN_LEVEL4 )
+        if( boostEntity->client && boostEntity->client->ps.stats[ STAT_TEAM ] == TEAM_ALIENS &&
+            boostEntity->client->ps.stats[ STAT_CLASS ] == PCL_ALIEN_LEVEL4 )
         {
           modifier = LEVEL4_REGEN_MOD;
           break;
@@ -824,22 +824,22 @@ void ClientTimerActions( gentity_t *ent, int msec )
 
       if( ent->health > 0 && ent->health < client->ps.stats[ STAT_MAX_HEALTH ] &&
           ( ent->lastDamageTime + ALIEN_REGEN_DAMAGE_TIME ) < level.time )
-        ent->health += BG_FindRegenRateForClass( client->ps.stats[ STAT_PCLASS ] ) * modifier;
+        ent->health += BG_FindRegenRateForClass( client->ps.stats[ STAT_CLASS ] ) * modifier;
 
       if( ent->health > client->ps.stats[ STAT_MAX_HEALTH ] )
         ent->health = client->ps.stats[ STAT_MAX_HEALTH ];
     }
 
     // turn off life support when a team admits defeat
-    if( client->ps.stats[ STAT_PTEAM ] == PTE_ALIENS &&
-      level.surrenderTeam == PTE_ALIENS )
+    if( client->ps.stats[ STAT_TEAM ] == TEAM_ALIENS &&
+      level.surrenderTeam == TEAM_ALIENS )
     {
       G_Damage( ent, NULL, NULL, NULL, NULL,
-        BG_FindRegenRateForClass( client->ps.stats[ STAT_PCLASS ] ),
+        BG_FindRegenRateForClass( client->ps.stats[ STAT_CLASS ] ),
         DAMAGE_NO_ARMOR, MOD_SUICIDE );
     }
-    else if( client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS &&
-      level.surrenderTeam == PTE_HUMANS )
+    else if( client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS &&
+      level.surrenderTeam == TEAM_HUMANS )
     {
       G_Damage( ent, NULL, NULL, NULL, NULL, 5, DAMAGE_NO_ARMOR, MOD_SUICIDE );
     }
@@ -899,10 +899,10 @@ void ClientEvents( gentity_t *ent, int oldEventSequence )
   vec3_t    dir;
   vec3_t    point, mins;
   float     fallDistance;
-  pClass_t  class;
+  class_t   class;
 
   client = ent->client;
-  class = client->ps.stats[ STAT_PCLASS ];
+  class = client->ps.stats[ STAT_CLASS ];
 
   if( oldEventSequence < client->ps.eventSequence - MAX_PS_EVENTS )
     oldEventSequence = client->ps.eventSequence - MAX_PS_EVENTS;
@@ -1353,7 +1353,7 @@ void ClientThink_real( gentity_t *ent )
   }
 
   // spectators don't do much
-  if( client->sess.sessionTeam == TEAM_SPECTATOR )
+  if( client->sess.spectatorState != SPECTATOR_NOT )
   {
     if( client->sess.spectatorState == SPECTATOR_SCOREBOARD )
       return;
@@ -1458,7 +1458,7 @@ void ClientThink_real( gentity_t *ent )
   }
 
   // set speed
-  client->ps.speed = g_speed.value * BG_FindSpeedForClass( client->ps.stats[ STAT_PCLASS ] );
+  client->ps.speed = g_speed.value * BG_FindSpeedForClass( client->ps.stats[ STAT_CLASS ] );
 
   if( client->lastCreepSlowTime + CREEP_TIMEOUT < level.time )
     client->ps.stats[ STAT_STATE ] &= ~SS_CREEPSLOWED;
@@ -1645,7 +1645,7 @@ void ClientThink_real( gentity_t *ent )
 
       traceEnt = &g_entities[ trace.entityNum ];
 
-      if( traceEnt && traceEnt->biteam == client->ps.stats[ STAT_PTEAM ] && traceEnt->use )
+      if( traceEnt && traceEnt->buildableTeam == client->ps.stats[ STAT_TEAM ] && traceEnt->use )
         traceEnt->use( traceEnt, ent, ent ); //other and activator are the same in this context
       else
       {
@@ -1659,14 +1659,14 @@ void ClientThink_real( gentity_t *ent )
         {
           traceEnt = &g_entities[ entityList[ i ] ];
 
-          if( traceEnt && traceEnt->biteam == client->ps.stats[ STAT_PTEAM ] && traceEnt->use )
+          if( traceEnt && traceEnt->buildableTeam == client->ps.stats[ STAT_TEAM ] && traceEnt->use )
           {
             traceEnt->use( traceEnt, ent, ent ); //other and activator are the same in this context
             break;
           }
         }
 
-        if( i == num && client->ps.stats[ STAT_PTEAM ] == PTE_ALIENS )
+        if( i == num && client->ps.stats[ STAT_TEAM ] == TEAM_ALIENS )
         {
           if( BG_UpgradeClassAvailable( &client->ps ) )
           {
@@ -1690,9 +1690,9 @@ void ClientThink_real( gentity_t *ent )
     {
       //gotta love logic like this eh?
     }
-    else if( ent->client->ps.stats[ STAT_PTEAM ] == PTE_ALIENS )
+    else if( ent->client->ps.stats[ STAT_TEAM ] == TEAM_ALIENS )
       G_AddCreditToClient( ent->client, FREEKILL_ALIEN, qtrue );
-    else if( ent->client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS )
+    else if( ent->client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS )
       G_AddCreditToClient( ent->client, FREEKILL_HUMAN, qtrue );
 
     ent->client->lastKillTime = level.time;
@@ -1765,7 +1765,8 @@ void SpectatorClientEndFrame( gentity_t *ent )
     {
       cl = &level.clients[ clientNum ];
 
-      if( cl->pers.connected == CON_CONNECTED && cl->sess.sessionTeam != TEAM_SPECTATOR )
+      if( cl->pers.connected == CON_CONNECTED &&
+          cl->sess.spectatorState == SPECTATOR_NOT )
       {
         flags = ( cl->ps.eFlags & ~( EF_VOTED | EF_TEAMVOTED ) ) |
           ( ent->client->ps.eFlags & ( EF_VOTED | EF_TEAMVOTED ) );
@@ -1794,7 +1795,7 @@ void ClientEndFrame( gentity_t *ent )
 {
   clientPersistant_t  *pers;
 
-  if( ent->client->sess.sessionTeam == TEAM_SPECTATOR )
+  if( ent->client->sess.spectatorState != SPECTATOR_NOT )
   {
     SpectatorClientEndFrame( ent );
     return;

@@ -56,7 +56,7 @@ buildableAttributes_t bg_buildableList[ ] =
     ASPAWN_SPLASHDAMAGE,   //int       splashDamage;
     ASPAWN_SPLASHRADIUS,   //int       splashRadius;
     MOD_ASPAWN,            //int       meansOfDeath;
-    BIT_ALIENS,            //int       team;
+    TEAM_ALIENS,           //int       team;
     ( 1 << WP_ABUILD )|( 1 << WP_ABUILD2 ),    //weapon_t  buildWeapon;
     BANIM_IDLE1,           //int       idleAnim;
     100,                   //int       nextthink;
@@ -94,7 +94,7 @@ buildableAttributes_t bg_buildableList[ ] =
     BARRICADE_SPLASHDAMAGE,//int       splashDamage;
     BARRICADE_SPLASHRADIUS,//int       splashRadius;
     MOD_ASPAWN,            //int       meansOfDeath;
-    BIT_ALIENS,            //int       team;
+    TEAM_ALIENS,           //int       team;
     ( 1 << WP_ABUILD )|( 1 << WP_ABUILD2 ),    //weapon_t  buildWeapon;
     BANIM_IDLE1,           //int       idleAnim;
     100,                   //int       nextthink;
@@ -135,7 +135,7 @@ buildableAttributes_t bg_buildableList[ ] =
     BOOSTER_SPLASHDAMAGE,  //int       splashDamage;
     BOOSTER_SPLASHRADIUS,  //int       splashRadius;
     MOD_ASPAWN,            //int       meansOfDeath;
-    BIT_ALIENS,            //int       team;
+    TEAM_ALIENS,           //int       team;
     ( 1 << WP_ABUILD )|( 1 << WP_ABUILD2 ),    //weapon_t  buildWeapon;
     BANIM_IDLE1,           //int       idleAnim;
     100,                   //int       nextthink;
@@ -174,7 +174,7 @@ buildableAttributes_t bg_buildableList[ ] =
     ACIDTUBE_SPLASHDAMAGE, //int       splashDamage;
     ACIDTUBE_SPLASHRADIUS, //int       splashRadius;
     MOD_ATUBE,             //int       meansOfDeath;
-    BIT_ALIENS,            //int       team;
+    TEAM_ALIENS,           //int       team;
     ( 1 << WP_ABUILD )|( 1 << WP_ABUILD2 ),    //weapon_t  buildWeapon;
     BANIM_IDLE1,           //int       idleAnim;
     200,                   //int       nextthink;
@@ -212,7 +212,7 @@ buildableAttributes_t bg_buildableList[ ] =
     HIVE_SPLASHDAMAGE,     //int       splashDamage;
     HIVE_SPLASHRADIUS,     //int       splashRadius;
     MOD_ASPAWN,            //int       meansOfDeath;
-    BIT_ALIENS,            //int       team;
+    TEAM_ALIENS,           //int       team;
     ( 1 << WP_ABUILD )|( 1 << WP_ABUILD2 ),    //weapon_t  buildWeapon;
     BANIM_IDLE1,           //int       idleAnim;
     500,                   //int       nextthink;
@@ -251,7 +251,7 @@ buildableAttributes_t bg_buildableList[ ] =
     TRAPPER_SPLASHDAMAGE,  //int       splashDamage;
     TRAPPER_SPLASHRADIUS,  //int       splashRadius;
     MOD_ASPAWN,            //int       meansOfDeath;
-    BIT_ALIENS,            //int       team;
+    TEAM_ALIENS,           //int       team;
     ( 1 << WP_ABUILD )|( 1 << WP_ABUILD2 ),    //weapon_t  buildWeapon;
     BANIM_IDLE1,           //int       idleAnim;
     100,                   //int       nextthink;
@@ -290,7 +290,7 @@ buildableAttributes_t bg_buildableList[ ] =
     OVERMIND_SPLASHDAMAGE, //int       splashDamage;
     OVERMIND_SPLASHRADIUS, //int       splashRadius;
     MOD_ASPAWN,            //int       meansOfDeath;
-    BIT_ALIENS,            //int       team;
+    TEAM_ALIENS,           //int       team;
     ( 1 << WP_ABUILD )|( 1 << WP_ABUILD2 ),    //weapon_t  buildWeapon;
     BANIM_IDLE1,           //int       idleAnim;
     OVERMIND_ATTACK_REPEAT,//int       nextthink;
@@ -329,7 +329,7 @@ buildableAttributes_t bg_buildableList[ ] =
     HOVEL_SPLASHDAMAGE,    //int       splashDamage;
     HOVEL_SPLASHRADIUS,    //int       splashRadius;
     MOD_ASPAWN,            //int       meansOfDeath;
-    BIT_ALIENS,            //int       team;
+    TEAM_ALIENS,           //int       team;
     ( 1 << WP_ABUILD )|( 1 << WP_ABUILD2 ),    //weapon_t  buildWeapon;
     BANIM_IDLE1,           //int       idleAnim;
     150,                   //int       nextthink;
@@ -368,7 +368,7 @@ buildableAttributes_t bg_buildableList[ ] =
     HSPAWN_SPLASHDAMAGE,   //int       splashDamage;
     HSPAWN_SPLASHRADIUS,   //int       splashRadius;
     MOD_HSPAWN,            //int       meansOfDeath;
-    BIT_HUMANS,            //int       team;
+    TEAM_HUMANS,           //int       team;
     ( 1 << WP_HBUILD )|( 1 << WP_HBUILD2 ),    //weapon_t  buildWeapon;
     BANIM_IDLE1,           //int       idleAnim;
     100,                   //int       nextthink;
@@ -407,7 +407,7 @@ buildableAttributes_t bg_buildableList[ ] =
     MEDISTAT_SPLASHDAMAGE, //int       splashDamage;
     MEDISTAT_SPLASHRADIUS, //int       splashRadius;
     MOD_HSPAWN,            //int       meansOfDeath;
-    BIT_HUMANS,            //int       team;
+    TEAM_HUMANS,           //int       team;
     ( 1 << WP_HBUILD )|( 1 << WP_HBUILD2 ),    //weapon_t  buildWeapon;
     BANIM_IDLE1,           //int       idleAnim;
     100,                   //int       nextthink;
@@ -448,7 +448,7 @@ buildableAttributes_t bg_buildableList[ ] =
     MGTURRET_SPLASHDAMAGE, //int       splashDamage;
     MGTURRET_SPLASHRADIUS, //int       splashRadius;
     MOD_HSPAWN,            //int       meansOfDeath;
-    BIT_HUMANS,            //int       team;
+    TEAM_HUMANS,           //int       team;
     ( 1 << WP_HBUILD )|( 1 << WP_HBUILD2 ),   //weapon_t  buildWeapon;
     BANIM_IDLE1,           //int       idleAnim;
     50,                    //int       nextthink;
@@ -487,7 +487,7 @@ buildableAttributes_t bg_buildableList[ ] =
     TESLAGEN_SPLASHDAMAGE, //int       splashDamage;
     TESLAGEN_SPLASHRADIUS, //int       splashRadius;
     MOD_HSPAWN,            //int       meansOfDeath;
-    BIT_HUMANS,            //int       team;
+    TEAM_HUMANS,           //int       team;
     ( 1 << WP_HBUILD2 ),   //weapon_t  buildWeapon;
     BANIM_IDLE1,           //int       idleAnim;
     150,                   //int       nextthink;
@@ -526,7 +526,7 @@ buildableAttributes_t bg_buildableList[ ] =
     DC_SPLASHDAMAGE,       //int       splashDamage;
     DC_SPLASHRADIUS,       //int       splashRadius;
     MOD_HSPAWN,            //int       meansOfDeath;
-    BIT_HUMANS,            //int       team;
+    TEAM_HUMANS,           //int       team;
     ( 1 << WP_HBUILD2 ),   //weapon_t  buildWeapon;
     BANIM_IDLE1,           //int       idleAnim;
     100,                   //int       nextthink;
@@ -565,7 +565,7 @@ buildableAttributes_t bg_buildableList[ ] =
     ARMOURY_SPLASHDAMAGE,  //int       splashDamage;
     ARMOURY_SPLASHRADIUS,  //int       splashRadius;
     MOD_HSPAWN,            //int       meansOfDeath;
-    BIT_HUMANS,            //int       team;
+    TEAM_HUMANS,           //int       team;
     ( 1 << WP_HBUILD )|( 1 << WP_HBUILD2 ),    //weapon_t  buildWeapon;
     BANIM_IDLE1,           //int       idleAnim;
     100,                   //int       nextthink;
@@ -604,7 +604,7 @@ buildableAttributes_t bg_buildableList[ ] =
     REACTOR_SPLASHDAMAGE,  //int       splashDamage;
     REACTOR_SPLASHRADIUS,  //int       splashRadius;
     MOD_HSPAWN,            //int       meansOfDeath;
-    BIT_HUMANS,            //int       team;
+    TEAM_HUMANS,           //int       team;
     ( 1 << WP_HBUILD )|( 1 << WP_HBUILD2 ),    //weapon_t  buildWeapon;
     BANIM_IDLE1,           //int       idleAnim;
     REACTOR_ATTACK_REPEAT, //int       nextthink;
@@ -643,7 +643,7 @@ buildableAttributes_t bg_buildableList[ ] =
     REPEATER_SPLASHDAMAGE, //int       splashDamage;
     REPEATER_SPLASHRADIUS, //int       splashRadius;
     MOD_HSPAWN,            //int       meansOfDeath;
-    BIT_HUMANS,            //int       team;
+    TEAM_HUMANS,           //int       team;
     ( 1 << WP_HBUILD )|( 1 << WP_HBUILD2 ),    //weapon_t  buildWeapon;
     BANIM_IDLE1,           //int       idleAnim;
     100,                   //int       nextthink;
@@ -1088,7 +1088,7 @@ int BG_FindTeamForBuildable( int bclass )
     }
   }
 
-  return BIT_NONE;
+  return TEAM_NONE;
 }
 
 /*
@@ -3161,7 +3161,7 @@ weaponAttributes_t bg_weapons[ ] =
     qfalse,               //qboolean  purchasable;
     qtrue,                //qboolean  longRanged;
     0,                    //int       buildDelay;
-    WUT_HUMANS            //WUTeam_t  team;
+    TEAM_HUMANS           //team_t  team;
   },
   {
     WP_MACHINEGUN,        //int       weaponNum;
@@ -3188,7 +3188,7 @@ weaponAttributes_t bg_weapons[ ] =
     qtrue,                //qboolean  purchasable;
     qtrue,                //qboolean  longRanged;
     0,                    //int       buildDelay;
-    WUT_HUMANS            //WUTeam_t  team;
+    TEAM_HUMANS           //team_t  team;
   },
   {
     WP_SHOTGUN,           //int       weaponNum;
@@ -3216,7 +3216,7 @@ weaponAttributes_t bg_weapons[ ] =
     qtrue,                //qboolean  purchasable;
     qtrue,                //qboolean  longRanged;
     0,                    //int       buildDelay;
-    WUT_HUMANS            //WUTeam_t  team;
+    TEAM_HUMANS           //team_t  team;
   },
   {
     WP_FLAMER,            //int       weaponNum;
@@ -3244,7 +3244,7 @@ weaponAttributes_t bg_weapons[ ] =
     qtrue,                //qboolean  purchasable;
     qtrue,                //qboolean  longRanged;
     0,                    //int       buildDelay;
-    WUT_HUMANS            //WUTeam_t  team;
+    TEAM_HUMANS           //team_t  team;
   },
   {
     WP_CHAINGUN,          //int       weaponNum;
@@ -3272,7 +3272,7 @@ weaponAttributes_t bg_weapons[ ] =
     qtrue,                //qboolean  purchasable;
     qtrue,                //qboolean  longRanged;
     0,                    //int       buildDelay;
-    WUT_HUMANS            //WUTeam_t  team;
+    TEAM_HUMANS           //team_t  team;
   },
   {
     WP_MASS_DRIVER,       //int       weaponNum;
@@ -3300,7 +3300,7 @@ weaponAttributes_t bg_weapons[ ] =
     qtrue,                //qboolean  purchasable;
     qtrue,                //qboolean  longRanged;
     0,                    //int       buildDelay;
-    WUT_HUMANS            //WUTeam_t  team;
+    TEAM_HUMANS           //team_t  team;
   },
   {
     WP_PULSE_RIFLE,       //int       weaponNum;
@@ -3327,7 +3327,7 @@ weaponAttributes_t bg_weapons[ ] =
     qtrue,                //qboolean  purchasable;
     qtrue,                //qboolean  longRanged;
     0,                    //int       buildDelay;
-    WUT_HUMANS            //WUTeam_t  team;
+    TEAM_HUMANS           //team_t  team;
   },
   {
     WP_LUCIFER_CANNON,    //int       weaponNum;
@@ -3355,7 +3355,7 @@ weaponAttributes_t bg_weapons[ ] =
     qtrue,                //qboolean  purchasable;
     qtrue,                //qboolean  longRanged;
     0,                    //int       buildDelay;
-    WUT_HUMANS            //WUTeam_t  team;
+    TEAM_HUMANS           //team_t  team;
   },
   {
     WP_LAS_GUN,           //int       weaponNum;
@@ -3382,7 +3382,7 @@ weaponAttributes_t bg_weapons[ ] =
     qtrue,                //qboolean  purchasable;
     qtrue,                //qboolean  longRanged;
     0,                    //int       buildDelay;
-    WUT_HUMANS            //WUTeam_t  team;
+    TEAM_HUMANS           //team_t  team;
   },
   {
     WP_PAIN_SAW,          //int       weaponNum;
@@ -3410,7 +3410,7 @@ weaponAttributes_t bg_weapons[ ] =
     qtrue,                //qboolean  purchasable;
     qfalse,               //qboolean  longRanged;
     0,                    //int       buildDelay;
-    WUT_HUMANS            //WUTeam_t  team;
+    TEAM_HUMANS           //team_t  team;
   },
   {
     WP_GRENADE,           //int       weaponNum;
@@ -3436,7 +3436,7 @@ weaponAttributes_t bg_weapons[ ] =
     qfalse,               //qboolean  purchasable;
     qfalse,               //qboolean  longRanged;
     0,                    //int       buildDelay;
-    WUT_HUMANS            //WUTeam_t  team;
+    TEAM_HUMANS           //team_t  team;
   },
   {
     WP_HBUILD,            //int       weaponNum;
@@ -3463,7 +3463,7 @@ weaponAttributes_t bg_weapons[ ] =
     qtrue,                //qboolean  purchasable;
     qfalse,               //qboolean  longRanged;
     HBUILD_DELAY,         //int       buildDelay;
-    WUT_HUMANS            //WUTeam_t  team;
+    TEAM_HUMANS           //team_t  team;
   },
   {
     WP_HBUILD2,           //int       weaponNum;
@@ -3490,7 +3490,7 @@ weaponAttributes_t bg_weapons[ ] =
     qtrue,                //qboolean  purchasable;
     qfalse,               //qboolean  longRanged;
     HBUILD2_DELAY,        //int       buildDelay;
-    WUT_HUMANS            //WUTeam_t  team;
+    TEAM_HUMANS           //team_t  team;
   },
   {
     WP_ABUILD,            //int       weaponNum;
@@ -3516,7 +3516,7 @@ weaponAttributes_t bg_weapons[ ] =
     qtrue,                //qboolean  purchasable;
     qfalse,               //qboolean  longRanged;
     ABUILDER_BASE_DELAY,  //int       buildDelay;
-    WUT_ALIENS            //WUTeam_t  team;
+    TEAM_ALIENS           //team_t  team;
   },
   {
     WP_ABUILD2,           //int       weaponNum;
@@ -3542,7 +3542,7 @@ weaponAttributes_t bg_weapons[ ] =
     qtrue,                //qboolean  purchasable;
     qfalse,               //qboolean  longRanged;
     ABUILDER_ADV_DELAY,   //int       buildDelay;
-    WUT_ALIENS            //WUTeam_t  team;
+    TEAM_ALIENS           //team_t  team;
   },
   {
     WP_ALEVEL0,           //int       weaponNum;
@@ -3568,7 +3568,7 @@ weaponAttributes_t bg_weapons[ ] =
     qfalse,               //qboolean  purchasable;
     qfalse,               //qboolean  longRanged;
     0,                    //int       buildDelay;
-    WUT_ALIENS            //WUTeam_t  team;
+    TEAM_ALIENS           //team_t  team;
   },
   {
     WP_ALEVEL1,           //int       weaponNum;
@@ -3594,7 +3594,7 @@ weaponAttributes_t bg_weapons[ ] =
     qfalse,               //qboolean  purchasable;
     qfalse,               //qboolean  longRanged;
     0,                    //int       buildDelay;
-    WUT_ALIENS            //WUTeam_t  team;
+    TEAM_ALIENS           //team_t  team;
   },
   {
     WP_ALEVEL1_UPG,       //int       weaponNum;
@@ -3620,7 +3620,7 @@ weaponAttributes_t bg_weapons[ ] =
     qfalse,               //qboolean  purchasable;
     qtrue,                //qboolean  longRanged;
     0,                    //int       buildDelay;
-    WUT_ALIENS            //WUTeam_t  team;
+    TEAM_ALIENS           //team_t  team;
   },
   {
     WP_ALEVEL2,           //int       weaponNum;
@@ -3646,7 +3646,7 @@ weaponAttributes_t bg_weapons[ ] =
     qfalse,               //qboolean  purchasable;
     qfalse,               //qboolean  longRanged;
     0,                    //int       buildDelay;
-    WUT_ALIENS            //WUTeam_t  team;
+    TEAM_ALIENS           //team_t  team;
   },
   {
     WP_ALEVEL2_UPG,       //int       weaponNum;
@@ -3672,7 +3672,7 @@ weaponAttributes_t bg_weapons[ ] =
     qfalse,               //qboolean  purchasable;
     qfalse,               //qboolean  longRanged;
     0,                    //int       buildDelay;
-    WUT_ALIENS            //WUTeam_t  team;
+    TEAM_ALIENS           //team_t  team;
   },
   {
     WP_ALEVEL3,           //int       weaponNum;
@@ -3698,7 +3698,7 @@ weaponAttributes_t bg_weapons[ ] =
     qfalse,               //qboolean  purchasable;
     qfalse,               //qboolean  longRanged;
     0,                    //int       buildDelay;
-    WUT_ALIENS            //WUTeam_t  team;
+    TEAM_ALIENS           //team_t  team;
   },
   {
     WP_ALEVEL3_UPG,       //int       weaponNum;
@@ -3724,7 +3724,7 @@ weaponAttributes_t bg_weapons[ ] =
     qfalse,               //qboolean  purchasable;
     qtrue,                //qboolean  longRanged;
     0,                    //int       buildDelay;
-    WUT_ALIENS            //WUTeam_t  team;
+    TEAM_ALIENS           //team_t  team;
   },
   {
     WP_ALEVEL4,           //int       weaponNum;
@@ -3750,7 +3750,7 @@ weaponAttributes_t bg_weapons[ ] =
     qfalse,               //qboolean  purchasable;
     qfalse,               //qboolean  longRanged;
     0,                    //int       buildDelay;
-    WUT_ALIENS            //WUTeam_t  team;
+    TEAM_ALIENS           //team_t  team;
   },
   {
     WP_LOCKBLOB_LAUNCHER, //int       weaponNum;
@@ -3776,7 +3776,7 @@ weaponAttributes_t bg_weapons[ ] =
     qfalse,               //qboolean  purchasable;
     qfalse,               //qboolean  longRanged;
     0,                    //int       buildDelay;
-    WUT_ALIENS            //WUTeam_t  team;
+    TEAM_ALIENS           //team_t  team;
   },
   {
     WP_HIVE,              //int       weaponNum;
@@ -3802,7 +3802,7 @@ weaponAttributes_t bg_weapons[ ] =
     qfalse,               //qboolean  purchasable;
     qfalse,               //qboolean  longRanged;
     0,                    //int       buildDelay;
-    WUT_ALIENS            //WUTeam_t  team;
+    TEAM_ALIENS           //team_t  team;
   },
   {
     WP_MGTURRET,          //int       weaponNum;
@@ -3828,7 +3828,7 @@ weaponAttributes_t bg_weapons[ ] =
     qfalse,               //qboolean  purchasable;
     qfalse,               //qboolean  longRanged;
     0,                    //int       buildDelay;
-    WUT_HUMANS            //WUTeam_t  team;
+    TEAM_HUMANS           //team_t  team;
   },
   {
     WP_TESLAGEN,          //int       weaponNum;
@@ -3854,7 +3854,7 @@ weaponAttributes_t bg_weapons[ ] =
     qfalse,               //qboolean  purchasable;
     qfalse,               //qboolean  longRanged;
     0,                    //int       buildDelay;
-    WUT_HUMANS            //WUTeam_t  team;
+    TEAM_HUMANS           //team_t  team;
   }
 };
 
@@ -4302,7 +4302,7 @@ int BG_FindBuildDelayForWeapon( int weapon )
 BG_FindTeamForWeapon
 ==============
 */
-WUTeam_t BG_FindTeamForWeapon( int weapon )
+team_t BG_FindTeamForWeapon( int weapon )
 {
   int i;
 
@@ -4314,7 +4314,7 @@ WUTeam_t BG_FindTeamForWeapon( int weapon )
     }
   }
 
-  return WUT_NONE;
+  return TEAM_NONE;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -4333,7 +4333,7 @@ upgradeAttributes_t bg_upgrades[ ] =
     "icons/iconu_larmour",
     qtrue,                  //qboolean purchasable
     qfalse,                 //qboolean usable
-    WUT_HUMANS              //WUTeam_t  team;
+    TEAM_HUMANS             //team_t  team;
   },
   {
     UP_HELMET,              //int   upgradeNum;
@@ -4348,7 +4348,7 @@ upgradeAttributes_t bg_upgrades[ ] =
     "icons/iconu_helmet",
     qtrue,                  //qboolean purchasable
     qfalse,                 //qboolean usable
-    WUT_HUMANS              //WUTeam_t  team;
+    TEAM_HUMANS             //team_t  team;
   },
   {
     UP_MEDKIT,              //int   upgradeNum;
@@ -4361,7 +4361,7 @@ upgradeAttributes_t bg_upgrades[ ] =
     "icons/iconu_atoxin",
     qfalse,                 //qboolean purchasable
     qtrue,                  //qboolean usable
-    WUT_HUMANS              //WUTeam_t  team;
+    TEAM_HUMANS             //team_t  team;
   },
   {
     UP_BATTPACK,            //int   upgradeNum;
@@ -4375,7 +4375,7 @@ upgradeAttributes_t bg_upgrades[ ] =
     "icons/iconu_battpack",
     qtrue,                  //qboolean purchasable
     qfalse,                 //qboolean usable
-    WUT_HUMANS              //WUTeam_t  team;
+    TEAM_HUMANS             //team_t  team;
   },
   {
     UP_JETPACK,             //int   upgradeNum;
@@ -4390,7 +4390,7 @@ upgradeAttributes_t bg_upgrades[ ] =
     "icons/iconu_jetpack",
     qtrue,                  //qboolean purchasable
     qtrue,                  //qboolean usable
-    WUT_HUMANS              //WUTeam_t  team;
+    TEAM_HUMANS             //team_t  team;
   },
   {
     UP_BATTLESUIT,          //int   upgradeNum;
@@ -4405,7 +4405,7 @@ upgradeAttributes_t bg_upgrades[ ] =
     "icons/iconu_bsuit",
     qtrue,                  //qboolean purchasable
     qfalse,                 //qboolean usable
-    WUT_HUMANS              //WUTeam_t  team;
+    TEAM_HUMANS             //team_t  team;
   },
   {
     UP_GRENADE,             //int   upgradeNum;
@@ -4419,7 +4419,7 @@ upgradeAttributes_t bg_upgrades[ ] =
     0,
     qtrue,                  //qboolean purchasable
     qtrue,                  //qboolean usable
-    WUT_HUMANS              //WUTeam_t  team;
+    TEAM_HUMANS             //team_t  team;
   },
   {
     UP_AMMO,                //int   upgradeNum;
@@ -4432,7 +4432,7 @@ upgradeAttributes_t bg_upgrades[ ] =
     0,
     qtrue,                  //qboolean purchasable
     qfalse,                 //qboolean usable
-    WUT_HUMANS              //WUTeam_t  team;
+    TEAM_HUMANS             //team_t  team;
   }
 };
 
@@ -4637,7 +4637,7 @@ qboolean BG_FindUsableForUpgrade( int upgrade )
 BG_FindTeamForUpgrade
 ==============
 */
-WUTeam_t BG_FindTeamForUpgrade( int upgrade )
+team_t BG_FindTeamForUpgrade( int upgrade )
 {
   int i;
 
@@ -4649,7 +4649,7 @@ WUTeam_t BG_FindTeamForUpgrade( int upgrade )
     }
   }
 
-  return WUT_NONE;
+  return TEAM_NONE;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -4915,7 +4915,7 @@ void BG_PlayerStateToEntityState( playerState_t *ps, entityState_t *s, qboolean 
 
   if( ps->pm_type == PM_INTERMISSION || ps->pm_type == PM_SPECTATOR || ps->pm_type == PM_FREEZE )
     s->eType = ET_INVISIBLE;
-  else if( ps->persistant[ PERS_TEAM ] == TEAM_SPECTATOR )
+  else if( ps->persistant[ PERS_SPECSTATE ] != SPECTATOR_NOT )
     s->eType = ET_INVISIBLE;
   else
     s->eType = ET_PLAYER;
@@ -4990,7 +4990,7 @@ void BG_PlayerStateToEntityState( playerState_t *ps, entityState_t *s, qboolean 
   }
 
   // use misc field to store team/class info:
-  s->misc = ps->stats[ STAT_PTEAM ] | ( ps->stats[ STAT_PCLASS ] << 8 );
+  s->misc = ps->stats[ STAT_TEAM ] | ( ps->stats[ STAT_CLASS ] << 8 );
 
   // have to get the surfNormal through somehow...
   VectorCopy( ps->grapplePoint, s->angles2 );
@@ -5021,7 +5021,7 @@ void BG_PlayerStateToEntityStateExtraPolate( playerState_t *ps, entityState_t *s
 
   if( ps->pm_type == PM_INTERMISSION || ps->pm_type == PM_SPECTATOR || ps->pm_type == PM_FREEZE )
     s->eType = ET_INVISIBLE;
-  else if( ps->persistant[ PERS_TEAM ] == TEAM_SPECTATOR )
+  else if( ps->persistant[ PERS_SPECSTATE ] != SPECTATOR_NOT )
     s->eType = ET_INVISIBLE;
   else
     s->eType = ET_PLAYER;
@@ -5101,7 +5101,7 @@ void BG_PlayerStateToEntityStateExtraPolate( playerState_t *ps, entityState_t *s
   }
 
   // use misc field to store team/class info:
-  s->misc = ps->stats[ STAT_PTEAM ] | ( ps->stats[ STAT_PCLASS ] << 8 );
+  s->misc = ps->stats[ STAT_TEAM ] | ( ps->stats[ STAT_CLASS ] << 8 );
 
   // have to get the surfNormal through somehow...
   VectorCopy( ps->grapplePoint, s->angles2 );
@@ -5367,7 +5367,7 @@ void BG_PositionBuildableRelativeToPlayer( const playerState_t *ps,
 
   VectorCopy( ps->viewangles, angles );
   VectorCopy( ps->origin, playerOrigin );
-  buildDist = BG_FindBuildDistForClass( ps->stats[ STAT_PCLASS ] );
+  buildDist = BG_FindBuildDistForClass( ps->stats[ STAT_CLASS ] );
 
   AngleVectors( angles, forward, NULL, NULL );
   ProjectPointOnPlane( forward, forward, playerNormal );
@@ -5532,7 +5532,7 @@ void BG_ParseCSVEquipmentList( const char *string, weapon_t *weapons, int weapon
 BG_ParseCSVClassList
 ===============
 */
-void BG_ParseCSVClassList( const char *string, pClass_t *classes, int classesSize )
+void BG_ParseCSVClassList( const char *string, class_t *classes, int classesSize )
 {
   char      buffer[ MAX_STRING_CHARS ];
   int       i = 0;
@@ -5643,7 +5643,7 @@ qboolean BG_UpgradeClassAvailable( playerState_t *ps )
 
   for( i = PCL_NONE + 1; i < PCL_NUM_CLASSES; i++ )
   {
-    if( BG_ClassCanEvolveFromTo( ps->stats[ STAT_PCLASS ], i,
+    if( BG_ClassCanEvolveFromTo( ps->stats[ STAT_CLASS ], i,
             ps->persistant[ PERS_CREDIT ], 0 ) >= 0 &&
         BG_FindStagesForClass( i, currentStage ) &&
         BG_ClassIsAllowed( i ) )
@@ -5658,7 +5658,7 @@ qboolean BG_UpgradeClassAvailable( playerState_t *ps )
 typedef struct gameElements_s
 {
   buildable_t       buildables[ BA_NUM_BUILDABLES ];
-  pClass_t          classes[ PCL_NUM_CLASSES ];
+  class_t           classes[ PCL_NUM_CLASSES ];
   weapon_t          weapons[ WP_NUM_WEAPONS ];
   upgrade_t         upgrades[ UP_NUM_UPGRADES ];
 } gameElements_t;
@@ -5737,7 +5737,7 @@ qboolean BG_UpgradeIsAllowed( upgrade_t upgrade )
 BG_ClassIsAllowed
 ============
 */
-qboolean BG_ClassIsAllowed( pClass_t class )
+qboolean BG_ClassIsAllowed( class_t class )
 {
   int i;
 

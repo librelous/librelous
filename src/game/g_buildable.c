@@ -168,7 +168,7 @@ static qboolean G_FindPower( gentity_t *self )
   int       minDistance = REPEATER_BASESIZE + 1;
   vec3_t    temp_v;
 
-  if( self->biteam != BIT_HUMANS )
+  if( self->buildableTeam != TEAM_HUMANS )
     return qfalse;
 
   //reactor is always powered
@@ -231,7 +231,7 @@ static gentity_t *G_PowerEntityForPoint( vec3_t origin )
   gentity_t dummy;
 
   dummy.parentNode = NULL;
-  dummy.biteam = BIT_HUMANS;
+  dummy.buildableTeam = TEAM_HUMANS;
   dummy.s.modelindex = BA_NONE;
   VectorCopy( origin, dummy.s.origin );
 
@@ -274,7 +274,7 @@ static qboolean G_FindDCC( gentity_t *self )
   vec3_t    temp_v;
   qboolean  foundDCC = qfalse;
 
-  if( self->biteam != BIT_HUMANS )
+  if( self->buildableTeam != TEAM_HUMANS )
     return qfalse;
 
   //if this already has dcc then stop now
@@ -324,7 +324,7 @@ qboolean G_IsDCCBuilt( void )
   memset( &dummy, 0, sizeof( gentity_t ) );
 
   dummy.dccNode = NULL;
-  dummy.biteam = BIT_HUMANS;
+  dummy.buildableTeam = TEAM_HUMANS;
 
   return G_FindDCC( &dummy );
 }
@@ -341,7 +341,7 @@ static qboolean G_FindOvermind( gentity_t *self )
   int       i;
   gentity_t *ent;
 
-  if( self->biteam != BIT_ALIENS )
+  if( self->buildableTeam != TEAM_ALIENS )
     return qfalse;
 
   //if this already has overmind then stop now
@@ -382,7 +382,7 @@ qboolean G_IsOvermindBuilt( void )
   memset( &dummy, 0, sizeof( gentity_t ) );
 
   dummy.overmindNode = NULL;
-  dummy.biteam = BIT_ALIENS;
+  dummy.buildableTeam = TEAM_ALIENS;
 
   return G_FindOvermind( &dummy );
 }
@@ -488,7 +488,7 @@ static void G_CreepSlow( gentity_t *self )
   {
     enemy = &g_entities[ entityList[ i ] ];
 
-    if( enemy->client && enemy->client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS &&
+    if( enemy->client && enemy->client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS &&
         enemy->client->ps.groundEntityNum != ENTITYNUM_NONE &&
         G_Visible( self, enemy ) )
     {
@@ -573,7 +573,7 @@ Called when an alien spawn dies
 void ASpawn_Melt( gentity_t *self )
 {
   G_SelectiveRadiusDamage( self->s.pos.trBase, self, self->splashDamage,
-    self->splashRadius, self, self->splashMethodOfDeath, PTE_ALIENS );
+    self->splashRadius, self, self->splashMethodOfDeath, TEAM_ALIENS );
 
   //start creep recession
   if( !( self->s.eFlags & EF_DEAD ) )
@@ -612,7 +612,7 @@ void ASpawn_Blast( gentity_t *self )
 
   //do a bit of radius damage
   G_SelectiveRadiusDamage( self->s.pos.trBase, self, self->splashDamage,
-    self->splashRadius, self, self->splashMethodOfDeath, PTE_ALIENS );
+    self->splashRadius, self, self->splashMethodOfDeath, TEAM_ALIENS );
 
   //pretty events and item cleanup
   self->s.eFlags |= EF_NODRAW; //don't draw the model once it's destroyed
@@ -649,7 +649,7 @@ void ASpawn_Die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 
   if( attacker && attacker->client )
   {
-    if( attacker->client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS )
+    if( attacker->client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS )
     {
       if( self->s.modelindex == BA_A_OVERMIND )
         G_AddCreditToClient( attacker->client, OVERMIND_VALUE, qtrue );
@@ -658,7 +658,7 @@ void ASpawn_Die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
     }
     else
     {
-      G_TeamCommand( PTE_ALIENS,
+      G_TeamCommand( TEAM_ALIENS,
         va( "print \"%s ^3DESTROYED^7 by teammate %s^7\n\"",
           BG_FindHumanNameForBuildable( self->s.modelindex ),
           attacker->client->pers.netname ) );
@@ -754,7 +754,7 @@ void AOvermind_Think( gentity_t *self )
   {
     //do some damage
     if( G_SelectiveRadiusDamage( self->s.pos.trBase, self, self->splashDamage,
-          self->splashRadius, self, MOD_OVERMIND, PTE_ALIENS ) )
+          self->splashRadius, self, MOD_OVERMIND, TEAM_ALIENS ) )
     {
       self->timestamp = level.time;
       G_SetBuildableAnim( self, BANIM_ATTACK1, qfalse );
@@ -855,7 +855,7 @@ void ABarricade_Blast( gentity_t *self )
 
   //do a bit of radius damage
   G_SelectiveRadiusDamage( self->s.pos.trBase, self, self->splashDamage,
-    self->splashRadius, self, self->splashMethodOfDeath, PTE_ALIENS );
+    self->splashRadius, self, self->splashMethodOfDeath, TEAM_ALIENS );
 
   //pretty events and item cleanup
   self->s.eFlags |= EF_NODRAW; //don't draw the model once its destroyed
@@ -891,9 +891,9 @@ void ABarricade_Die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker,
 
   if( attacker && attacker->client )
   {
-    if( attacker->client->ps.stats[ STAT_PTEAM ] == PTE_ALIENS )
+    if( attacker->client->ps.stats[ STAT_TEAM ] == TEAM_ALIENS )
     {
-      G_TeamCommand( PTE_ALIENS,
+      G_TeamCommand( TEAM_ALIENS,
         va( "print \"%s ^3DESTROYED^7 by teammate %s^7\n\"",
           BG_FindHumanNameForBuildable( self->s.modelindex ),
           attacker->client->pers.netname ) );
@@ -967,7 +967,7 @@ void AAcidTube_Damage( gentity_t *self )
 
     //do some damage
     G_SelectiveRadiusDamage( self->s.pos.trBase, self, self->splashDamage,
-      self->splashRadius, self, self->splashMethodOfDeath, PTE_ALIENS );
+      self->splashRadius, self, self->splashMethodOfDeath, TEAM_ALIENS );
   }
 
   G_CreepSlow( self );
@@ -1013,7 +1013,7 @@ void AAcidTube_Think( gentity_t *self )
       if( !G_Visible( self, enemy ) )
         continue;
 
-      if( enemy->client && enemy->client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS )
+      if( enemy->client && enemy->client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS )
       {
         self->timestamp = level.time;
         self->think = AAcidTube_Damage;
@@ -1084,7 +1084,7 @@ void AHive_Think( gentity_t *self )
       if( !G_Visible( self, enemy ) )
         continue;
 
-      if( enemy->client && enemy->client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS )
+      if( enemy->client && enemy->client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS )
       {
         self->active = qtrue;
         self->target_ent = enemy;
@@ -1130,7 +1130,7 @@ qboolean AHovel_Blocked( gentity_t *hovel, gentity_t *player, qboolean provideEx
   trace_t   tr;
 
   BG_FindBBoxForBuildable( BA_A_HOVEL, NULL, hovelMaxs );
-  BG_FindBBoxForClass( player->client->ps.stats[ STAT_PCLASS ],
+  BG_FindBBoxForClass( player->client->ps.stats[ STAT_CLASS ],
                        mins, maxs, NULL, NULL, NULL );
 
   VectorCopy( hovel->s.origin2, normal );
@@ -1204,8 +1204,8 @@ void AHovel_Use( gentity_t *self, gentity_t *other, gentity_t *activator )
       //this hovel is in use
       G_TriggerMenu( activator->client->ps.clientNum, MN_A_HOVEL_OCCUPIED );
     }
-    else if( ( ( activator->client->ps.stats[ STAT_PCLASS ] == PCL_ALIEN_BUILDER0 ) ||
-               ( activator->client->ps.stats[ STAT_PCLASS ] == PCL_ALIEN_BUILDER0_UPG ) ) &&
+    else if( ( ( activator->client->ps.stats[ STAT_CLASS ] == PCL_ALIEN_BUILDER0 ) ||
+               ( activator->client->ps.stats[ STAT_CLASS ] == PCL_ALIEN_BUILDER0_UPG ) ) &&
              activator->health > 0 && self->health > 0 )
     {
       if( AHovel_Blocked( self, activator, qfalse ) )
@@ -1285,7 +1285,7 @@ void AHovel_Die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 
   //do a bit of radius damage
   G_SelectiveRadiusDamage( self->s.pos.trBase, self, self->splashDamage,
-    self->splashRadius, self, self->splashMethodOfDeath, PTE_ALIENS );
+    self->splashRadius, self, self->splashMethodOfDeath, TEAM_ALIENS );
 
   //pretty events and item cleanup
   self->s.eFlags |= EF_NODRAW; //don't draw the model once its destroyed
@@ -1327,9 +1327,9 @@ void AHovel_Die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 
   if( attacker && attacker->client )
   {
-    if( attacker->client->ps.stats[ STAT_PTEAM ] == PTE_ALIENS )
+    if( attacker->client->ps.stats[ STAT_TEAM ] == TEAM_ALIENS )
     {
-      G_TeamCommand( PTE_ALIENS,
+      G_TeamCommand( TEAM_ALIENS,
         va( "print \"%s ^3DESTROYED^7 by teammate %s^7\n\"",
           BG_FindHumanNameForBuildable( self->s.modelindex ),
           attacker->client->pers.netname ) );
@@ -1371,7 +1371,7 @@ void ABooster_Touch( gentity_t *self, gentity_t *other, trace_t *trace )
   if( !client )
     return;
 
-  if( client && client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS )
+  if( client && client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS )
     return;
 
   //only allow boostage once every 30 seconds
@@ -1408,7 +1408,7 @@ void ATrapper_FireOnEnemy( gentity_t *self, int firespeed, float range )
   int       lowMsec = 0;
   int       highMsec = (int)( (
     ( ( distanceToTarget * LOCKBLOB_SPEED ) +
-      ( distanceToTarget * BG_FindSpeedForClass( enemy->client->ps.stats[ STAT_PCLASS ] ) ) ) /
+      ( distanceToTarget * BG_FindSpeedForClass( enemy->client->ps.stats[ STAT_CLASS ] ) ) ) /
     ( LOCKBLOB_SPEED * LOCKBLOB_SPEED ) ) * 1000.0f );
 
   VectorScale( enemy->acceleration, 1.0f / 2.0f, halfAcceleration );
@@ -1465,9 +1465,9 @@ qboolean ATrapper_CheckTarget( gentity_t *self, gentity_t *target, int range )
     return qfalse;
   if( !target->client ) // is the target a bot or player?
     return qfalse;
-  if( target->client->ps.stats[ STAT_PTEAM ] == PTE_ALIENS ) // one of us?
+  if( target->client->ps.stats[ STAT_TEAM ] == TEAM_ALIENS ) // one of us?
     return qfalse;
-  if( target->client->sess.sessionTeam == TEAM_SPECTATOR ) // is the target alive?
+  if( target->client->sess.spectatorState != SPECTATOR_NOT ) // is the target alive?
     return qfalse;
   if( target->health <= 0 ) // is the target still alive?
     return qfalse;
@@ -1649,7 +1649,7 @@ void HReactor_Think( gentity_t *self )
   //do some damage
   if( self->spawned && ( self->health > 0 ) &&
     G_SelectiveRadiusDamage( self->s.pos.trBase, self, REACTOR_ATTACK_DAMAGE,
-      REACTOR_ATTACK_RANGE, self, MOD_REACTOR, PTE_HUMANS ) )
+      REACTOR_ATTACK_RANGE, self, MOD_REACTOR, TEAM_HUMANS ) )
   {
     self->timestamp = level.time;
     //detect alien targets and draw tesla trails
@@ -1658,7 +1658,7 @@ void HReactor_Think( gentity_t *self )
     {
       enemy = &g_entities[ entityList[ i ] ];
 
-      if( enemy->client && enemy->client->ps.stats[ STAT_PTEAM ] == PTE_ALIENS )
+      if( enemy->client && enemy->client->ps.stats[ STAT_TEAM ] == TEAM_ALIENS )
       {
         tent = G_TempEntity( enemy->s.pos.trBase, EV_TESLATRAIL );
 
@@ -1699,7 +1699,7 @@ void HArmoury_Activate( gentity_t *self, gentity_t *other, gentity_t *activator 
   if( self->spawned )
   {
     //only humans can activate this
-    if( activator->client->ps.stats[ STAT_PTEAM ] != PTE_HUMANS )
+    if( activator->client->ps.stats[ STAT_TEAM ] != TEAM_HUMANS )
       return;
 
     //if this is powered then call the armoury menu
@@ -1804,7 +1804,7 @@ void HMedistat_Think( gentity_t *self )
     {
       player = &g_entities[ entityList[ i ] ];
 
-      if( player->client && player->client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS )
+      if( player->client && player->client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS )
       {
         if( player->health < player->client->ps.stats[ STAT_MAX_HEALTH ] &&
             player->client->ps.pm_type != PM_DEAD &&
@@ -1822,7 +1822,7 @@ void HMedistat_Think( gentity_t *self )
       {
         player = &g_entities[ entityList[ i ] ];
 
-        if( player->client && player->client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS )
+        if( player->client && player->client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS )
         {
           if( player->health < player->client->ps.stats[ STAT_MAX_HEALTH ] &&
               player->client->ps.pm_type != PM_DEAD )
@@ -1993,7 +1993,7 @@ qboolean HMGTurret_CheckTarget( gentity_t *self, gentity_t *target, qboolean ign
   if( !traceEnt->client )
     return qfalse;
 
-  if( traceEnt->client && traceEnt->client->ps.stats[ STAT_PTEAM ] != PTE_ALIENS )
+  if( traceEnt->client && traceEnt->client->ps.stats[ STAT_TEAM ] != TEAM_ALIENS )
     return qfalse;
 
   return qtrue;
@@ -2025,7 +2025,7 @@ void HMGTurret_FindEnemy( gentity_t *self )
   {
     target = &g_entities[ entityList[ i ] ];
 
-    if( target->client && target->client->ps.stats[ STAT_PTEAM ] == PTE_ALIENS )
+    if( target->client && target->client->ps.stats[ STAT_TEAM ] == TEAM_ALIENS )
     {
       //if target is not valid keep searching
       if( !HMGTurret_CheckTarget( self, target, qfalse ) )
@@ -2044,7 +2044,7 @@ void HMGTurret_FindEnemy( gentity_t *self )
     {
       target = &g_entities[ entityList[ i ] ];
 
-      if( target->client && target->client->ps.stats[ STAT_PTEAM ] == PTE_ALIENS )
+      if( target->client && target->client->ps.stats[ STAT_TEAM ] == TEAM_ALIENS )
       {
         //if target is not valid keep searching
         if( !HMGTurret_CheckTarget( self, target, qtrue ) )
@@ -2169,7 +2169,7 @@ void HTeslaGen_Think( gentity_t *self )
     {
       enemy = &g_entities[ entityList[ i ] ];
 
-      if( enemy->client && enemy->client->ps.stats[ STAT_PTEAM ] == PTE_ALIENS &&
+      if( enemy->client && enemy->client->ps.stats[ STAT_TEAM ] == TEAM_ALIENS &&
           enemy->health > 0 &&
           Distance( enemy->s.pos.trBase, self->s.pos.trBase ) <= TESLAGEN_RANGE )
       {
@@ -2291,7 +2291,7 @@ void HSpawn_Die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 
   if( attacker && attacker->client )
   {
-    if( attacker->client->ps.stats[ STAT_PTEAM ] == PTE_ALIENS )
+    if( attacker->client->ps.stats[ STAT_TEAM ] == TEAM_ALIENS )
     {
       if( self->s.modelindex == BA_H_REACTOR )
         G_AddCreditToClient( attacker->client, REACTOR_VALUE, qtrue );
@@ -2300,7 +2300,7 @@ void HSpawn_Die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
     }
     else
     {
-      G_TeamCommand( PTE_HUMANS,
+      G_TeamCommand( TEAM_HUMANS,
         va( "print \"%s ^3DESTROYED^7 by teammate %s^7\n\"",
           BG_FindHumanNameForBuildable( self->s.modelindex ),
           attacker->client->pers.netname ) );
@@ -2473,7 +2473,7 @@ void G_BuildableThink( gentity_t *ent, int msec )
 
     if( !ent->spawned && ent->health > 0 )
       ent->health += (int)( ceil( (float)bHealth / (float)( bTime * 0.001 ) ) );
-    else if( ent->biteam == BIT_ALIENS && ent->health > 0 && ent->health < bHealth &&
+    else if( ent->buildableTeam == TEAM_ALIENS && ent->health > 0 && ent->health < bHealth &&
         bRegen && ( ent->lastDamageTime + ALIEN_REGEN_DAMAGE_TIME ) < level.time )
       ent->health += bRegen;
 
@@ -2525,7 +2525,7 @@ qboolean G_BuildableRange( vec3_t origin, float r, buildable_t buildable )
     if( ent->s.eType != ET_BUILDABLE )
       continue;
 
-    if( ent->biteam == BIT_HUMANS && !ent->powered )
+    if( ent->buildableTeam == TEAM_HUMANS && !ent->powered )
       continue;
 
     if( ent->s.modelindex == buildable && ent->spawned )
@@ -2711,7 +2711,7 @@ static itemBuildError_t G_SufficientBPAvailable( buildable_t     buildable,
   int               numBuildables = 0;
   int               pointsYielded = 0;
   gentity_t         *ent;
-  buildableTeam_t   team = BG_FindTeamForBuildable( buildable );
+  team_t            team = BG_FindTeamForBuildable( buildable );
   int               buildPoints = BG_FindBuildPointsForBuildable( buildable );
   int               remainingBP, remainingSpawns;
   qboolean          collision = qfalse;
@@ -2723,7 +2723,7 @@ static itemBuildError_t G_SufficientBPAvailable( buildable_t     buildable,
   buildable_t       core;
   int               spawnCount = 0;
 
-  if( team == BIT_ALIENS )
+  if( team == TEAM_ALIENS )
   {
     remainingBP     = level.alienBuildPoints;
     remainingSpawns = level.numAlienSpawns;
@@ -2731,7 +2731,7 @@ static itemBuildError_t G_SufficientBPAvailable( buildable_t     buildable,
     spawn           = BA_A_SPAWN;
     core            = BA_A_OVERMIND;
   }
-  else if( team == BIT_HUMANS )
+  else if( team == TEAM_HUMANS )
   {
     remainingBP     = level.humanBuildPoints;
     remainingSpawns = level.numHumanSpawns;
@@ -2809,7 +2809,7 @@ static itemBuildError_t G_SufficientBPAvailable( buildable_t     buildable,
     if( ent->health <= 0 )
       continue;
 
-    if( ent->biteam != team )
+    if( ent->buildableTeam != team )
       continue;
 
     // Don't allow destruction of hovel with granger inside
@@ -2968,7 +2968,7 @@ itemBuildError_t G_CanBuild( gentity_t *ent, buildable_t buildable, int distance
   contents = trap_PointContents( entity_origin, -1 );
   buildPoints = BG_FindBuildPointsForBuildable( buildable );
 
-  if( ent->client->ps.stats[ STAT_PTEAM ] == PTE_ALIENS )
+  if( ent->client->ps.stats[ STAT_TEAM ] == TEAM_ALIENS )
   {
     //alien criteria
 
@@ -3003,7 +3003,7 @@ itemBuildError_t G_CanBuild( gentity_t *ent, buildable_t buildable, int distance
     if( tr1.surfaceFlags & SURF_NOALIENBUILD || contents & CONTENTS_NOALIENBUILD )
       reason = IBE_PERMISSION;
   }
-  else if( ent->client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS )
+  else if( ent->client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS )
   {
     //human criteria
 
@@ -3108,7 +3108,7 @@ static gentity_t *G_Build( gentity_t *builder, buildable_t buildable, vec3_t ori
   built->classname = BG_FindEntityNameForBuildable( buildable );
 
   built->s.modelindex = buildable; //so we can tell what this is on the client side
-  built->biteam = built->s.modelindex2 = BG_FindTeamForBuildable( buildable );
+  built->buildableTeam = built->s.modelindex2 = BG_FindTeamForBuildable( buildable );
 
   BG_FindBBoxForBuildable( buildable, built->r.mins, built->r.maxs );
 
@@ -3295,7 +3295,7 @@ static gentity_t *G_Build( gentity_t *builder, buildable_t buildable, vec3_t ori
   if( built->s.generic1 < 0 )
     built->s.generic1 = 0;
 
-  if( BG_FindTeamForBuildable( built->s.modelindex ) == PTE_ALIENS )
+  if( BG_FindTeamForBuildable( built->s.modelindex ) == TEAM_ALIENS )
   {
     built->powered = qtrue;
     built->s.generic1 |= B_POWERED_TOGGLEBIT;
@@ -3332,7 +3332,7 @@ qboolean G_BuildIfValid( gentity_t *ent, buildable_t buildable )
   float         dist;
   vec3_t        origin;
 
-  dist = BG_FindBuildDistForClass( ent->client->ps.stats[ STAT_PCLASS ] );
+  dist = BG_FindBuildDistForClass( ent->client->ps.stats[ STAT_CLASS ] );
 
   switch( G_CanBuild( ent, buildable, dist, origin ) )
   {
@@ -3365,14 +3365,14 @@ qboolean G_BuildIfValid( gentity_t *ent, buildable_t buildable )
       return qfalse;
 
     case IBE_NORMAL:
-      if( ent->client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS )
+      if( ent->client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS )
         G_TriggerMenu( ent->client->ps.clientNum, MN_H_NORMAL );
       else
         G_TriggerMenu( ent->client->ps.clientNum, MN_A_NORMAL );
       return qfalse;
 
     case IBE_PERMISSION:
-      if( ent->client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS )
+      if( ent->client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS )
         G_TriggerMenu( ent->client->ps.clientNum, MN_H_NORMAL );
       else
         G_TriggerMenu( ent->client->ps.clientNum, MN_A_NORMAL );
@@ -3387,7 +3387,7 @@ qboolean G_BuildIfValid( gentity_t *ent, buildable_t buildable )
       return qfalse;
 
     case IBE_NOROOM:
-      if( ent->client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS )
+      if( ent->client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS )
         G_TriggerMenu( ent->client->ps.clientNum, MN_H_NOROOM );
       else
         G_TriggerMenu( ent->client->ps.clientNum, MN_A_NOROOM );
@@ -3775,7 +3775,7 @@ void G_LayoutLoad( void )
 G_BaseSelfDestruct
 ============
 */
-void G_BaseSelfDestruct( pTeam_t team )
+void G_BaseSelfDestruct( team_t team )
 {
   int       i;
   gentity_t *ent;
@@ -3787,9 +3787,9 @@ void G_BaseSelfDestruct( pTeam_t team )
       continue;
     if( ent->s.eType != ET_BUILDABLE )
       continue;
-    if( team == PTE_HUMANS && ent->biteam != BIT_HUMANS )
+    if( team == TEAM_HUMANS && ent->buildableTeam != TEAM_HUMANS )
       continue;
-    if( team == PTE_ALIENS && ent->biteam != BIT_ALIENS )
+    if( team == TEAM_ALIENS && ent->buildableTeam != TEAM_ALIENS )
       continue;
     G_Damage( ent, NULL, NULL, NULL, NULL, 10000, 0, MOD_SUICIDE );
   }

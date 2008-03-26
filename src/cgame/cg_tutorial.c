@@ -162,7 +162,7 @@ static entityState_t *CG_BuildableInRange( playerState_t *ps, float *healthFract
   }
 
   if( es->eType == ET_BUILDABLE &&
-      ps->stats[ STAT_PTEAM ] == BG_FindTeamForBuildable( es->modelindex ) )
+      ps->stats[ STAT_TEAM ] == BG_FindTeamForBuildable( es->modelindex ) )
     return es;
   else
     return NULL;
@@ -222,7 +222,7 @@ static void CG_AlienBuilderText( char *text, playerState_t *ps )
     }
   }
 
-  if( ps->stats[ STAT_PCLASS ] == PCL_ALIEN_BUILDER0_UPG )
+  if( ps->stats[ STAT_CLASS ] == PCL_ALIEN_BUILDER0_UPG )
   {
     if( ( ps->stats[ STAT_BUILDABLE ] & ~SB_VALID_TOGGLEBIT ) == BA_NONE )
     {
@@ -270,7 +270,7 @@ static void CG_AlienLevel1Text( char *text, playerState_t *ps )
       va( "Press %s to swipe\n",
         CG_KeyNameForCommand( "+attack" ) ) );
 
-  if( ps->stats[ STAT_PCLASS ] == PCL_ALIEN_LEVEL1_UPG )
+  if( ps->stats[ STAT_CLASS ] == PCL_ALIEN_LEVEL1_UPG )
   {
     Q_strcat( text, MAX_TUTORIAL_TEXT,
         va( "Press %s to spray poisonous gas\n",
@@ -293,7 +293,7 @@ static void CG_AlienLevel2Text( char *text, playerState_t *ps )
       va( "Press %s to bite\n",
         CG_KeyNameForCommand( "+attack" ) ) );
 
-  if( ps->stats[ STAT_PCLASS ] == PCL_ALIEN_LEVEL2_UPG )
+  if( ps->stats[ STAT_CLASS ] == PCL_ALIEN_LEVEL2_UPG )
   {
     Q_strcat( text, MAX_TUTORIAL_TEXT,
         va( "Press %s to invoke an electrical attack\n",
@@ -316,7 +316,7 @@ static void CG_AlienLevel3Text( char *text, playerState_t *ps )
       va( "Press %s to bite\n",
         CG_KeyNameForCommand( "+attack" ) ) );
 
-  if( ps->stats[ STAT_PCLASS ] == PCL_ALIEN_LEVEL3_UPG )
+  if( ps->stats[ STAT_CLASS ] == PCL_ALIEN_LEVEL3_UPG )
   {
     Q_strcat( text, MAX_TUTORIAL_TEXT,
         va( "Press %s to launch a projectile\n",
@@ -608,14 +608,14 @@ const char *CG_TutorialText( void )
 
   if( !cg.intermissionStarted && !cg.demoPlayback )
   {
-    if( ps->persistant[ PERS_TEAM ] == TEAM_SPECTATOR ||
+    if( ps->persistant[ PERS_SPECSTATE ] != SPECTATOR_NOT ||
         ps->pm_flags & PMF_FOLLOW )
     {
       CG_SpectatorText( text, ps );
     }
     else if( ps->stats[ STAT_HEALTH ] > 0 )
     {
-      switch( ps->stats[ STAT_PCLASS ] )
+      switch( ps->stats[ STAT_CLASS ] )
       {
         case PCL_ALIEN_BUILDER0:
         case PCL_ALIEN_BUILDER0_UPG:
@@ -654,7 +654,7 @@ const char *CG_TutorialText( void )
           break;
       }
 
-      if( ps->stats[ STAT_PTEAM ] == PTE_ALIENS )
+      if( ps->stats[ STAT_TEAM ] == TEAM_ALIENS )
       {
         entityState_t *es = CG_BuildableInRange( ps, NULL );
 
@@ -666,8 +666,8 @@ const char *CG_TutorialText( void )
         }
         else if( es && es->modelindex == BA_A_HOVEL &&
                  es->generic1 & B_SPAWNED_TOGGLEBIT &&
-                 ( ps->stats[ STAT_PCLASS ] == PCL_ALIEN_BUILDER0 ||
-                   ps->stats[ STAT_PCLASS ] == PCL_ALIEN_BUILDER0_UPG ) )
+                 ( ps->stats[ STAT_CLASS ] == PCL_ALIEN_BUILDER0 ||
+                   ps->stats[ STAT_CLASS ] == PCL_ALIEN_BUILDER0_UPG ) )
         {
           Q_strcat( text, MAX_TUTORIAL_TEXT,
               va( "Press %s to enter the hovel\n",

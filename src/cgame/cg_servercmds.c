@@ -222,7 +222,7 @@ CG_AnnounceAlienStageTransistion
 */
 static void CG_AnnounceAlienStageTransistion( stage_t from, stage_t to )
 {
-  if( cg.predictedPlayerState.stats[ STAT_PTEAM ] != PTE_ALIENS )
+  if( cg.predictedPlayerState.stats[ STAT_TEAM ] != TEAM_ALIENS )
     return;
 
   trap_S_StartLocalSound( cgs.media.alienStageTransition, CHAN_ANNOUNCER );
@@ -236,7 +236,7 @@ CG_AnnounceHumanStageTransistion
 */
 static void CG_AnnounceHumanStageTransistion( stage_t from, stage_t to )
 {
-  if( cg.predictedPlayerState.stats[ STAT_PTEAM ] != PTE_HUMANS )
+  if( cg.predictedPlayerState.stats[ STAT_TEAM ] != TEAM_HUMANS )
     return;
 
   trap_S_StartLocalSound( cgs.media.humanStageTransition, CHAN_ANNOUNCER );
@@ -752,7 +752,7 @@ void CG_Menu( int menu )
       break;
 
     case MN_A_INFEST:
-      trap_Cvar_Set( "ui_currentClass", va( "%d %d",  cg.snap->ps.stats[ STAT_PCLASS ],
+      trap_Cvar_Set( "ui_currentClass", va( "%d %d",  cg.snap->ps.stats[ STAT_CLASS ],
                                                       cg.snap->ps.persistant[ PERS_CREDIT ] ) );
       cmd       = "menu tremulous_alienupgrade\n";
       break;
@@ -837,9 +837,9 @@ static void CG_ServerCommand( void )
     Q_strncpyz( text, CG_Argv( 1 ), MAX_SAY_TEXT );
     if( Q_stricmpn( text, "[skipnotify]", 12 ) )
     {
-      if( cg.snap->ps.stats[ STAT_PTEAM ] == PTE_ALIENS )
+      if( cg.snap->ps.stats[ STAT_TEAM ] == TEAM_ALIENS )
         trap_S_StartLocalSound( cgs.media.alienTalkSound, CHAN_LOCAL_SOUND );
-      else if( cg.snap->ps.stats[ STAT_PTEAM ] == PTE_HUMANS )
+      else if( cg.snap->ps.stats[ STAT_TEAM ] == TEAM_HUMANS )
         trap_S_StartLocalSound( cgs.media.humanTalkSound, CHAN_LOCAL_SOUND );
       else
         trap_S_StartLocalSound( cgs.media.talkSound, CHAN_LOCAL_SOUND );

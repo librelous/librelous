@@ -210,8 +210,8 @@ typedef enum
   STAT_WEAPONS,         // 16 bit fields
   STAT_WEAPONS2,        // another 16 bits to push the max weapon count up
   STAT_MAX_HEALTH, // health / armor limit, changable by handicap
-  STAT_PCLASS,    // player class (for aliens AND humans)
-  STAT_PTEAM,     // player team
+  STAT_CLASS,     // player class (for aliens AND humans)
+  STAT_TEAM,      // player team
   STAT_STAMINA,   // stamina (human only)
   STAT_STATE,     // client states e.g. wall climbing
   STAT_MISC,      // for uh...misc stuff
@@ -255,7 +255,7 @@ typedef enum
   PERS_SCORE,           // !!! MUST NOT CHANGE, SERVER AND GAME BOTH REFERENCE !!!
   PERS_HITS,            // total points damage inflicted so damage beeps can sound on change
   PERS_RANK,
-  PERS_TEAM,
+  PERS_SPECSTATE,
   PERS_SPAWN_COUNT,     // incremented every respawn
   PERS_ATTACKER,        // clientnum of last damage inflicter
   PERS_KILLED,          // count of the number of times you died
@@ -372,16 +372,6 @@ typedef enum
   UP_NUM_UPGRADES
 } upgrade_t;
 
-typedef enum
-{
-  WUT_NONE,
-
-  WUT_ALIENS,
-  WUT_HUMANS,
-
-  WUT_NUM_TEAMS
-} WUTeam_t;
-
 // bitmasks for upgrade slots
 #define SLOT_NONE       0x00000000
 #define SLOT_HEAD       0x00000001
@@ -421,16 +411,6 @@ typedef enum
 
   BA_NUM_BUILDABLES
 } buildable_t;
-
-typedef enum
-{
-  BIT_NONE,
-
-  BIT_ALIENS,
-  BIT_HUMANS,
-
-  BIT_NUM_TEAMS
-} buildableTeam_t;
 
 #define B_HEALTH_BITS       12
 #define B_HEALTH_MASK       ((1<<B_HEALTH_BITS)-1)
@@ -784,15 +764,6 @@ typedef struct animation_s
 #define ANIM_TOGGLEBIT    0x80
 #define ANIM_FORCEBIT     0x40
 
-
-typedef enum
-{
-  TEAM_FREE,
-  TEAM_SPECTATOR,
-
-  TEAM_NUM_TEAMS
-} team_t;
-
 // Time between location updates
 #define TEAM_LOCATION_UPDATE_TIME   1000
 
@@ -823,18 +794,27 @@ typedef enum
   PCL_HUMAN_BSUIT,
 
   PCL_NUM_CLASSES
-} pClass_t;
+} class_t;
 
+// spectator state
+typedef enum
+{
+  SPECTATOR_NOT,
+  SPECTATOR_FREE,
+  SPECTATOR_LOCKED,
+  SPECTATOR_FOLLOW,
+  SPECTATOR_SCOREBOARD
+} spectatorState_t;
 
 // player teams
 typedef enum
 {
-  PTE_NONE,
-  PTE_ALIENS,
-  PTE_HUMANS,
+  TEAM_NONE,
+  TEAM_ALIENS,
+  TEAM_HUMANS,
 
-  PTE_NUM_TEAMS
-} pTeam_t;
+  NUM_TEAMS
+} team_t;
 
 
 // means of death
@@ -1079,7 +1059,7 @@ typedef struct
 
   int       buildDelay;
 
-  WUTeam_t  team;
+  team_t    team;
 } weaponAttributes_t;
 
 // upgrade record
@@ -1101,7 +1081,7 @@ typedef struct
   qboolean  purchasable;
   qboolean  usable;
 
-  WUTeam_t  team;
+  team_t    team;
 } upgradeAttributes_t;
 
 qboolean  BG_WeaponIsFull( weapon_t weapon, int stats[ ], int ammo, int clips );
@@ -1222,7 +1202,7 @@ float     BG_FindZoomFovForWeapon( int weapon );
 qboolean  BG_FindPurchasableForWeapon( int weapon );
 qboolean  BG_FindLongRangedForWeapon( int weapon );
 int       BG_FindBuildDelayForWeapon( int weapon );
-WUTeam_t  BG_FindTeamForWeapon( int weapon );
+team_t    BG_FindTeamForWeapon( int weapon );
 
 int       BG_FindPriceForUpgrade( int upgrade );
 qboolean  BG_FindStagesForUpgrade( int upgrade, stage_t stage );
@@ -1234,7 +1214,7 @@ char      *BG_FindInfoForUpgrade( int upgrade );
 char      *BG_FindIconForUpgrade( int upgrade );
 qboolean  BG_FindPurchasableForUpgrade( int upgrade );
 qboolean  BG_FindUsableForUpgrade( int upgrade );
-WUTeam_t  BG_FindTeamForUpgrade( int upgrade );
+team_t    BG_FindTeamForUpgrade( int upgrade );
 
 // content masks
 #define MASK_ALL          (-1)
@@ -1306,12 +1286,12 @@ int     atoi_neg( char *token, qboolean allowNegative );
 
 void BG_ParseCSVEquipmentList( const char *string, weapon_t *weapons, int weaponsSize,
     upgrade_t *upgrades, int upgradesSize );
-void BG_ParseCSVClassList( const char *string, pClass_t *classes, int classesSize );
+void BG_ParseCSVClassList( const char *string, class_t *classes, int classesSize );
 void BG_ParseCSVBuildableList( const char *string, buildable_t *buildables, int buildablesSize );
 void BG_InitAllowedGameElements( void );
 qboolean BG_WeaponIsAllowed( weapon_t weapon );
 qboolean BG_UpgradeIsAllowed( upgrade_t upgrade );
-qboolean BG_ClassIsAllowed( pClass_t class );
+qboolean BG_ClassIsAllowed( class_t class );
 qboolean BG_BuildableIsAllowed( buildable_t buildable );
 qboolean BG_UpgradeClassAvailable( playerState_t *ps );
 

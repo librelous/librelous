@@ -149,8 +149,7 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
   // stop any following clients
   for( i = 0; i < level.maxclients; i++ )
   {
-    if( level.clients[ i ].sess.sessionTeam == TEAM_SPECTATOR &&
-        level.clients[ i ].sess.spectatorState == SPECTATOR_FOLLOW &&
+    if( level.clients[ i ].sess.spectatorState == SPECTATOR_FOLLOW &&
         level.clients[ i ].sess.spectatorClient == self->client->ps.clientNum )
     {
       if( !G_FollowNewClient( &g_entities[ i ], 1 ) )
@@ -218,9 +217,9 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
       AddScore( attacker, -1 );
 
       //punish team kills and suicides
-      if( attacker->client->ps.stats[ STAT_PTEAM ] == PTE_ALIENS )
+      if( attacker->client->ps.stats[ STAT_TEAM ] == TEAM_ALIENS )
         G_AddCreditToClient( attacker->client, -1, qtrue );
-      else if( attacker->client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS )
+      else if( attacker->client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS )
         G_AddCreditToClient( attacker->client, -ASPAWN_VALUE, qtrue );
     }
     else
@@ -240,18 +239,18 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
   // if players did more than DAMAGE_FRACTION_FOR_KILL increment the stage counters
   if( !OnSameTeam( self, attacker ) && totalDamage >= ( self->client->ps.stats[ STAT_MAX_HEALTH ] * DAMAGE_FRACTION_FOR_KILL ) )
   {
-    if( self->client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS )
+    if( self->client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS )
       trap_Cvar_Set( "g_alienKills", va( "%d", g_alienKills.integer + 1 ) );
-    else if( self->client->ps.stats[ STAT_PTEAM ] == PTE_ALIENS )
+    else if( self->client->ps.stats[ STAT_TEAM ] == TEAM_ALIENS )
       trap_Cvar_Set( "g_humanKills", va( "%d", g_humanKills.integer + 1 ) );
   }
 
   if( totalDamage > 0.0f )
   {
-    if( self->client->ps.stats[ STAT_PTEAM ] == PTE_ALIENS )
+    if( self->client->ps.stats[ STAT_TEAM ] == TEAM_ALIENS )
     {
       //nice simple happy bouncy human land
-      float classValue = BG_FindValueOfClass( self->client->ps.stats[ STAT_PCLASS ] );
+      float classValue = BG_FindValueOfClass( self->client->ps.stats[ STAT_CLASS ] );
 
       for( i = 0; i < MAX_CLIENTS; i++ )
       {
@@ -260,7 +259,7 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
         if( !player->client )
           continue;
 
-        if( player->client->ps.stats[ STAT_PTEAM ] != PTE_HUMANS )
+        if( player->client->ps.stats[ STAT_TEAM ] != TEAM_HUMANS )
           continue;
 
         if( !self->credits[ i ] )
@@ -271,7 +270,7 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
             (int)( classValue * ( (float)self->credits[ i ] / totalDamage ) ), qtrue );
       }
     }
-    else if( self->client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS )
+    else if( self->client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS )
     {
       //horribly complex nasty alien land
       float humanValue = BG_GetValueOfHuman( &self->client->ps );
@@ -285,7 +284,7 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
         if( !player->client )
           continue;
 
-        if( player->client->ps.stats[ STAT_PTEAM ] != PTE_ALIENS )
+        if( player->client->ps.stats[ STAT_TEAM ] != TEAM_ALIENS )
           continue;
 
         //this client did no damage
@@ -364,7 +363,7 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
     if( client->pers.connected != CON_CONNECTED )
       continue;
 
-    if( client->sess.sessionTeam != TEAM_SPECTATOR )
+    if( client->sess.spectatorState == SPECTATOR_NOT )
       continue;
 
     if( client->sess.spectatorClient == self->s.number )
@@ -906,7 +905,7 @@ dflags    these flags are used to control how T_Damage works
 void G_SelectiveDamage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
          vec3_t dir, vec3_t point, int damage, int dflags, int mod, int team )
 {
-  if( targ->client && ( team != targ->client->ps.stats[ STAT_PTEAM ] ) )
+  if( targ->client && ( team != targ->client->ps.stats[ STAT_TEAM ] ) )
     G_Damage( targ, inflictor, attacker, dir, point, damage, dflags, mod );
 }
 
@@ -967,7 +966,7 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
   if( targ->client )
   {
     knockback = (int)( (float)knockback *
-      BG_FindKnockbackScaleForClass( targ->client->ps.stats[ STAT_PCLASS ] ) );
+      BG_FindKnockbackScaleForClass( targ->client->ps.stats[ STAT_CLASS ] ) );
   }
 
   if( knockback > 200 )
@@ -1019,12 +1018,12 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
       if( !g_friendlyFire.integer )
       {
         if( !g_friendlyFireHumans.integer &&
-            targ->client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS )
+            targ->client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS )
         {
           return;
         }
         if( !g_friendlyFireAliens.integer &&
-             targ->client->ps.stats[ STAT_PTEAM ] == PTE_ALIENS )
+             targ->client->ps.stats[ STAT_TEAM ] == TEAM_ALIENS )
         {
           return;
         }
@@ -1033,7 +1032,7 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 
     // If target is buildable on the same team as the attacking client
     if( targ->s.eType == ET_BUILDABLE && attacker->client &&
-        targ->biteam == attacker->client->pers.teamSelection )
+        targ->buildableTeam == attacker->client->pers.teamSelection )
     {
       if( !g_friendlyBuildableFire.integer )
         return;
@@ -1087,7 +1086,7 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
     targ->client->lasthurt_client = attacker->s.number;
     targ->client->lasthurt_mod = mod;
     take = (int)( (float)take * G_CalcDamageModifier( point, targ, attacker,
-                                                      client->ps.stats[ STAT_PCLASS ], dflags ) );
+                                                      client->ps.stats[ STAT_CLASS ], dflags ) );
 
     //if boosted poison every attack
     if( attacker->client && attacker->client->ps.stats[ STAT_STATE ] & SS_BOOSTED )
@@ -1262,7 +1261,7 @@ qboolean G_SelectiveRadiusDamage( vec3_t origin, gentity_t *attacker, float dama
     points = damage * ( 1.0 - dist / radius );
 
     if( CanDamage( ent, origin ) && ent->client &&
-        ent->client->ps.stats[ STAT_PTEAM ] != team )
+        ent->client->ps.stats[ STAT_TEAM ] != team )
     {
       VectorSubtract( ent->r.currentOrigin, origin, dir );
       // push the center of mass higher than the origin so players
