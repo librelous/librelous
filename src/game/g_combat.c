@@ -250,7 +250,7 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
     if( self->client->ps.stats[ STAT_TEAM ] == TEAM_ALIENS )
     {
       //nice simple happy bouncy human land
-      float classValue = BG_FindValueOfClass( self->client->ps.stats[ STAT_CLASS ] );
+      float classValue = BG_Class( self->client->ps.stats[ STAT_CLASS ] )->value;
 
       for( i = 0; i < MAX_CLIENTS; i++ )
       {
@@ -826,7 +826,7 @@ void G_InitDamageLocations( void )
 
   for( i = PCL_NONE + 1; i < PCL_NUM_CLASSES; i++ )
   {
-    modelName = BG_FindModelNameForClass( i );
+    modelName = BG_ClassConfig( i )->modelName;
     Com_sprintf( filename, sizeof( filename ), "models/players/%s/locdamage.cfg", modelName );
 
     len = trap_FS_FOpenFile( filename, &fileHandle, FS_READ );
@@ -852,7 +852,7 @@ void G_InitDamageLocations( void )
 
   for( i = UP_NONE + 1; i < UP_NUM_UPGRADES; i++ )
   {
-    modelName = BG_FindNameForUpgrade( i );
+    modelName = BG_Upgrade( i )->name;
     Com_sprintf( filename, sizeof( filename ), "armour/%s.armour", modelName );
 
     len = trap_FS_FOpenFile( filename, &fileHandle, FS_READ );
@@ -960,13 +960,13 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
   if( inflictor->s.weapon != WP_NONE )
   {
     knockback = (int)( (float)knockback *
-      BG_FindKnockbackScaleForWeapon( inflictor->s.weapon ) );
+      BG_Weapon( inflictor->s.weapon )->knockbackScale );
   }
 
   if( targ->client )
   {
     knockback = (int)( (float)knockback *
-      BG_FindKnockbackScaleForClass( targ->client->ps.stats[ STAT_CLASS ] ) );
+      BG_Class( targ->client->ps.stats[ STAT_CLASS ] )->knockbackScale );
   }
 
   if( knockback > 200 )

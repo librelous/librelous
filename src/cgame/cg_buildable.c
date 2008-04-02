@@ -108,7 +108,7 @@ static void CG_Creep( centity_t *cent )
   float         size, frac;
   trace_t       tr;
   vec3_t        temp, origin;
-  int           scaleUpTime = BG_FindBuildTimeForBuildable( cent->currentState.modelindex );
+  int           scaleUpTime = BG_Buildable( cent->currentState.modelindex )->buildTime;
   int           time;
 
   time = cent->currentState.time;
@@ -338,7 +338,7 @@ void CG_InitBuildables( void )
 
   for( i = BA_NONE + 1; i < BA_NUM_BUILDABLES; i++ )
   {
-    buildableName = BG_FindNameForBuildable( i );
+    buildableName = BG_Buildable( i )->name;
 
     //animation.cfg
     Com_sprintf( filename, sizeof( filename ), "models/buildables/%s/animation.cfg", buildableName );
@@ -353,7 +353,8 @@ void CG_InitBuildables( void )
     //models
     for( j = 0; j <= 3; j++ )
     {
-      if( ( modelFile = BG_FindModelsForBuildable( i, j ) ) )
+      modelFile = BG_BuildableConfig( i )->models[ j ];
+      if( strlen( modelFile ) > 0 )
         cg_buildables[ i ].models[ j ] = trap_R_RegisterModel( modelFile );
     }
 
@@ -375,7 +376,7 @@ void CG_InitBuildables( void )
         else
         {
           //file doesn't exist - use default
-          if( BG_FindTeamForBuildable( i ) == TEAM_ALIENS )
+          if( BG_Buildable( i )->team == TEAM_ALIENS )
             cg_buildables[ i ].sounds[ j ].sound = defaultAlienSounds[ j ];
           else
             cg_buildables[ i ].sounds[ j ].sound = defaultHumanSounds[ j ];
@@ -447,7 +448,7 @@ static void CG_RunBuildableLerpFrame( centity_t *cent )
     {
       if( cg_debugRandom.integer )
         CG_Printf( "Sound for animation %d for a %s\n",
-            newAnimation, BG_FindHumanNameForBuildable( buildable ) );
+            newAnimation, BG_Buildable( buildable )->humanName );
 
       trap_S_StartSound( cent->lerpOrigin, cent->currentState.number, CHAN_AUTO,
         cg_buildables[ buildable ].sounds[ newAnimation ].sound );
@@ -505,7 +506,7 @@ static void CG_BuildableAnimation( centity_t *cent, int *old, int *now, float *b
         CG_Printf( "%d->%d l:%d t:%d %s(%d)\n",
                    cent->oldBuildableAnim, cent->buildableAnim,
                    es->legsAnim, es->torsoAnim,
-                   BG_FindHumanNameForBuildable( es->modelindex ), es->number );
+                   BG_Buildable( es->modelindex )->humanName, es->number );
 
       if( cent->buildableAnim == es->torsoAnim || es->legsAnim & ANIM_FORCEBIT )
         cent->buildableAnim = cent->oldBuildableAnim = es->legsAnim;
@@ -583,7 +584,7 @@ void CG_GhostBuildable( buildable_t buildable )
 
   memset( &ent, 0, sizeof( ent ) );
 
-  BG_FindBBoxForBuildable( buildable, mins, maxs );
+  BG_BuildableBoundingBox( buildable, mins, maxs );
 
   BG_PositionBuildableRelativeToPlayer( ps, mins, maxs, CG_Trace, entity_origin, angles, &tr );
 
@@ -591,7 +592,7 @@ void CG_GhostBuildable( buildable_t buildable )
                                     mins, maxs, ent.axis, ent.origin );
 
   //offset on the Z axis if required
-  VectorMA( ent.origin, BG_FindZOffsetForBuildable( buildable ), tr.plane.normal, ent.origin );
+  VectorMA( ent.origin, BG_BuildableConfig( buildable )->zOffset, tr.plane.normal, ent.origin );
 
   VectorCopy( ent.origin, ent.lightingOrigin );
   VectorCopy( ent.origin, ent.oldorigin ); // don't positionally lerp at all
@@ -604,7 +605,7 @@ void CG_GhostBuildable( buildable_t buildable )
     ent.customShader = cgs.media.redBuildShader;
 
   //rescale the model
-  scale = BG_FindModelScaleForBuildable( buildable );
+  scale = BG_BuildableConfig( buildable )->modelScale;
 
   if( scale != 1.0f )
   {
@@ -629,7 +630,7 @@ CG_BuildableParticleEffects
 static void CG_BuildableParticleEffects( centity_t *cent )
 {
   entityState_t   *es = &cent->currentState;
-  team_t          team = BG_FindTeamForBuildable( es->modelindex );
+  team_t          team = BG_Buildable( es->modelindex )->team;
   int             health = es->generic1 & B_HEALTH_MASK;
   float           healthFrac = (float)health / B_HEALTH_MASK;
 
@@ -837,7 +838,7 @@ static void CG_BuildableStatusDisplay( centity_t *cent )
   vec3_t          mins, maxs;
   entityState_t   *hit;
 
-  if( BG_FindTeamForBuildable( es->modelindex ) == TEAM_ALIENS )
+  if( BG_Buildable( es->modelindex )->team == TEAM_ALIENS )
     bs = &cgs.alienBuildStat;
   else
     bs = &cgs.humanBuildStat;
@@ -852,7 +853,7 @@ static void CG_BuildableStatusDisplay( centity_t *cent )
   Vector4Copy( bs->foreColor, color );
 
   // trace for center point
-  BG_FindBBoxForBuildable( es->modelindex, mins, maxs );
+  BG_BuildableBoundingBox( es->modelindex, mins, maxs );
 
   VectorCopy( cent->lerpOrigin, origin );
 
@@ -898,7 +899,7 @@ static void CG_BuildableStatusDisplay( centity_t *cent )
 
       if( tr.entityNum < MAX_CLIENTS || ( hit->eType == ET_BUILDABLE &&
           ( !( es->generic1 & B_SPAWNED_TOGGLEBIT ) ||
-            BG_FindTransparentTestForBuildable( hit->modelindex ) ) ) )
+            BG_Buildable( hit->modelindex )->transparentTest ) ) )
       {
         entNum = tr.entityNum;
         VectorCopy( tr.endpos, trOrigin );
@@ -1054,7 +1055,7 @@ static void CG_BuildableStatusDisplay( centity_t *cent )
       int healthMax;
       int healthPoints;
 
-      healthMax = BG_FindHealthForBuildable( es->modelindex );
+      healthMax = BG_Buildable( es->modelindex )->health;
       healthPoints = (int)( healthScale * healthMax );
       if( health > 0 && healthPoints < 1 )
         healthPoints = 1;
@@ -1110,8 +1111,8 @@ static qboolean CG_PlayerIsBuilder( buildable_t buildable )
     case WP_ABUILD2:
     case WP_HBUILD:
     case WP_HBUILD2:
-      return BG_FindTeamForBuildable( buildable ) ==
-             BG_FindTeamForWeapon( cg.predictedPlayerState.weapon );
+      return BG_Buildable( buildable )->team ==
+             BG_Weapon( cg.predictedPlayerState.weapon )->team;
 
     default:
       return qfalse;
@@ -1182,7 +1183,7 @@ void CG_Buildable( centity_t *cent )
   vec3_t          surfNormal, xNormal, mins, maxs;
   vec3_t          refNormal = { 0.0f, 0.0f, 1.0f };
   float           rotAngle;
-  team_t          team = BG_FindTeamForBuildable( es->modelindex );
+  team_t          team = BG_Buildable( es->modelindex )->team;
   float           scale;
   int             health;
   float           healthScale;
@@ -1209,14 +1210,14 @@ void CG_Buildable( centity_t *cent )
   VectorCopy( es->origin2, surfNormal );
 
   VectorCopy( es->angles, angles );
-  BG_FindBBoxForBuildable( es->modelindex, mins, maxs );
+  BG_BuildableBoundingBox( es->modelindex, mins, maxs );
 
   if( es->pos.trType == TR_STATIONARY )
     CG_PositionAndOrientateBuildable( angles, ent.origin, surfNormal, es->number,
                                       mins, maxs, ent.axis, ent.origin );
 
   //offset on the Z axis if required
-  VectorMA( ent.origin, BG_FindZOffsetForBuildable( es->modelindex ), surfNormal, ent.origin );
+  VectorMA( ent.origin, BG_BuildableConfig( es->modelindex )->zOffset, surfNormal, ent.origin );
 
   VectorCopy( ent.origin, ent.oldorigin ); // don't positionally lerp at all
   VectorCopy( ent.origin, ent.lightingOrigin );
@@ -1241,7 +1242,7 @@ void CG_Buildable( centity_t *cent )
   CG_BuildableAnimation( cent, &ent.oldframe, &ent.frame, &ent.backlerp );
 
   //rescale the model
-  scale = BG_FindModelScaleForBuildable( es->modelindex );
+  scale = BG_BuildableConfig( es->modelindex )->modelScale;
 
   if( scale != 1.0f )
   {
@@ -1356,7 +1357,7 @@ void CG_Buildable( centity_t *cent )
     weaponInfo_t  *weapon = &cg_weapons[ es->weapon ];
 
     if( cg.time - cent->muzzleFlashTime > MUZZLE_FLASH_TIME ||
-        BG_FindProjTypeForBuildable( es->modelindex ) == WP_TESLAGEN )
+        BG_Buildable( es->modelindex )->turretProjType == WP_TESLAGEN )
     {
       if( weapon->wim[ WPM_PRIMARY ].flashDlightColor[ 0 ] ||
           weapon->wim[ WPM_PRIMARY ].flashDlightColor[ 1 ] ||

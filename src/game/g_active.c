@@ -204,7 +204,7 @@ static void G_ClientShove( gentity_t *ent, gentity_t *victim )
   // human mass is 200, double for bsuit
   if( ent->client->pers.teamSelection == TEAM_ALIENS )
   {
-    entMass = BG_FindHealthForClass( ent->client->pers.classSelection );
+    entMass = BG_Class( ent->client->pers.classSelection )->health;
   }
   else if( ent->client->pers.teamSelection == TEAM_HUMANS )
   {
@@ -216,7 +216,7 @@ static void G_ClientShove( gentity_t *ent, gentity_t *victim )
 
   if( victim->client->pers.teamSelection == TEAM_ALIENS )
   {
-    vicMass = BG_FindHealthForClass( victim->client->pers.classSelection );
+    vicMass = BG_Class( victim->client->pers.classSelection )->health;
   }
   else if( BG_InventoryContainsUpgrade( UP_BATTLESUIT,
     victim->client->ps.stats ) )
@@ -315,7 +315,7 @@ void  G_TouchTriggers( gentity_t *ent )
   if( ent->client->ps.stats[ STAT_HEALTH ] <= 0 )
     return;
 
-  BG_FindBBoxForClass( ent->client->ps.stats[ STAT_CLASS ],
+  BG_ClassBoundingBox( ent->client->ps.stats[ STAT_CLASS ],
                        pmins, pmaxs, NULL, NULL, NULL );
 
   VectorAdd( ent->client->ps.origin, pmins, mins );
@@ -388,7 +388,7 @@ void SpectatorThink( gentity_t *ent, usercmd_t *ucmd )
     else
       client->ps.pm_type = PM_SPECTATOR;
 
-    client->ps.speed = BG_FindSpeedForClass( client->ps.stats[ STAT_CLASS ] );
+    client->ps.speed = BG_Class( client->ps.stats[ STAT_CLASS ] )->speed;
 
     client->ps.stats[ STAT_STAMINA ] = 0;
     client->ps.stats[ STAT_MISC ] = 0;
@@ -684,7 +684,7 @@ void ClientTimerActions( gentity_t *ent, int msec )
         //set validity bit on buildable
         if( ( client->ps.stats[ STAT_BUILDABLE ] & ~SB_VALID_TOGGLEBIT ) > BA_NONE )
         {
-          int     dist = BG_FindBuildDistForClass( ent->client->ps.stats[ STAT_CLASS ] );
+          int     dist = BG_Class( ent->client->ps.stats[ STAT_CLASS ] )->buildDist;
           vec3_t  dummy;
 
           if( G_CanBuild( ent, client->ps.stats[ STAT_BUILDABLE ] & ~SB_VALID_TOGGLEBIT,
@@ -824,7 +824,7 @@ void ClientTimerActions( gentity_t *ent, int msec )
 
       if( ent->health > 0 && ent->health < client->ps.stats[ STAT_MAX_HEALTH ] &&
           ( ent->lastDamageTime + ALIEN_REGEN_DAMAGE_TIME ) < level.time )
-        ent->health += BG_FindRegenRateForClass( client->ps.stats[ STAT_CLASS ] ) * modifier;
+        ent->health += BG_Class( client->ps.stats[ STAT_CLASS ] )->regenRate * modifier;
 
       if( ent->health > client->ps.stats[ STAT_MAX_HEALTH ] )
         ent->health = client->ps.stats[ STAT_MAX_HEALTH ];
@@ -835,7 +835,7 @@ void ClientTimerActions( gentity_t *ent, int msec )
       level.surrenderTeam == TEAM_ALIENS )
     {
       G_Damage( ent, NULL, NULL, NULL, NULL,
-        BG_FindRegenRateForClass( client->ps.stats[ STAT_CLASS ] ),
+        BG_Class( client->ps.stats[ STAT_CLASS ] )->regenRate,
         DAMAGE_NO_ARMOR, MOD_SUICIDE );
     }
     else if( client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS &&
@@ -853,7 +853,7 @@ void ClientTimerActions( gentity_t *ent, int msec )
     {
       int maxAmmo;
 
-      BG_FindAmmoForWeapon( WP_ALEVEL3_UPG, &maxAmmo, NULL );
+      maxAmmo = BG_Weapon( WP_ALEVEL3_UPG )->maxAmmo;
 
       if( client->ps.ammo < maxAmmo )
         client->ps.ammo++;
@@ -926,11 +926,11 @@ void ClientEvents( gentity_t *ent, int oldEventSequence )
         else if( fallDistance > 1.0f )
           fallDistance = 1.0f;
 
-        damage = (int)( (float)BG_FindHealthForClass( class ) *
-                 BG_FindFallDamageForClass( class ) * fallDistance );
+        damage = (int)( (float)BG_Class( class )->health *
+                 BG_Class( class )->fallDamage * fallDistance );
 
         VectorSet( dir, 0, 0, 1 );
-        BG_FindBBoxForClass( class, mins, NULL, NULL, NULL, NULL );
+        BG_ClassBoundingBox( class, mins, NULL, NULL, NULL, NULL );
         mins[ 0 ] = mins[ 1 ] = 0.0f;
         VectorAdd( client->ps.origin, mins, point );
 
@@ -1458,7 +1458,7 @@ void ClientThink_real( gentity_t *ent )
   }
 
   // set speed
-  client->ps.speed = g_speed.value * BG_FindSpeedForClass( client->ps.stats[ STAT_CLASS ] );
+  client->ps.speed = g_speed.value * BG_Class( client->ps.stats[ STAT_CLASS ] )->speed;
 
   if( client->lastCreepSlowTime + CREEP_TIMEOUT < level.time )
     client->ps.stats[ STAT_STATE ] &= ~SS_CREEPSLOWED;
