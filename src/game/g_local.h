@@ -343,6 +343,7 @@ typedef struct
   qboolean            muted;
   qboolean            denyBuild;
   int                 adminLevel;
+  char                voice[ MAX_VOICE_NAME_LEN ];
 } clientPersistant_t;
 
 #define MAX_UNLAGGED_MARKERS 10
@@ -446,6 +447,9 @@ struct gclient_s
   unlagged_t          unlaggedBackup;
   unlagged_t          unlaggedCalc;
   int                 unlaggedTime;
+ 
+  float               voiceEnthusiasm;
+  char                lastVoiceCmd[ MAX_VOICE_CMD_LEN ];
 
 };
 
@@ -643,6 +647,8 @@ typedef struct
   char              layout[ MAX_QPATH ];
 
   team_t            surrenderTeam;
+
+  voice_t           *voices;
 } level_locals_t;
 
 #define CMD_CHEAT         0x01
@@ -1143,6 +1149,9 @@ extern  vmCvar_t  g_currentMapRotation;
 extern  vmCvar_t  g_currentMap;
 extern  vmCvar_t  g_initialMapRotation;
 extern  vmCvar_t  g_chatTeamPrefix;
+
+extern  vmCvar_t  g_debugVoices;
+extern  vmCvar_t  g_voiceChats;
 
 extern  vmCvar_t  g_shove;
 
