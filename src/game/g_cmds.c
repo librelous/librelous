@@ -2100,6 +2100,7 @@ void Cmd_Buy_f( gentity_t *ent )
         }
         VectorCopy( newOrigin, ent->s.pos.trBase );
         ent->client->ps.stats[ STAT_CLASS ] = PCL_HUMAN_BSUIT;
+        ent->client->pers.classSelection = PCL_HUMAN_BSUIT;
         ent->client->ps.eFlags ^= EF_TELEPORT_BIT;
       }
 
@@ -2200,6 +2201,7 @@ void Cmd_Sell_f( gentity_t *ent )
         }
         VectorCopy( newOrigin, ent->s.pos.trBase );
         ent->client->ps.stats[ STAT_CLASS ] = PCL_HUMAN;
+        ent->client->pers.classSelection = PCL_HUMAN;
         ent->client->ps.eFlags ^= EF_TELEPORT_BIT;
       }
 
