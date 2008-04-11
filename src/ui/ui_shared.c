@@ -1543,7 +1543,8 @@ static void Menus_Close( menuDef_t *menu )
     Menu_RunCloseScript( menu );
     menu->window.flags &= ~( WINDOW_VISIBLE | WINDOW_HASFOCUS );
 
-    openMenuCount--;
+    if( openMenuCount > 0 )
+      openMenuCount--;
 
     if( openMenuCount > 0 )
       Menus_Activate( menuStack[ openMenuCount - 1 ] );
@@ -1559,10 +1560,18 @@ void Menus_CloseAll( void )
 {
   int i;
 
-  for( i = 0; i < menuCount; i++ )
-    Menus_Close( &Menus[i] );
+  // Close any menus on the stack first
+  if( openMenuCount > 0 )
+  {
+    for( i = openMenuCount; i > 0; i-- )
+      Menus_Close( menuStack[ i ] );
 
-  openMenuCount = 0;
+    openMenuCount = 0;
+  }
+
+  // Close all other menus
+  for( i = 0; i < menuCount; i++ )
+    Menus_Close( &Menus[ i ] );
 }
 
 

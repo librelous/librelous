@@ -169,7 +169,7 @@ intptr_t vmMain( int command, int arg0, int arg1, int arg2, int arg3,
       return 0;
 
     case UI_IS_FULLSCREEN:
-      return UI_IsFullscreen();
+      return UI_IsFullscreen( );
 
     case UI_SET_ACTIVE_MENU:
       UI_SetActiveMenu( arg0 );
@@ -3975,7 +3975,7 @@ void UI_SetActiveMenu( uiMenuCommand_t menu )
 
 qboolean UI_IsFullscreen( void )
 {
-  return Menus_AnyFullScreenVisible();
+  return Menus_AnyFullScreenVisible( );
 }
 
 
@@ -4235,7 +4235,7 @@ void UI_DrawConnectScreen( qboolean overlay )
 
   // print any server info (server full, bad version, etc)
   if( cstate.connState < CA_CONNECTED )
-    Text_PaintCenter_AutoWrapped( centerPoint, yStart + 176, 630, 20, scale, colorWhite, cstate.messageString, 0 );
+    Text_PaintCenter( centerPoint, yStart + 176, scale, colorWhite, cstate.messageString, 0 );
 
   if( lastConnState > cstate.connState )
     lastLoadingText[0] = '\0';
