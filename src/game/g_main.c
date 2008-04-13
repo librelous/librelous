@@ -2121,7 +2121,7 @@ void CheckVote( void )
 CheckTeamVote
 ==================
 */
-void CheckTeamVote( int team )
+void CheckTeamVote( team_t team )
 {
   int cs_offset;
 

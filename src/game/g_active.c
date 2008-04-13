@@ -610,7 +610,6 @@ void ClientTimerActions( gentity_t *ent, int msec )
       if( client->ps.stats[ STAT_MISC ] < LEVEL4_CHARGE_TIME && ucmd->buttons & BUTTON_ATTACK2 &&
           !client->charging )
       {
-        client->charging = qfalse; //should already be off, just making sure
         client->ps.stats[ STAT_STATE ] &= ~SS_CHARGING;
 
         if( ucmd->forwardmove > 0 )
