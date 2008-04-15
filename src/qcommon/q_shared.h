@@ -1322,4 +1322,7 @@ typedef enum {
 #define SAY_TEAM	1
 #define SAY_TELL	2
 
+#define MAX_EMOTICON_NAME_LEN 16
+#define MAX_EMOTICONS 64
+
 #endif	// __Q_SHARED_H
