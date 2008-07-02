@@ -834,7 +834,7 @@ pain function for Alien Spawn
 */
 void ABarricade_Pain( gentity_t *self, gentity_t *attacker, int damage )
 {
-  if( rand( ) % 1 )
+  if( rand( ) % 2 )
     G_SetBuildableAnim( self, BANIM_PAIN1, qfalse );
   else
     G_SetBuildableAnim( self, BANIM_PAIN2, qfalse );

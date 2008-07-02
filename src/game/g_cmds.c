@@ -536,6 +536,7 @@ void G_LeaveTeam( gentity_t *self )
     return;
 
   G_TeamVote( self, qfalse );
+  ent->suicideTime = 0;
 
   for( i = 0; i < level.num_entities; i++ )
   {
@@ -2613,16 +2614,16 @@ qboolean G_FollowNewClient( gentity_t *ent, int dir )
     if( clientnum == original && !selectAny )
       continue; //effectively break;
 
-    // can't follow self
-    if( &level.clients[ clientnum ] == ent->client )
-      continue;
-
     // can only follow connected clients
     if( level.clients[ clientnum ].pers.connected != CON_CONNECTED )
       continue;
 
     // can't follow another spectator
     if( level.clients[ clientnum ].sess.spectatorState != SPECTATOR_NOT )
+      continue;
+
+    // can't follow dead client
+    if( level.clients[ clientnum ].ps.stats[ STAT_HEALTH ] <= 0 )
       continue;
 
     // this is good, we can use it
@@ -2683,12 +2684,12 @@ void Cmd_Follow_f( gentity_t *ent )
       }
     }
 
-    // can't follow self
-    if( &level.clients[ i ] == ent->client )
+    // can't follow another spectator
+    if( level.clients[ i ].sess.spectatorState != SPECTATOR_NOT )
       return;
 
-    // can't follow another spectator
-    if( level.clients[ i ].pers.teamSelection == TEAM_NONE )
+    // can't follow dead clients
+    if( level.clients[ i ].ps.stat[ STAT_HEALTH ] <= 0 )
       return;
 
     ent->client->sess.spectatorState = SPECTATOR_FOLLOW;
