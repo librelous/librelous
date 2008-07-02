@@ -2689,7 +2689,7 @@ void Cmd_Follow_f( gentity_t *ent )
       return;
 
     // can't follow dead clients
-    if( level.clients[ i ].ps.stat[ STAT_HEALTH ] <= 0 )
+    if( level.clients[ i ].ps.stats[ STAT_HEALTH ] <= 0 )
       return;
 
     ent->client->sess.spectatorState = SPECTATOR_FOLLOW;
