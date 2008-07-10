@@ -36,8 +36,6 @@ G_ForceWeaponChange
 */
 void G_ForceWeaponChange( gentity_t *ent, weapon_t weapon )
 {
-  int i;
-
   if( ent )
   {
     ent->client->ps.pm_flags |= PMF_WEAPON_SWITCH;

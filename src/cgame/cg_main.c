@@ -66,6 +66,12 @@ intptr_t vmMain( int command, int arg0, int arg1, int arg2, int arg3,
       CG_DrawActiveFrame( arg0, arg1, arg2 );
       return 0;
 
+    case CG_CROSSHAIR_PLAYER:
+      return CG_CrosshairPlayer( );
+
+    case CG_LAST_ATTACKER:
+      return CG_LastAttacker( );
+
     case CG_KEY_EVENT:
       CG_KeyEvent( arg0, arg1 );
       return 0;
@@ -479,7 +485,7 @@ void QDECL CG_Printf( const char *msg, ... )
   char    text[ 1024 ];
 
   va_start( argptr, msg );
-  vsprintf( text, msg, argptr );
+  Q_vsnprintf( text, sizeof( text ), msg, argptr );
   va_end( argptr );
 
   trap_Print( text );
@@ -491,7 +497,7 @@ void QDECL CG_Error( const char *msg, ... )
   char    text[ 1024 ];
 
   va_start( argptr, msg );
-  vsprintf( text, msg, argptr );
+  Q_vsnprintf( text, sizeof( text ), msg, argptr );
   va_end( argptr );
 
   trap_Error( text );
@@ -503,7 +509,7 @@ void QDECL Com_Error( int level, const char *error, ... )
   char    text[1024];
 
   va_start( argptr, error );
-  vsprintf( text, error, argptr );
+  Q_vsnprintf( text, sizeof( text ), error, argptr );
   va_end( argptr );
 
   CG_Error( "%s", text );
@@ -513,9 +519,9 @@ void QDECL Com_Printf( const char *msg, ... ) {
   va_list   argptr;
   char    text[1024];
 
-  va_start (argptr, msg);
-  vsprintf (text, msg, argptr);
-  va_end (argptr);
+  va_start( argptr, msg );
+  Q_vsnprintf( text, sizeof( text ), msg, argptr );
+  va_end( argptr );
 
   CG_Printf ("%s", text);
 }
