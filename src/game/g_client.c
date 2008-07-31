@@ -981,12 +981,6 @@ void ClientUserinfoChanged( int clientNum )
   if( !Info_Validate(userinfo) )
     strcpy( userinfo, "\\name\\badinfo" );
 
-  // check for local client
-  s = Info_ValueForKey( userinfo, "ip" );
-
-  if( !strcmp( s, "localhost" ) )
-    client->pers.localClient = qtrue;
-
   // set name
   Q_strncpyz( oldname, client->pers.netname, sizeof( oldname ) );
   s = Info_ValueForKey( userinfo, "name" );
@@ -1161,11 +1155,12 @@ char *ClientConnect( int clientNum, qboolean firstTime )
   char      userinfo[ MAX_INFO_STRING ];
   gentity_t *ent;
   char      guid[ 33 ];
-  char      ip[ 16 ] = {""};
   char      reason[ MAX_STRING_CHARS ] = {""};
-  int       i;
 
   ent = &g_entities[ clientNum ];
+  client = &level.clients[ clientNum ];
+  ent->client = client;
+  memset( client, 0, sizeof( *client ) );
 
   trap_GetUserinfo( clientNum, userinfo, sizeof( userinfo ) );
 
@@ -1184,15 +1179,7 @@ char *ClientConnect( int clientNum, qboolean firstTime )
   // recommanding PB based IP / GUID banning, the builtin system is pretty limited
   // check to see if they are on the banned IP list
   value = Info_ValueForKey( userinfo, "ip" );
-  i = 0;
-  while( *value && i < sizeof( ip ) - 2 )
-  {
-    if( *value != '.' && ( *value < '0' || *value > '9' ) )
-      break;
-    ip[ i++ ] = *value;
-    value++;
-  }
-  ip[ i ] = '\0';
+  Q_strncpyz( client->pers.ip, value, sizeof( client->pers.ip ) );
   if( G_FilterPacket( value ) )
     return "You are banned from this server.";
 
@@ -1202,12 +1189,6 @@ char *ClientConnect( int clientNum, qboolean firstTime )
   if( g_password.string[ 0 ] && Q_stricmp( g_password.string, "none" ) &&
       strcmp( g_password.string, value ) != 0 )
     return "Invalid password";
-
-  // they can connect
-  ent->client = level.clients + clientNum;
-  client = ent->client;
-
-  memset( client, 0, sizeof(*client) );
 
   // add guid to session so we don't have to keep parsing userinfo everywhere
   if( !guid[0] )
@@ -1219,7 +1200,9 @@ char *ClientConnect( int clientNum, qboolean firstTime )
   {
     Q_strncpyz( client->pers.guid, guid, sizeof( client->pers.guid ) );
   }
-  Q_strncpyz( client->pers.ip, ip, sizeof( client->pers.ip ) );
+  // check for local client
+  if( !strcmp( client->pers.ip, "localhost" ) )
+    client->pers.localClient = qtrue;
   client->pers.adminLevel = G_admin_level( ent );
 
   client->pers.connected = CON_CONNECTING;

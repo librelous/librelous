@@ -1591,13 +1591,18 @@ qboolean G_admin_kick( gentity_t *ent, int skiparg )
     ADMP( va( "^3!kick: ^7%s\n", err ) );
     return qfalse;
   }
-  if( !admin_higher( ent, &g_entities[ pids[ 0 ] ] ) )
+  vic = &g_entities[ pids[ 0 ] ];
+  if( !admin_higher( ent, vic ) )
   {
     ADMP( "^3!kick: ^7sorry, but your intended victim has a higher admin"
         " level than you\n" );
     return qfalse;
   }
-  vic = &g_entities[ pids[ 0 ] ];
+  if( vic->client->pers.localClient )
+  {
+    ADMP( "^3!kick: ^7disconnecting the host would end the game\n" );
+    return qfalse;
+  }
   if( g_adminTempBan.integer > 0 )
   {
     admin_create_ban( ent,
@@ -1779,9 +1784,6 @@ qboolean G_admin_ban( gentity_t *ent, int skiparg )
     return qfalse;
   }
 
-  G_admin_duration( ( seconds ) ? seconds : -1,
-    duration, sizeof( duration ) );
-
   if( ent && !admin_higher_guid( ent->client->pers.guid,
     g_admin_namelog[ logmatch ]->guid ) )
   {
@@ -1790,6 +1792,14 @@ qboolean G_admin_ban( gentity_t *ent, int skiparg )
       " level than you\n" );
     return qfalse;
   }
+  if( !strcmp( g_admin_namelog[ logmatch ]->ip, "localhost" ) )
+  {
+    ADMP( "^3!ban: ^7disconnecting the host would end the game\n" );
+    return qfalse;
+  }
+
+  G_admin_duration( ( seconds ) ? seconds : -1,
+    duration, sizeof( duration ) );
 
   admin_create_ban( ent,
     g_admin_namelog[ logmatch ]->name[ 0 ],
