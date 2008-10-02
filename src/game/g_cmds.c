@@ -846,14 +846,14 @@ void G_Say( gentity_t *ent, gentity_t *target, int mode, const char *chatText )
   {
     default:
     case SAY_ALL:
-      G_LogPrintf( "say: %s: %s\n", ent->client->pers.netname, chatText );
+      G_LogPrintf( "say: %s^7: %s\n", ent->client->pers.netname, chatText );
       Com_sprintf( name, sizeof( name ), "%s%s%c%c"EC": ", prefix,
                    ent->client->pers.netname, Q_COLOR_ESCAPE, COLOR_WHITE );
       color = COLOR_GREEN;
       break;
 
     case SAY_TEAM:
-      G_LogPrintf( "sayteam: %s: %s\n", ent->client->pers.netname, chatText );
+      G_LogPrintf( "sayteam: %s^7: %s\n", ent->client->pers.netname, chatText );
       if( Team_GetLocationMsg( ent, location, sizeof( location ) ) )
         Com_sprintf( name, sizeof( name ), EC"(%s%c%c"EC") (%s)"EC": ",
           ent->client->pers.netname, Q_COLOR_ESCAPE, COLOR_WHITE, location );
@@ -962,7 +962,7 @@ static void Cmd_Tell_f( gentity_t *ent )
 
   p = ConcatArgs( 2 );
 
-  G_LogPrintf( "tell: %s to %s: %s\n", ent->client->pers.netname, target->client->pers.netname, p );
+  G_LogPrintf( "tell: %s^7 to %s^7: %s\n", ent->client->pers.netname, target->client->pers.netname, p );
   G_Say( ent, target, SAY_TELL, p );
   // don't tell to the player self if it was already directed to this player
   // also don't send the chat back to a bot
@@ -1157,7 +1157,7 @@ void Cmd_CallVote_f( gentity_t *ent )
     !Q_stricmp( arg1, "mute" ) ||
     !Q_stricmp( arg1, "unmute" ) )
   {
-    int clientNums[ MAX_CLIENTS ] = { -1 };
+    int clientNums[ MAX_CLIENTS ];
 
     if( !arg2[ 0 ] )
     {
@@ -1175,12 +1175,6 @@ void Cmd_CallVote_f( gentity_t *ent )
     {
       // look for an exact name match (sets clientNum to -1 if it fails)
       clientNum = G_ClientNumberFromString( arg2 );
-    }
-
-    if( clientNum != -1 &&
-      level.clients[ clientNum ].pers.connected == CON_DISCONNECTED )
-    {
-      clientNum = -1;
     }
 
     if( clientNum != -1 )
@@ -1208,7 +1202,7 @@ void Cmd_CallVote_f( gentity_t *ent )
     if( level.clients[ clientNum ].pers.localClient )
     {
       trap_SendServerCommand( ent-g_entities,
-        "print \"callvote: host is immute from vote kick\n\"" );
+        "print \"callvote: host is immune from vote kick\n\"" );
       return;
     }
 
@@ -1393,7 +1387,7 @@ void Cmd_CallTeamVote_f( gentity_t *ent )
     !Q_stricmp( arg1, "denybuild" ) ||
     !Q_stricmp( arg1, "allowbuild" ) )
   {
-    int clientNums[ MAX_CLIENTS ] = { -1 };
+    int clientNums[ MAX_CLIENTS ];
 
     if( !arg2[ 0 ] )
     {
@@ -1416,12 +1410,6 @@ void Cmd_CallTeamVote_f( gentity_t *ent )
     // make sure this player is on the same team
     if( clientNum != -1 && level.clients[ clientNum ].pers.teamSelection !=
       team )
-    {
-      clientNum = -1;
-    }
-
-    if( clientNum != -1 &&
-      level.clients[ clientNum ].pers.connected == CON_DISCONNECTED )
     {
       clientNum = -1;
     }
@@ -1650,7 +1638,7 @@ static qboolean G_RoomForClassChange( gentity_t *ent, class_t class, vec3_t newO
   }
 
   // find what the new origin would be on a level surface
-  newOrigin[ 2 ] += fabs( toMins[ 2 ] ) - fabs( fromMins[ 2 ] );
+  newOrigin[ 2 ] -= toMins[ 2 ] - fromMins[ 2 ];
 
   //compute a place up in the air to start the real trace
   VectorCopy( newOrigin, temp );
@@ -1942,17 +1930,7 @@ void Cmd_Destroy_f( gentity_t *ent )
         }
         else
         {
-          G_TeamCommand( ent->client->pers.teamSelection,
-            va( "print \"%s ^3DECONSTRUCTED^7 by %s^7\n\"",
-              BG_Buildable( traceEnt->s.modelindex )->humanName,
-              ent->client->pers.netname ) );
-
-          G_LogPrintf( "Decon: %i %i 0: %s deconstructed %s\n",
-            ent->client->ps.clientNum,
-            traceEnt->s.modelindex,
-            ent->client->pers.netname,
-            BG_Buildable( traceEnt->s.modelindex )->humanName );
-
+          G_LogDestruction( traceEnt, ent, MOD_UNKNOWN );
           G_FreeEntity( traceEnt );
 
           if( !g_cheats.integer )
@@ -2236,7 +2214,7 @@ void Cmd_Buy_f( gentity_t *ent )
           G_TriggerMenu( ent->client->ps.clientNum, MN_H_NOROOMBSUITON );
           return;
         }
-        VectorCopy( newOrigin, ent->s.pos.trBase );
+        VectorCopy( newOrigin, ent->client->ps.origin );
         ent->client->ps.stats[ STAT_CLASS ] = PCL_HUMAN_BSUIT;
         ent->client->pers.classSelection = PCL_HUMAN_BSUIT;
         ent->client->ps.eFlags ^= EF_TELEPORT_BIT;
@@ -2337,7 +2315,7 @@ void Cmd_Sell_f( gentity_t *ent )
           G_TriggerMenu( ent->client->ps.clientNum, MN_H_NOROOMBSUITOFF );
           return;
         }
-        VectorCopy( newOrigin, ent->s.pos.trBase );
+        VectorCopy( newOrigin, ent->client->ps.origin );
         ent->client->ps.stats[ STAT_CLASS ] = PCL_HUMAN;
         ent->client->pers.classSelection = PCL_HUMAN;
         ent->client->ps.eFlags ^= EF_TELEPORT_BIT;
@@ -2398,7 +2376,7 @@ void Cmd_Sell_f( gentity_t *ent )
             G_TriggerMenu( ent->client->ps.clientNum, MN_H_NOROOMBSUITOFF );
             continue;
           }
-          VectorCopy( newOrigin, ent->s.pos.trBase );
+          VectorCopy( newOrigin, ent->client->ps.origin );
           ent->client->ps.stats[ STAT_CLASS ] = PCL_HUMAN;
           ent->client->pers.classSelection = PCL_HUMAN;
           ent->client->ps.eFlags ^= EF_TELEPORT_BIT;
@@ -2407,21 +2385,7 @@ void Cmd_Sell_f( gentity_t *ent )
         BG_RemoveUpgradeFromInventory( i, ent->client->ps.stats );
 
         if( i == UP_BATTPACK )
-        {
-          int j;
-
-          //remove energy
-          for( j = WP_NONE; j < WP_NUM_WEAPONS; j++ )
-          {
-            if( BG_InventoryContainsWeapon( j, ent->client->ps.stats ) &&
-                BG_Weapon( j )->usesEnergy &&
-                !BG_Weapon( j )->infiniteAmmo )
-            {
-              ent->client->ps.ammo = 0;
-              ent->client->ps.clips = 0;
-            }
-          }
-        }
+          G_GiveClientMaxAmmo( ent, qtrue );
 
         //add to funds
         G_AddCreditToClient( ent->client, (short)BG_Upgrade( i )->price, qfalse );
@@ -3235,7 +3199,7 @@ void G_PrivateMessage( gentity_t *ent )
     ADMP( va( "^%cPrivate message: ^7%s\n", color, msg ) );
     ADMP( va( "%s\n", str ) );
 
-    G_LogPrintf( "%s: %s: %s: %s\n",
+    G_LogPrintf( "%s: %s^7: %s^7: %s\n",
       ( teamonly ) ? "tprivmsg" : "privmsg",
       ( ent ) ? ent->client->pers.netname : "console",
       name, msg );
