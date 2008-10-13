@@ -674,6 +674,7 @@ void      G_LeaveTeam( gentity_t *self );
 void      G_ChangeTeam( gentity_t *ent, team_t newTeam );
 void      G_SanitiseString( char *in, char *out, int len );
 void      G_PrivateMessage( gentity_t *ent );
+void      G_AdminMessage( gentity_t *ent );
 qboolean  G_FloodLimited( gentity_t *ent );
 
 //
@@ -911,6 +912,7 @@ void G_MapConfigs( const char *mapname );
 void CalculateRanks( void );
 void FindIntermissionPoint( void );
 void G_RunThink( gentity_t *ent );
+void QDECL G_AdminsPrintf( const char *prefix, const char *fmt, ... );
 void QDECL G_LogPrintf( const char *fmt, ... );
 void SendScoreboardMessageToAllClients( void );
 void QDECL G_Printf( const char *fmt, ... );
@@ -1149,6 +1151,7 @@ extern  vmCvar_t  g_adminNameProtect;
 extern  vmCvar_t  g_adminTempBan;
 
 extern  vmCvar_t  g_privateMessages;
+extern  vmCvar_t  g_publicAdminMessages;
 
 void      trap_Print( const char *fmt );
 void      trap_Error( const char *fmt );
