@@ -670,8 +670,6 @@ int       G_SayArgc( void );
 qboolean  G_SayArgv( int n, char *buffer, int bufferLength );
 char      *G_SayConcatArgs( int start );
 void      G_DecolorString( char *in, char *out, int len );
-void      G_LeaveTeam( gentity_t *self );
-void      G_ChangeTeam( gentity_t *ent, team_t newTeam );
 void      G_SanitiseString( char *in, char *out, int len );
 void      G_PrivateMessage( gentity_t *ent );
 void      G_AdminMessage( gentity_t *ent );
@@ -948,7 +946,11 @@ void G_RunClient( gentity_t *ent );
 //
 // g_team.c
 //
+team_t    G_TeamFromString( char *str );
+char      *G_TeamName( team_t team );
 qboolean  OnSameTeam( gentity_t *ent1, gentity_t *ent2 );
+void      G_LeaveTeam( gentity_t *self );
+void      G_ChangeTeam( gentity_t *ent, team_t newTeam );
 gentity_t *Team_GetLocation( gentity_t *ent );
 qboolean  Team_GetLocationMsg( gentity_t *ent, char *loc, int loclen );
 void      TeamplayInfoMessage( gentity_t *ent );
