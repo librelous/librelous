@@ -1383,6 +1383,34 @@ static clientInfo_t * CG_InfoFromScoreIndex( int index, int team, int *scoreInde
   return &cgs.clientinfo[ cg.scores[ index ].client ];
 }
 
+static qboolean CG_ClientIsReady( int clientNum )
+{
+  // CS_CLIENTS_READY is a hex string, each character of which is 4 bits
+  // the highest bit of the first char is a toggle for client 0, the second
+  // highest for client 1, etc.
+  // there are exactly four bits of information in each character
+  int val;
+  const char *s = CG_ConfigString( CS_CLIENTS_READY );
+
+  // select the appropriate character without passing the end of the string
+  for( val = clientNum / 4; *s && val > 0; s++, val-- );
+
+  // convert hex -> int
+  // FIXME: replace with sscanf when it supports width conversions (or some
+  // other appropriate library function)
+  if( isdigit( *s ) )
+    val = *s - '0';
+  else if( *s >= 'a' && *s <= 'f' )
+    val = 10 + *s - 'a';
+  else if( *s >= 'A' && *s <= 'F' )
+    val = 10 + *s - 'A';
+  else
+    return qfalse;
+
+  // select appropriate bit
+  return ( ( val & 1 << ( 3 - clientNum % 4 ) ) != 0 );
+}
+
 static const char *CG_FeederItemText( float feederID, int index, int column, qhandle_t *handle )
 {
   int           scoreIndex = 0;
@@ -1401,8 +1429,7 @@ static const char *CG_FeederItemText( float feederID, int index, int column, qha
   info = CG_InfoFromScoreIndex( index, team, &scoreIndex );
   sp = &cg.scores[ scoreIndex ];
 
-  if( ( atoi( CG_ConfigString( CS_CLIENTS_READY ) ) & ( 1 << sp->client ) ) &&
-      cg.intermissionStarted )
+  if( cg.intermissionStarted && CG_ClientIsReady( sp->client ) )
     showIcons = qfalse;
   else if( cg.snap->ps.pm_type == PM_SPECTATOR || cg.snap->ps.pm_flags & PMF_FOLLOW ||
     team == cg.snap->ps.stats[ STAT_TEAM ] || cg.intermissionStarted )
@@ -1444,8 +1471,7 @@ static const char *CG_FeederItemText( float feederID, int index, int column, qha
         break;
 
       case 2:
-        if( ( atoi( CG_ConfigString( CS_CLIENTS_READY ) ) & ( 1 << sp->client ) ) &&
-            cg.intermissionStarted )
+        if( cg.intermissionStarted && CG_ClientIsReady( sp->client ) )
           return "Ready";
         break;
 

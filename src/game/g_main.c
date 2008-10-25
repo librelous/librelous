@@ -1601,9 +1601,9 @@ void QDECL G_AdminsPrintf( const char *prefix, const char *fmt, ... )
   // Send to all appropriate clients
   for( i = 0; i < level.maxclients; i++ )
   {
-    if( G_admin_permission( &g_entities[ i ], ADMF_ADMINCHAT) ) 
+    if( G_admin_permission( &g_entities[ i ], ADMF_ADMINCHAT ) ) 
     {
-       trap_SendServerCommand( i, va( "print \"%s\"", outstring ) ); 
+       trap_SendServerCommand( i, va( "chat \"%s\"", outstring ) ); 
     }
   }
   
@@ -1805,13 +1805,15 @@ wait 10 seconds before going on.
 */
 void CheckIntermissionExit( void )
 {
-  int       ready, notReady, numPlayers;
+  int       ready, notReady;
   int       i;
   gclient_t *cl;
-  int       readyMask;
+  byte      readyMasks[ ( MAX_CLIENTS + 7 ) / 8 ];
+  // each byte in readyMasks will become two characters 00 - ff in the string
+  char      readyString[ 2 * sizeof( readyMasks ) + 1 ];
 
   //if no clients are connected, just exit
-  if( !level.numConnectedClients )
+  if( level.numConnectedClients == 0 )
   {
     ExitLevel( );
     return;
@@ -1820,8 +1822,7 @@ void CheckIntermissionExit( void )
   // see which players are ready
   ready = 0;
   notReady = 0;
-  readyMask = 0;
-  numPlayers = 0;
+  Com_Memset( readyMasks, 0, sizeof( readyMasks ) );
   for( i = 0; i < g_maxclients.integer; i++ )
   {
     cl = level.clients + i;
@@ -1834,16 +1835,21 @@ void CheckIntermissionExit( void )
     if( cl->readyToExit )
     {
       ready++;
-      if( i < 16 )
-        readyMask |= 1 << i;
+      // the highest bit of readyMasks is for the 0th client, and so on
+      readyMasks[ i / 8 ] |= 1 << ( 7 - i % 8 );
     }
     else
       notReady++;
 
-    numPlayers++;
   }
 
-  trap_SetConfigstring( CS_CLIENTS_READY, va( "%d", readyMask ) );
+  // this is hex so that we can construct the string piece by piece, whereas
+  // decimal must be considered as a single large number (which would overflow)
+  for( i = 0; i < sizeof( readyMasks ); i++ )
+    Com_sprintf( &readyString[ i * 2 ], sizeof( readyString ) - i * 2,
+                 "%2.2x", readyMasks[ i ] );
+
+  trap_SetConfigstring( CS_CLIENTS_READY, readyString );
 
   // never exit in less than five seconds
   if( level.time < level.intermissiontime + 5000 )
@@ -1857,14 +1863,14 @@ void CheckIntermissionExit( void )
   }
 
   // if nobody wants to go, clear timer
-  if( !ready && numPlayers )
+  if( ready == 0 && notReady > 0 )
   {
     level.readyToExit = qfalse;
     return;
   }
 
   // if everyone wants to go, go now
-  if( !notReady )
+  if( notReady == 0 )
   {
     ExitLevel( );
     return;
