@@ -204,6 +204,7 @@ struct gentity_s
   qboolean          dcced;              // controlled by a dcc or not?
   qboolean          spawned;            // whether or not this buildable has finished spawning
   int               buildTime;          // when this buildable was built
+  int               animTime;           // last animation change
   int               time1000;           // timer evaluated every second
   qboolean          deconstruct;        // deconstruct if no BP left
   int               deconstructTime;    // time at which structure marked
@@ -673,7 +674,7 @@ void      G_DecolorString( char *in, char *out, int len );
 void      G_SanitiseString( char *in, char *out, int len );
 void      Cmd_PrivateMessage_f( gentity_t *ent );
 void      Cmd_AdminMessage_f( gentity_t *ent );
-qboolean  G_FloodLimited( gentity_t *ent );
+int       G_FloodLimited( gentity_t *ent );
 
 //
 // g_physics.c
