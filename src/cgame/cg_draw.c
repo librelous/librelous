@@ -1977,7 +1977,6 @@ static void CG_DrawCrosshair( void )
   } 
 
   if( ( cg.snap->ps.persistant[ PERS_SPECSTATE ] != SPECTATOR_NOT ) ||
-      ( cg.snap->ps.stats[ STAT_STATE ] & SS_INFESTING ) ||
       ( cg.snap->ps.stats[ STAT_STATE ] & SS_HOVELING ) )
     return;
 
@@ -2798,8 +2797,7 @@ static void CG_Draw2D( void )
   else
     menu = Menus_FindByName( BG_ClassConfig( cg.predictedPlayerState.stats[ STAT_CLASS ] )->hudName );
 
-  if( !( cg.snap->ps.stats[ STAT_STATE ] & SS_INFESTING ) &&
-      !( cg.snap->ps.stats[ STAT_STATE ] & SS_HOVELING ) && menu &&
+  if( menu && !( cg.snap->ps.stats[ STAT_STATE ] & SS_HOVELING ) &&
       ( cg.snap->ps.stats[ STAT_HEALTH ] > 0 ) )
   {
     CG_DrawBuildableStatus( );

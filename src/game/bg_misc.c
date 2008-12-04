@@ -2951,8 +2951,6 @@ void BG_PlayerStateToEntityState( playerState_t *ps, entityState_t *s, qboolean 
 
   // have to get the surfNormal through somehow...
   VectorCopy( ps->grapplePoint, s->angles2 );
-  if( ps->stats[ STAT_STATE ] & SS_WALLCLIMBINGCEILING )
-    s->eFlags |= EF_WALLCLIMBCEILING;
 
   s->loopSound = ps->loopSound;
   s->generic1 = ps->generic1;
@@ -3062,8 +3060,6 @@ void BG_PlayerStateToEntityStateExtraPolate( playerState_t *ps, entityState_t *s
 
   // have to get the surfNormal through somehow...
   VectorCopy( ps->grapplePoint, s->angles2 );
-  if( ps->stats[ STAT_STATE ] & SS_WALLCLIMBINGCEILING )
-    s->eFlags |= EF_WALLCLIMBCEILING;
 
   s->loopSound = ps->loopSound;
   s->generic1 = ps->generic1;
@@ -3295,7 +3291,7 @@ void BG_GetClientNormal( const playerState_t *ps, vec3_t normal )
 {
   if( ps->stats[ STAT_STATE ] & SS_WALLCLIMBING )
   {
-    if( ps->stats[ STAT_STATE ] & SS_WALLCLIMBINGCEILING )
+    if( ps->eFlags & EF_WALLCLIMBCEILING )
       VectorSet( normal, 0.0f, 0.0f, -1.0f );
     else
       VectorCopy( ps->grapplePoint, normal );

@@ -115,7 +115,6 @@ typedef enum
   PM_DEAD,          // no acceleration or turning, but free falling
   PM_FREEZE,        // stuck in place with no control
   PM_INTERMISSION,  // no movement or status bar
-  PM_SPINTERMISSION // no movement or status bar
 } pmtype_t;
 
 typedef enum
@@ -228,20 +227,18 @@ typedef enum
 #define SCA_CANUSELADDERS       0x00000020
 #define SCA_WALLJUMPER          0x00000040
 
-#define SS_WALLCLIMBING         0x00000001
-#define SS_WALLCLIMBINGCEILING  0x00000002
-#define SS_CREEPSLOWED          0x00000004
-#define SS_SPEEDBOOST           0x00000008
-#define SS_INFESTING            0x00000010
-#define SS_GRABBED              0x00000020
-#define SS_BLOBLOCKED           0x00000040
-#define SS_POISONED             0x00000080
-#define SS_HOVELING             0x00000100
-#define SS_BOOSTED              0x00000200
-#define SS_SLOWLOCKED           0x00000400
-#define SS_POISONCLOUDED        0x00000800
-#define SS_MEDKIT_ACTIVE        0x00001000
-#define SS_CHARGING             0x00002000
+#define SS_WALLCLIMBING         0x0001
+#define SS_CREEPSLOWED          0x0002
+#define SS_SPEEDBOOST           0x0004
+#define SS_GRABBED              0x0008
+#define SS_BLOBLOCKED           0x0010
+#define SS_POISONED             0x0020
+#define SS_HOVELING             0x0040
+#define SS_BOOSTED              0x0080
+#define SS_SLOWLOCKED           0x0100
+#define SS_POISONCLOUDED        0x0200
+#define SS_MEDKIT_ACTIVE        0x0400
+#define SS_CHARGING             0x0800
 
 #define SB_VALID_TOGGLEBIT      0x00004000
 
