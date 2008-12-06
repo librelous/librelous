@@ -1109,6 +1109,14 @@ void ClientUserinfoChanged( int clientNum )
   else
     client->ps.persistant[ PERS_STATE ] &= ~PS_WALLCLIMBINGTOGGLE;
 
+  // fly speed
+  s = Info_ValueForKey( userinfo, "cg_flySpeed" );
+
+  if( *s )
+    client->pers.flySpeed = atoi( s );
+  else
+    client->pers.flySpeed = BG_Class( PCL_NONE )->speed;
+
   // teamInfo
   s = Info_ValueForKey( userinfo, "teamoverlay" );
 

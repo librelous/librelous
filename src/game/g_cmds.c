@@ -2786,12 +2786,13 @@ commands_t cmds[ ] = {
   { "give", CMD_CHEAT|CMD_TEAM|CMD_LIVING, Cmd_Give_f },
   { "god", CMD_CHEAT|CMD_TEAM|CMD_LIVING, Cmd_God_f },
   { "notarget", CMD_CHEAT|CMD_TEAM|CMD_LIVING, Cmd_Notarget_f },
-  { "noclip", CMD_CHEAT|CMD_TEAM|CMD_LIVING, Cmd_Noclip_f },
   { "levelshot", CMD_CHEAT, Cmd_LevelShot_f },
-  { "setviewpos", CMD_CHEAT, Cmd_SetViewpos_f },
+  { "setviewpos", CMD_CHEAT_TEAM, Cmd_SetViewpos_f },
+  { "noclip", CMD_CHEAT_TEAM, Cmd_Noclip_f },
   { "destroy", CMD_CHEAT|CMD_TEAM|CMD_LIVING, Cmd_Destroy_f },
 
   { "kill", CMD_TEAM|CMD_LIVING, Cmd_Kill_f },
+  { "where", 0, Cmd_Where_f },
 
   // game commands
   { "ptrcverify", CMD_NOTEAM, Cmd_PTRCVerify_f },
@@ -2801,7 +2802,6 @@ commands_t cmds[ ] = {
   { "follownext", CMD_NOTEAM, Cmd_FollowCycle_f },
   { "followprev", CMD_NOTEAM, Cmd_FollowCycle_f },
 
-  { "where", CMD_TEAM, Cmd_Where_f },
   { "teamvote", CMD_TEAM, Cmd_TeamVote_f },
   { "class", CMD_TEAM, Cmd_Class_f },
 
@@ -2872,7 +2872,8 @@ void ClientCommand( int clientNum )
     return;
   }
 
-  if( cmds[ i ].cmdFlags & CMD_NOTEAM &&
+  if( ( cmds[ i ].cmdFlags & CMD_NOTEAM ||
+      ( cmds[ i ].cmdFlags & CMD_CHEAT_TEAM && !g_cheats.integer ) ) &&
       ent->client->pers.teamSelection != TEAM_NONE )
   {
     trap_SendServerCommand( clientNum,
