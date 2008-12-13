@@ -678,43 +678,39 @@ static void CG_DrawPlayerWallclimbing( rectDef_t *rect, vec4_t color, qhandle_t 
 
 static void CG_DrawPlayerAmmoValue( rectDef_t *rect, vec4_t color )
 {
-  int           value;
-  centity_t     *cent;
-  playerState_t *ps;
+  int value;
 
-  cent = &cg_entities[ cg.snap->ps.clientNum ];
-  ps = &cg.snap->ps;
-
-  if( cent->currentState.weapon )
+  switch( BG_PrimaryWeapon( cg.snap->ps.stats ) )
   {
-    switch( cent->currentState.weapon )
-    {
-      case WP_ABUILD:
-      case WP_ABUILD2:
-        //percentage of BP remaining
-        value = cgs.alienBuildPoints;
-        break;
+    case WP_NONE:
+    case WP_BLASTER:
+      return;
 
-      case WP_HBUILD:
-      case WP_HBUILD2:
-        //percentage of BP remaining
-        value = cgs.humanBuildPoints;
-        break;
+    case WP_ABUILD:
+    case WP_ABUILD2:
+      // BP remaining
+      value = cgs.alienBuildPoints;
+      break;
 
-      default:
-        value = ps->ammo;
-        break;
-    }
+    case WP_HBUILD:
+    case WP_HBUILD2:
+      // BP remaining
+      value = cgs.humanBuildPoints;
+      break;
 
-    if( value > 999 )
-      value = 999;
+    default:
+      value = cg.snap->ps.ammo;
+      break;
+  }
 
-    if( value > -1 )
-    {
-      trap_R_SetColor( color );
-      CG_DrawField( rect->x, rect->y, 4, rect->w / 4, rect->h, value );
-      trap_R_SetColor( NULL );
-    }
+  if( value > 999 )
+    value = 999;
+
+  if( value > -1 )
+  {
+    trap_R_SetColor( color );
+    CG_DrawField( rect->x, rect->y, 4, rect->w / 4, rect->h, value );
+    trap_R_SetColor( NULL );
   }
 }
 
@@ -783,108 +779,92 @@ static void CG_DrawPlayerBuildTimer( rectDef_t *rect, vec4_t color )
 {
   float         progress;
   int           index;
-  centity_t     *cent;
   playerState_t *ps;
 
-  cent = &cg_entities[ cg.snap->ps.clientNum ];
   ps = &cg.snap->ps;
 
-  if( cent->currentState.weapon )
+  if( !ps->stats[ STAT_MISC ] )
+    return;
+
+  switch( BG_PrimaryWeapon( ps->stats ) )
   {
-    switch( cent->currentState.weapon )
-    {
-      case WP_ABUILD:
-        progress = (float)ps->stats[ STAT_MISC ] / (float)ABUILDER_BASE_DELAY;
-        break;
+    case WP_ABUILD:
+      progress = (float)ps->stats[ STAT_MISC ] / (float)ABUILDER_BASE_DELAY;
+      break;
 
-      case WP_ABUILD2:
-        progress = (float)ps->stats[ STAT_MISC ] / (float)ABUILDER_ADV_DELAY;
-        break;
+    case WP_ABUILD2:
+      progress = (float)ps->stats[ STAT_MISC ] / (float)ABUILDER_ADV_DELAY;
+      break;
 
-      case WP_HBUILD:
-        progress = (float)ps->stats[ STAT_MISC ] / (float)HBUILD_DELAY;
-        break;
+    case WP_HBUILD:
+      progress = (float)ps->stats[ STAT_MISC ] / (float)HBUILD_DELAY;
+      break;
 
-      case WP_HBUILD2:
-        progress = (float)ps->stats[ STAT_MISC ] / (float)HBUILD2_DELAY;
-        break;
+    case WP_HBUILD2:
+      progress = (float)ps->stats[ STAT_MISC ] / (float)HBUILD2_DELAY;
+      break;
 
-      default:
-        return;
-        break;
-    }
-
-    if( !ps->stats[ STAT_MISC ] )
+    default:
       return;
-
-    index = (int)( progress * 8.0f );
-
-    if( index > 7 )
-      index = 7;
-    else if( index < 0 )
-      index = 0;
-
-    if( cg.time - cg.lastBuildAttempt <= BUILD_DELAY_TIME )
-    {
-      if( ( ( cg.time - cg.lastBuildAttempt ) / 300 ) % 2 )
-      {
-        color[ 0 ] = 1.0f;
-        color[ 1 ] = color[ 2 ] = 0.0f;
-        color[ 3 ] = 1.0f;
-      }
-    }
-
-    trap_R_SetColor( color );
-    CG_DrawPic( rect->x, rect->y, rect->w, rect->h,
-      cgs.media.buildWeaponTimerPie[ index ] );
-    trap_R_SetColor( NULL );
+      break;
   }
+
+  index = (int)( progress * 8.0f );
+
+  if( index > 7 )
+    index = 7;
+  else if( index < 0 )
+    index = 0;
+
+  if( cg.time - cg.lastBuildAttempt <= BUILD_DELAY_TIME )
+  {
+    if( ( ( cg.time - cg.lastBuildAttempt ) / 300 ) % 2 )
+    {
+      color[ 0 ] = 1.0f;
+      color[ 1 ] = color[ 2 ] = 0.0f;
+      color[ 3 ] = 1.0f;
+    }
+  }
+
+  trap_R_SetColor( color );
+  CG_DrawPic( rect->x, rect->y, rect->w, rect->h,
+    cgs.media.buildWeaponTimerPie[ index ] );
+  trap_R_SetColor( NULL );
 }
 
 static void CG_DrawPlayerClipsValue( rectDef_t *rect, vec4_t color )
 {
   int           value;
-  centity_t     *cent;
-  playerState_t *ps;
+  playerState_t *ps = &cg.snap->ps;
 
-  cent = &cg_entities[ cg.snap->ps.clientNum ];
-  ps = &cg.snap->ps;
-
-  if( cent->currentState.weapon )
+  switch( BG_PrimaryWeapon( ps->stats ) )
   {
-    switch( cent->currentState.weapon )
-    {
-      case WP_ABUILD:
-      case WP_ABUILD2:
-      case WP_HBUILD:
-      case WP_HBUILD2:
-        break;
+    case WP_NONE:
+    case WP_BLASTER:
+    case WP_ABUILD:
+    case WP_ABUILD2:
+    case WP_HBUILD:
+    case WP_HBUILD2:
+      return;
 
-      default:
-        value = ps->clips;
+    default:
+      value = ps->clips;
 
-        if( value > -1 )
-        {
-          trap_R_SetColor( color );
-          CG_DrawField( rect->x, rect->y, 4, rect->w / 4, rect->h, value );
-          trap_R_SetColor( NULL );
-        }
-        break;
-    }
+      if( value > -1 )
+      {
+        trap_R_SetColor( color );
+        CG_DrawField( rect->x, rect->y, 4, rect->w / 4, rect->h, value );
+        trap_R_SetColor( NULL );
+      }
+      break;
   }
 }
 
 static void CG_DrawPlayerHealthValue( rectDef_t *rect, vec4_t color )
 {
-  playerState_t *ps;
-  int value;
-
-  ps = &cg.snap->ps;
-
-  value = ps->stats[ STAT_HEALTH ];
-
   trap_R_SetColor( color );
-  CG_DrawField( rect->x, rect->y, 4, rect->w / 4, rect->h, value );
+  CG_DrawField( rect->x, rect->y, 4, rect->w / 4, rect->h,
+                cg.snap->ps.stats[ STAT_HEALTH ] );
   trap_R_SetColor( NULL );
 }
 
@@ -895,8 +875,7 @@ CG_DrawPlayerHealthCross
 */
 static void CG_DrawPlayerHealthCross( rectDef_t *rect, vec4_t color, qhandle_t shader )
 {
-  playerState_t *ps = &cg.snap->ps;
-  int           health = ps->stats[ STAT_HEALTH ];
+  int           health = cg.snap->ps.stats[ STAT_HEALTH ];
 
   if( health < 10 )
   {
