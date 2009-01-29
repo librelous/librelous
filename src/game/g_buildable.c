@@ -1103,8 +1103,8 @@ qboolean AHovel_Blocked( gentity_t *hovel, gentity_t *player, qboolean provideEx
   AngleVectors( hovel->s.angles, forward, NULL, NULL );
   VectorInverse( forward );
 
-  displacement = VectorMaxComponent( maxs ) * M_ROOT3 +
-                 VectorMaxComponent( hovelMaxs ) * M_ROOT3 + 1.0f;
+  displacement = VectorMaxComponent( maxs ) +
+                 VectorMaxComponent( hovelMaxs ) + 1.0f;
 
   VectorMA( hovel->s.origin, displacement, forward, origin );
   vectoangles( forward, angles );
@@ -1113,9 +1113,6 @@ qboolean AHovel_Blocked( gentity_t *hovel, gentity_t *player, qboolean provideEx
 
   //compute a place up in the air to start the real trace
   trap_Trace( &tr, origin, mins, maxs, start, player->s.number, MASK_PLAYERSOLID );
-
-  if( tr.startsolid )
-    return qtrue;
 
   VectorMA( origin, ( HOVEL_TRACE_DEPTH * tr.fraction ) - 1.0f, normal, start );
   VectorMA( origin, -HOVEL_TRACE_DEPTH, normal, end );
@@ -1126,15 +1123,19 @@ qboolean AHovel_Blocked( gentity_t *hovel, gentity_t *player, qboolean provideEx
 
   trap_Trace( &tr, origin, mins, maxs, origin, player->s.number, MASK_PLAYERSOLID );
 
+  if( tr.fraction < 1.0f )
+    return qtrue;
+
   if( provideExit )
   {
     G_SetOrigin( player, origin );
     VectorCopy( origin, player->client->ps.origin );
-    VectorCopy( vec3_origin, player->client->ps.velocity );
+    // nudge
+    VectorMA( normal, 200.0f, forward, player->client->ps.velocity );
     SetClientViewAngle( player, angles );
   }
 
-  return ( tr.fraction < 1.0f );
+  return qfalse;
 }
 
 /*
