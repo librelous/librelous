@@ -278,6 +278,9 @@ static cvarTable_t cvarTable[ ] =
   { &cg_disableScannerPlane, "cg_disableScannerPlane", "0", CVAR_ARCHIVE },
   { &cg_tutorial, "cg_tutorial", "1", CVAR_ARCHIVE },
   { &cg_hudFiles, "cg_hudFiles", "ui/hud.txt", CVAR_ARCHIVE},
+  { NULL, "cg_alienConfig", "", CVAR_ARCHIVE },
+  { NULL, "cg_humanConfig", "", CVAR_ARCHIVE },
+  { NULL, "cg_spectatorConfig", "", CVAR_ARCHIVE },
 
   { &cg_painBlendUpRate, "cg_painBlendUpRate", "10.0", 0 },
   { &cg_painBlendDownRate, "cg_painBlendDownRate", "0.5", 0 },
