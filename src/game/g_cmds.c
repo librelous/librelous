@@ -1598,9 +1598,10 @@ void Cmd_Class_f( gentity_t *ent )
     //if we are not currently spectating, we are attempting evolution
     if( ent->client->pers.classSelection != PCL_NONE )
     {
-      if( ent->client->ps.eFlags & EF_WALLCLIMB )
+      //check that we have an overmind
+      if( !level.overmindPresent )
       {
-        trap_SendServerCommand( ent-g_entities, "print \"You cannot evolve while wallwalking\n\"" );
+        G_TriggerMenu( clientNum, MN_A_NOOVMND_EVOLVE );
         return;
       }
 
@@ -1620,10 +1621,11 @@ void Cmd_Class_f( gentity_t *ent )
           return;
         }
       }
-
-      if( !level.overmindPresent )
+      
+      //check that we are not wallwalking
+      if( ent->client->ps.eFlags & EF_WALLCLIMB )
       {
-        G_TriggerMenu( clientNum, MN_A_NOOVMND_EVOLVE );
+        trap_SendServerCommand( ent-g_entities, "print \"You cannot evolve while wallwalking\n\"" );
         return;
       }
 
