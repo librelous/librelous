@@ -503,7 +503,7 @@ void Cmd_Kill_f( gentity_t *ent )
 {
   if( ent->client->ps.stats[ STAT_STATE ] & SS_HOVELING )
   {
-    trap_SendServerCommand( ent-g_entities, "print \"Leave the hovel first (use your destroy key)\n\"" );
+    trap_SendServerCommand( ent-g_entities, "print \"Leave the Hovel first (use your destroy key)\n\"" );
     return;
   }
 

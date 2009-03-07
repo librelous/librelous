@@ -508,7 +508,7 @@ void CG_Menu( int menu )
 
     case MN_H_NOROOM:
       longMsg   = "There is no room to build here. Move until the buildable turns "
-                  "translucent green indicating a valid build location.";
+                  "translucent green, indicating a valid build location.";
       shortMsg  = "There is no room to build here\n";
       cmd       = "menu tremulous_human_dialog\n";
       break;
@@ -529,7 +529,7 @@ void CG_Menu( int menu )
 
     case MN_H_NORMAL:
       longMsg   = "Cannot build on this surface. The surface is too steep or "
-                  "unsuitable to build on. Please choose another site for this "
+                  "unsuitable for building. Please choose another site for this "
 	                "structure.";
       shortMsg  = "Cannot build on this surface\n";
       cmd       = "menu tremulous_human_dialog\n";
@@ -638,7 +638,7 @@ void CG_Menu( int menu )
 
     case MN_A_NOROOM:
       longMsg   = "There is no room to build here. Move until the structure turns "
-                  "translucent green indicating a valid build location.";
+                  "translucent green, indicating a valid build location.";
       shortMsg  = "There is no room to build here\n";
       cmd       = "menu tremulous_alien_dialog\n";
       break;
@@ -652,7 +652,7 @@ void CG_Menu( int menu )
 
     case MN_A_NOOVMND:
       longMsg   = "There is no Overmind. An Overmind must be built to control "
-                  "the structure you tried to place";
+                  "the structure you tried to place.";
       shortMsg  = "There is no Overmind\n";
       cmd       = "menu tremulous_alien_dialog\n";
       break;
@@ -687,7 +687,7 @@ void CG_Menu( int menu )
 
     case MN_A_NORMAL:
       longMsg   = "Cannot build on this surface. This surface is too steep or "
-                  "unsuitable to build on. Please choose another site for this "
+                  "unsuitable for building. Please choose another site for this "
 	                "structure.";
       shortMsg  = "Cannot build on this surface\n";
       cmd       = "menu tremulous_alien_dialog\n";
@@ -702,8 +702,7 @@ void CG_Menu( int menu )
 
     case MN_A_TOOCLOSE:
       longMsg   = "This location is too close to the enemy to evolve. Move away "
-                  "until you are no longer aware of the enemy's presence and try "
-	                "again.";
+                  "from the enemy's presence and try again."
       shortMsg  = "This location is too close to the enemy to evolve\n";
       cmd       = "menu tremulous_alien_dialog\n";
       break;
