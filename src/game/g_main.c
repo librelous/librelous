@@ -134,6 +134,7 @@ vmCvar_t  g_adminNameProtect;
 vmCvar_t  g_adminTempBan;
 
 vmCvar_t  g_privateMessages;
+vmCvar_t  g_specChat;
 vmCvar_t  g_publicAdminMessages;
 
 vmCvar_t  g_tag;
@@ -257,6 +258,7 @@ static cvarTable_t   gameCvarTable[ ] =
   { &g_adminTempBan, "g_adminTempBan", "2m", CVAR_ARCHIVE, 0, qfalse  },
 
   { &g_privateMessages, "g_privateMessages", "1", CVAR_ARCHIVE, 0, qfalse  },
+  { &g_specChat, "g_specChat", "1", CVAR_ARCHIVE, 0, qfalse  },
   { &g_publicAdminMessages, "g_publicAdminMessages", "1", CVAR_ARCHIVE, 0, qfalse  },
 
   { &g_tag, "g_tag", "main", CVAR_INIT, 0, qfalse },

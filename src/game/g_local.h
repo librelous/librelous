@@ -1154,6 +1154,7 @@ extern  vmCvar_t  g_adminNameProtect;
 extern  vmCvar_t  g_adminTempBan;
 
 extern  vmCvar_t  g_privateMessages;
+extern  vmCvar_t  g_specChat;
 extern  vmCvar_t  g_publicAdminMessages;
 
 void      trap_Print( const char *fmt );

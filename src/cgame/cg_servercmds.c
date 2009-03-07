@@ -702,7 +702,7 @@ void CG_Menu( int menu )
 
     case MN_A_TOOCLOSE:
       longMsg   = "This location is too close to the enemy to evolve. Move away "
-                  "from the enemy's presence and try again."
+                  "from the enemy's presence and try again.";
       shortMsg  = "This location is too close to the enemy to evolve\n";
       cmd       = "menu tremulous_alien_dialog\n";
       break;
