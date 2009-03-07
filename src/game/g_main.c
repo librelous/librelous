@@ -133,6 +133,7 @@ vmCvar_t  g_adminLog;
 vmCvar_t  g_adminParseSay;
 vmCvar_t  g_adminNameProtect;
 vmCvar_t  g_adminTempBan;
+vmCvar_t  g_adminMaxBan;
 
 vmCvar_t  g_privateMessages;
 vmCvar_t  g_specChat;
@@ -258,6 +259,7 @@ static cvarTable_t   gameCvarTable[ ] =
   { &g_adminParseSay, "g_adminParseSay", "1", CVAR_ARCHIVE, 0, qfalse  },
   { &g_adminNameProtect, "g_adminNameProtect", "1", CVAR_ARCHIVE, 0, qfalse  },
   { &g_adminTempBan, "g_adminTempBan", "2m", CVAR_ARCHIVE, 0, qfalse  },
+  { &g_adminMaxBan, "g_adminMaxBan", "2w", CVAR_ARCHIVE, 0, qfalse  },
 
   { &g_privateMessages, "g_privateMessages", "1", CVAR_ARCHIVE, 0, qfalse  },
   { &g_specChat, "g_specChat", "1", CVAR_ARCHIVE, 0, qfalse  },
