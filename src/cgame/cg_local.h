@@ -1418,7 +1418,6 @@ extern  vmCvar_t    cg_drawCrosshairNames;
 extern  vmCvar_t    cg_crosshairX;
 extern  vmCvar_t    cg_crosshairY;
 extern  vmCvar_t    cg_draw2D;
-extern  vmCvar_t    cg_drawStatus;
 extern  vmCvar_t    cg_animSpeed;
 extern  vmCvar_t    cg_debugAnim;
 extern  vmCvar_t    cg_debugPosition;
