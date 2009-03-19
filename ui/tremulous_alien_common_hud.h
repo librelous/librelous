@@ -199,3 +199,19 @@ itemDef
   decoration
   ownerdraw CG_PLAYER_ALIEN_SENSE
 }
+
+//SPECTATOR TEXT
+itemDef
+{
+  name "followtext"
+  rect 200 375 240 25
+  foreColor 1 1 1 1
+  aspectBias ALIGN_CENTER
+  textalign ALIGN_CENTER
+  textvalign VALIGN_TOP
+  visible MENU_TRUE
+  decoration
+  textScale .7
+  textStyle ITEM_TEXTSTYLE_SHADOWED
+  ownerdraw CG_FOLLOW
+}
