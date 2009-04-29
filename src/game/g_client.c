@@ -998,7 +998,12 @@ void ClientUserinfoChanged( int clientNum )
 
   // check for malformed or illegal info strings
   if( !Info_Validate(userinfo) )
-    strcpy( userinfo, "\\name\\badinfo" );
+  {
+    trap_SendServerCommand( ent - g_entities,
+        "disconnect \"illegal or malformed userinfo\n\"" );
+    trap_DropClient( ent - g_entities, 
+        "dropped: illegal or malformed userinfo");
+  }
 
   // set name
   Q_strncpyz( oldname, client->pers.netname, sizeof( oldname ) );
