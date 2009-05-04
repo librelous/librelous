@@ -1787,9 +1787,7 @@ void CheckIntermissionExit( void )
   int       ready, notReady;
   int       i;
   gclient_t *cl;
-  byte      readyMasks[ ( MAX_CLIENTS + 7 ) / 8 ];
-  // each byte in readyMasks will become two characters 00 - ff in the string
-  char      readyString[ 2 * sizeof( readyMasks ) + 1 ];
+  clientList_t readyMasks;
 
   //if no clients are connected, just exit
   if( level.numConnectedClients == 0 )
@@ -1801,7 +1799,7 @@ void CheckIntermissionExit( void )
   // see which players are ready
   ready = 0;
   notReady = 0;
-  Com_Memset( readyMasks, 0, sizeof( readyMasks ) );
+  Com_Memset( &readyMasks, 0, sizeof( readyMasks ) );
   for( i = 0; i < g_maxclients.integer; i++ )
   {
     cl = level.clients + i;
@@ -1814,21 +1812,14 @@ void CheckIntermissionExit( void )
     if( cl->readyToExit )
     {
       ready++;
-      // the highest bit of readyMasks is for the 0th client, and so on
-      readyMasks[ i / 8 ] |= 1 << ( 7 - i % 8 );
+      BG_ClientListAdd( &readyMasks, i );
     }
     else
       notReady++;
 
   }
 
-  // this is hex so that we can construct the string piece by piece, whereas
-  // decimal must be considered as a single large number (which would overflow)
-  for( i = 0; i < sizeof( readyMasks ); i++ )
-    Com_sprintf( &readyString[ i * 2 ], sizeof( readyString ) - i * 2,
-                 "%2.2x", readyMasks[ i ] );
-
-  trap_SetConfigstring( CS_CLIENTS_READY, readyString );
+  trap_SetConfigstring( CS_CLIENTS_READY, BG_ClientListString( &readyMasks ) );
 
   // never exit in less than five seconds
   if( level.time < level.intermissiontime + 5000 )
