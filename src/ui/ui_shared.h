@@ -280,7 +280,7 @@ typedef struct itemDef_s
   sfxHandle_t focusSound;
   int numColors;                 // number of color ranges
   colorRangeDef_t colorRanges[MAX_COLOR_RANGES];
-  float special;                 // used for feeder id's etc.. diff per type
+  int feederID;                  // where to get data for this item
   int cursorPos;                 // cursor position in characters
   union
   {
@@ -379,7 +379,7 @@ typedef struct
   void ( *addRefEntityToScene ) ( const refEntity_t *re );
   void ( *renderScene ) ( const refdef_t *fd );
   void ( *registerFont ) ( const char *pFontname, int pointSize, fontInfo_t *font );
-  void ( *ownerDrawItem ) ( float x, float y, float w, float h, float text_x, float text_y, int ownerDraw, int ownerDrawFlags, int align, int textalign, int textvalign, float special, float scale, vec4_t color, qhandle_t shader, int textStyle );
+  void ( *ownerDrawItem ) ( float x, float y, float w, float h, float text_x, float text_y, int ownerDraw, int ownerDrawFlags, int align, int textalign, int textvalign, float borderSize, float scale, vec4_t color, qhandle_t shader, int textStyle );
   float ( *getValue ) ( int ownerDraw );
   qboolean ( *ownerDrawVisible ) ( int flags );
   void ( *runScript )( char **p );
@@ -390,7 +390,7 @@ typedef struct
   void ( *setOverstrikeMode )( qboolean b );
   qboolean ( *getOverstrikeMode )( void );
   void ( *startLocalSound )( sfxHandle_t sfx, int channelNum );
-  qboolean ( *ownerDrawHandleKey )( int ownerDraw, int flags, float *special, int key );
+  qboolean ( *ownerDrawHandleKey )( int ownerDraw, int key );
   int ( *feederCount )( float feederID );
   const char *( *feederItemText )( float feederID, int index, int column, qhandle_t *handle );
   qhandle_t ( *feederItemImage )( float feederID, int index );

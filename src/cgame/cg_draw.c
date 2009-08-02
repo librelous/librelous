@@ -239,18 +239,21 @@ void CG_DrawField( float x, float y, int width, float cw, float ch, int value )
 
 static void CG_DrawProgressBar( rectDef_t *rect, vec4_t color, float scale,
                                 int align, int textalign, int textStyle,
-                                int special, float progress )
+                                float borderSize, float progress )
 {
-  float   rimWidth = rect->h / 20.0f;
+  float   rimWidth;
   float   doneWidth, leftWidth;
   float   tx, ty;
   char    textBuffer[ 8 ];
 
-  if( rimWidth < 0.6f )
-    rimWidth = 0.6f;
-
-  if( special >= 0.0f )
-    rimWidth = special;
+  if( borderSize >= 0.0f )
+    rimWidth = borderSize;
+  else
+  {
+    rimWidth = rect->h / 20.0f;
+    if( rimWidth < 0.6f )
+      rimWidth = 0.6f;
+  }
 
   if( progress < 0.0f )
     progress = 0.0f;
@@ -896,9 +899,11 @@ static void CG_DrawProgressLabel( rectDef_t *rect, float text_x, float text_y, v
 }
 
 static void CG_DrawMediaProgress( rectDef_t *rect, vec4_t color, float scale,
-                                  int align, int textalign, int textStyle, int special )
+                                  int align, int textalign, int textStyle,
+                                  float borderSize )
 {
-  CG_DrawProgressBar( rect, color, scale, align, textalign, textStyle, special, cg.mediaFraction );
+  CG_DrawProgressBar( rect, color, scale, align, textalign, textStyle,
+                      borderSize, cg.mediaFraction );
 }
 
 static void CG_DrawMediaProgressLabel( rectDef_t *rect, float text_x, float text_y,
@@ -908,10 +913,12 @@ static void CG_DrawMediaProgressLabel( rectDef_t *rect, float text_x, float text
                         "Map and Textures", cg.mediaFraction );
 }
 
-static void CG_DrawBuildablesProgress( rectDef_t *rect, vec4_t color, float scale,
-                                       int align, int textalign, int textStyle, int special )
+static void CG_DrawBuildablesProgress( rectDef_t *rect, vec4_t color,
+                                       float scale, int align, int textalign,
+                                       int textStyle, float borderSize )
 {
-  CG_DrawProgressBar( rect, color, scale, align, textalign, textStyle, special, cg.buildablesFraction );
+  CG_DrawProgressBar( rect, color, scale, align, textalign, textStyle,
+                      borderSize, cg.buildablesFraction );
 }
 
 static void CG_DrawBuildablesProgressLabel( rectDef_t *rect, float text_x, float text_y,
@@ -921,10 +928,12 @@ static void CG_DrawBuildablesProgressLabel( rectDef_t *rect, float text_x, float
                         "Buildable Models", cg.buildablesFraction );
 }
 
-static void CG_DrawCharModelProgress( rectDef_t *rect, vec4_t color, float scale,
-                                      int align, int textalign, int textStyle, int special )
+static void CG_DrawCharModelProgress( rectDef_t *rect, vec4_t color,
+                                      float scale, int align, int textalign,
+                                      int textStyle, float borderSize )
 {
-  CG_DrawProgressBar( rect, color, scale, align, textalign, textStyle, special, cg.charModelFraction );
+  CG_DrawProgressBar( rect, color, scale, align, textalign, textStyle,
+                      borderSize, cg.charModelFraction );
 }
 
 static void CG_DrawCharModelProgressLabel( rectDef_t *rect, float text_x, float text_y,
@@ -935,12 +944,16 @@ static void CG_DrawCharModelProgressLabel( rectDef_t *rect, float text_x, float 
 }
 
 static void CG_DrawOverallProgress( rectDef_t *rect, vec4_t color, float scale,
-                                    int align, int textalign, int textStyle, int special )
+                                    int align, int textalign, int textStyle,
+                                    float borderSize )
 {
   float total;
 
-  total = ( cg.charModelFraction + cg.buildablesFraction + cg.mediaFraction ) / 3.0f;
-  CG_DrawProgressBar( rect, color, scale, align, textalign, textStyle, special, total );
+  total = cg.charModelFraction + cg.buildablesFraction + cg.mediaFraction;
+  total /= 3.0f;
+
+  CG_DrawProgressBar( rect, color, scale, align, textalign, textStyle,
+                      borderSize, total );
 }
 
 static void CG_DrawLevelShot( rectDef_t *rect )
@@ -2080,7 +2093,7 @@ Draw an owner drawn item
 */
 void CG_OwnerDraw( float x, float y, float w, float h, float text_x,
                    float text_y, int ownerDraw, int ownerDrawFlags,
-                   int align, int textalign, int textvalign, float special,
+                   int align, int textalign, int textvalign, float borderSize,
                    float scale, vec4_t color,
                    qhandle_t shader, int textStyle )
 {
@@ -2193,25 +2206,29 @@ void CG_OwnerDraw( float x, float y, float w, float h, float text_x,
       CG_DrawLevelShot( &rect );
       break;
     case CG_LOAD_MEDIA:
-      CG_DrawMediaProgress( &rect, color, scale, align, textalign, textStyle, special );
+      CG_DrawMediaProgress( &rect, color, scale, align, textalign, textStyle,
+                            borderSize );
       break;
     case CG_LOAD_MEDIA_LABEL:
       CG_DrawMediaProgressLabel( &rect, text_x, text_y, color, scale, textalign, textvalign );
       break;
     case CG_LOAD_BUILDABLES:
-      CG_DrawBuildablesProgress( &rect, color, scale, align, textalign, textStyle, special );
+      CG_DrawBuildablesProgress( &rect, color, scale, align, textalign,
+                                 textStyle, borderSize );
       break;
     case CG_LOAD_BUILDABLES_LABEL:
       CG_DrawBuildablesProgressLabel( &rect, text_x, text_y, color, scale, textalign, textvalign );
       break;
     case CG_LOAD_CHARMODEL:
-      CG_DrawCharModelProgress( &rect, color, scale, align, textalign, textStyle, special );
+      CG_DrawCharModelProgress( &rect, color, scale, align, textalign,
+                                textStyle, borderSize );
       break;
     case CG_LOAD_CHARMODEL_LABEL:
       CG_DrawCharModelProgressLabel( &rect, text_x, text_y, color, scale, textalign, textvalign );
       break;
     case CG_LOAD_OVERALL:
-      CG_DrawOverallProgress( &rect, color, scale, align, textalign, textStyle, special );
+      CG_DrawOverallProgress( &rect, color, scale, align, textalign, textStyle,
+                              borderSize );
       break;
     case CG_LOAD_LEVELNAME:
       CG_DrawLevelName( &rect, text_x, text_y, color, scale, textalign, textvalign, textStyle );
