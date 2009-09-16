@@ -665,14 +665,17 @@ CG_CalcFov
 Fixed fov at intermissions, otherwise account for fov variable and zooms.
 ====================
 */
-#define WAVE_AMPLITUDE  1
-#define WAVE_FREQUENCY  0.4
+#define WAVE_AMPLITUDE  1.0f
+#define WAVE_FREQUENCY  0.4f
 
-#define FOVWARPTIME     400.0
+#define FOVWARPTIME     400.0f
+#define BASE_FOV_Y      67.5f
+#define MAX_FOV_Y       120.0f
+#define MAX_FOV_WARP_Y  127.5f
 
 static int CG_CalcFov( void )
 {
-  float     x;
+  float     y;
   float     phase;
   float     v;
   int       contents;
@@ -691,36 +694,31 @@ static int CG_CalcFov( void )
       ( cg.snap->ps.persistant[ PERS_SPECSTATE ] != SPECTATOR_NOT ) )
   {
     // if in intermission, use a fixed value
-    fov_x = 90;
+    fov_y = BASE_FOV_Y;
   }
   else
   {
     // don't lock the fov globally - we need to be able to change it
-    attribFov = BG_Class( cg.predictedPlayerState.stats[ STAT_CLASS ] )->fov;
-    fov_x = attribFov;
+    attribFov = BG_Class( cg.predictedPlayerState.stats[ STAT_CLASS ] )->fov * 0.75f;
+    fov_y = attribFov;
 
-    if ( fov_x < 1 )
-      fov_x = 1;
-    else if ( fov_x > 160 )
-      fov_x = 160;
+    if ( fov_y < 1.0f )
+      fov_y = 1.0f;
+    else if ( fov_y > MAX_FOV_Y )
+      fov_y = MAX_FOV_Y;
 
     if( cg.spawnTime > ( cg.time - FOVWARPTIME ) &&
         BG_ClassHasAbility( cg.predictedPlayerState.stats[ STAT_CLASS ], SCA_FOVWARPS ) )
     {
-      float temp, temp2;
+      float fraction = (float)( cg.time - cg.spawnTime ) / FOVWARPTIME;
 
-      temp = (float)( cg.time - cg.spawnTime ) / FOVWARPTIME;
-      temp2 = ( 170 - fov_x ) * temp;
-
-      //Com_Printf( "%f %f\n", temp*100, temp2*100 );
-
-      fov_x = 170 - temp2;
+      fov_y = MAX_FOV_WARP_Y - ( ( MAX_FOV_WARP_Y - fov_y ) * fraction );
     }
 
     // account for zooms
-    zoomFov = BG_Weapon( cg.predictedPlayerState.weapon )->zoomFov;
-    if ( zoomFov < 1 )
-      zoomFov = 1;
+    zoomFov = BG_Weapon( cg.predictedPlayerState.weapon )->zoomFov * 0.75f;
+    if ( zoomFov < 1.0f )
+      zoomFov = 1.0f;
     else if ( zoomFov > attribFov )
       zoomFov = attribFov;
 
@@ -732,10 +730,10 @@ static int CG_CalcFov( void )
       {
         f = ( cg.time - cg.zoomTime ) / (float)ZOOM_TIME;
 
-        if ( f > 1.0 )
-          fov_x = zoomFov;
+        if ( f > 1.0f )
+          fov_y = zoomFov;
         else
-          fov_x = fov_x + f * ( zoomFov - fov_x );
+          fov_y = fov_y + f * ( zoomFov - fov_y );
 
         // BUTTON_ATTACK2 isn't held so unzoom next time
         if( !( cmd.buttons & BUTTON_ATTACK2 ) )
@@ -748,10 +746,10 @@ static int CG_CalcFov( void )
       {
         f = ( cg.time - cg.zoomTime ) / (float)ZOOM_TIME;
 
-        if ( f > 1.0 )
-          fov_x = fov_x;
+        if ( f > 1.0f )
+          fov_y = fov_y;
         else
-          fov_x = zoomFov + f * ( fov_x - zoomFov );
+          fov_y = zoomFov + f * ( fov_y - zoomFov );
 
         // BUTTON_ATTACK2 is held so zoom next time
         if( cmd.buttons & BUTTON_ATTACK2 )
@@ -763,16 +761,16 @@ static int CG_CalcFov( void )
     }
   }
 
-  x = cg.refdef.width / tan( fov_x / 360 * M_PI );
-  fov_y = atan2( cg.refdef.height, x );
-  fov_y = fov_y * 360 / M_PI;
+  y = cg.refdef.height / tan( fov_y / 360.0f * M_PI );
+  fov_x = atan2( cg.refdef.width, y );
+  fov_x = fov_x * 360.0f / M_PI;
 
   // warp if underwater
   contents = CG_PointContents( cg.refdef.vieworg, -1 );
 
   if( contents & ( CONTENTS_WATER | CONTENTS_SLIME | CONTENTS_LAVA ) )
   {
-    phase = cg.time / 1000.0 * WAVE_FREQUENCY * M_PI * 2;
+    phase = cg.time / 1000.0f * WAVE_FREQUENCY * M_PI * 2.0f;
     v = WAVE_AMPLITUDE * sin( phase );
     fov_x += v;
     fov_y -= v;
@@ -785,7 +783,7 @@ static int CG_CalcFov( void )
       cg.predictedPlayerState.stats[ STAT_HEALTH ] > 0 &&
       !( cg.snap->ps.pm_flags & PMF_FOLLOW ) )
   {
-    phase = cg.time / 1000.0 * PCLOUD_ZOOM_FREQUENCY * M_PI * 2;
+    phase = cg.time / 1000.0f * PCLOUD_ZOOM_FREQUENCY * M_PI * 2.0f;
     v = PCLOUD_ZOOM_AMPLITUDE * sin( phase );
     v *= 1.0f - ( ( cg.time - cg.poisonedTime ) / (float)LEVEL1_PCLOUD_TIME );
     fov_x += v;
@@ -798,9 +796,9 @@ static int CG_CalcFov( void )
   cg.refdef.fov_y = fov_y;
 
   if( !cg.zoomed )
-    cg.zoomSensitivity = 1;
+    cg.zoomSensitivity = 1.0f;
   else
-    cg.zoomSensitivity = cg.refdef.fov_y / 75.0;
+    cg.zoomSensitivity = cg.refdef.fov_y / 75.0f;
 
   return inwater;
 }
