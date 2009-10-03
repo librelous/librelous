@@ -550,7 +550,10 @@ void VectorRotate( vec3_t in, vec3_t matrix[3], vec3_t out )
 */
 float Q_rsqrt( float number )
 {
-	floatint_t t;
+	union {
+		float f;
+		int i;
+	} t;
 	float x2, y;
 	const float threehalfs = 1.5F;
 
@@ -565,10 +568,9 @@ float Q_rsqrt( float number )
 }
 
 float Q_fabs( float f ) {
-	floatint_t fi;
-	fi.f = f;
-	fi.i &= 0x7FFFFFFF;
-	return fi.f;
+	int tmp = * ( int * ) &f;
+	tmp &= 0x7FFFFFFF;
+	return * ( float * ) &tmp;
 }
 #endif
 
@@ -1585,11 +1587,15 @@ Don't pass doubles to this
 */
 int Q_isnan( float x )
 {
-	floatint_t fi;
+	union
+	{
+		float f;
+		unsigned int i;
+	} t;
 
-	fi.f = x;
-	fi.ui &= 0x7FFFFFFF;
-	fi.ui = 0x7F800000 - fi.ui;
+	t.f = x;
+	t.i &= 0x7FFFFFFF;
+	t.i = 0x7F800000 - t.i;
 
-	return (int)( (unsigned int)fi.ui >> 31 );
+	return (int)( (unsigned int)t.i >> 31 );
 }

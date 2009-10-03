@@ -234,8 +234,6 @@ typedef struct directive_s
 #define DEFINEHASHSIZE    1024
 
 static int Parse_ReadToken(source_t *source, token_t *token);
-static qboolean Parse_AddDefineToSourceFromString( source_t *source,
-                                                   char *string );
 
 int numtokens;
 
@@ -317,6 +315,8 @@ punctuation_t default_punctuations[] =
   {"$",P_DOLLAR, NULL},
   {NULL, 0}
 };
+
+char basefolder[MAX_QPATH];
 
 /*
 ===============
@@ -900,10 +900,10 @@ static int Parse_ReadPrimitive(script_t *script, token_t *token)
 
 /*
 ===============
-Parse_ReadScriptToken
+Parse_ReadSciptToken
 ===============
 */
-static int Parse_ReadScriptToken(script_t *script, token_t *token)
+static int Parse_ReadSciptToken(script_t *script, token_t *token)
 {
   //if there is a token available (from UnreadToken)
   if (script->tokenavailable)
@@ -981,7 +981,7 @@ static void Parse_StripDoubleQuotes(char *string)
 {
   if (*string == '\"')
   {
-    memmove( string, string + 1, strlen( string ) + 1 );
+    strcpy(string, string+1);
   }
   if (string[strlen(string)-1] == '\"')
   {
@@ -1007,11 +1007,16 @@ Parse_LoadScriptFile
 static script_t *Parse_LoadScriptFile(const char *filename)
 {
   fileHandle_t fp;
+  char pathname[MAX_QPATH];
   int length;
   void *buffer;
   script_t *script;
 
-  length = FS_FOpenFileRead( filename, &fp, qfalse );
+  if (strlen(basefolder))
+    Com_sprintf(pathname, sizeof(pathname), "%s/%s", basefolder, filename);
+  else
+    Com_sprintf(pathname, sizeof(pathname), "%s", filename);
+  length = FS_FOpenFileRead( pathname, &fp, qfalse );
   if (!fp) return NULL;
 
   buffer = Z_Malloc(sizeof(script_t) + length + 1);
@@ -1040,6 +1045,7 @@ static script_t *Parse_LoadScriptFile(const char *filename)
   FS_Read(script->buffer, length, fp);
   FS_FCloseFile(fp);
   //
+  script->length = COM_Compress(script->buffer);
 
   return script;
 }
@@ -1091,6 +1097,16 @@ static void Parse_FreeScript(script_t *script)
 {
   if (script->punctuationtable) Z_Free(script->punctuationtable);
   Z_Free(script);
+}
+
+/*
+===============
+Parse_SetBaseFolder
+===============
+*/
+static void Parse_SetBaseFolder(char *path)
+{
+  Com_sprintf(basefolder, sizeof(basefolder), path);
 }
 
 /*
@@ -1237,22 +1253,13 @@ static int Parse_ReadSourceToken(source_t *source, token_t *token)
 {
   token_t *t;
   script_t *script;
-  int type, skip, lines;
+  int type, skip;
 
-  lines = 0;
   //if there's no token already available
   while(!source->tokens)
   {
     //if there's a token to read from the script
-    if( Parse_ReadScriptToken( source->scriptstack, token ) )
-    {
-      token->linescrossed += lines;
-      return qtrue;
-    }
-
-    // if lines were crossed before the end of the script, count them
-    lines += source->scriptstack->line - source->scriptstack->lastline;
-
+    if (Parse_ReadSciptToken(source->scriptstack, token)) return qtrue;
     //if at the end of the script
     if (Parse_EndOfScript(source->scriptstack))
     {
@@ -1548,7 +1555,11 @@ static int Parse_ExpandBuiltinDefine(source_t *source, token_t *deftoken, define
                     token_t **firsttoken, token_t **lasttoken)
 {
   token_t *token;
+#ifdef _WIN32
+  unsigned long t;  //  time_t t; //to prevent LCC warning
+#else
   time_t t;
+#endif
 
   char *curtime;
 
@@ -2557,7 +2568,7 @@ static int Parse_Directive_include(source_t *source)
         break;
       }
       if (token.type == TT_PUNCTUATION && *token.string == '>') break;
-      strncat(path, token.string, MAX_QPATH - 1);
+      strncat(path, token.string, MAX_QPATH);
     }
     if (*token.string != '>')
     {
@@ -3203,141 +3214,6 @@ static void Parse_UnreadToken(source_t *source, token_t *token)
 
 /*
 ===============
-Parse_ReadEnumeration
-
-It is assumed that the 'enum' token has already been consumed
-This is fairly basic: it doesn't catch some fairly obvious errors like nested
-enums, and enumerated names conflict with #define parameters
-===============
-*/
-static qboolean Parse_ReadEnumeration( source_t *source )
-{
-  token_t newtoken;
-  int value;
-
-  if( !Parse_ReadToken( source, &newtoken ) )
-    return qfalse;
-
-  if( newtoken.type != TT_PUNCTUATION || newtoken.subtype != P_BRACEOPEN )
-  {
-    Parse_SourceError( source, "Found %s when expecting {\n",
-                       newtoken.string );
-    return qfalse;
-  }
-
-  for( value = 0;; value++ )
-  {
-    token_t name;
-
-    // read the name
-    if( !Parse_ReadToken( source, &name ) )
-      break;
-
-    // it's ok for the enum to end immediately
-    if( name.type == TT_PUNCTUATION && name.subtype == P_BRACECLOSE )
-    {
-      if( !Parse_ReadToken( source, &name ) )
-        break;
-
-      // ignore trailing semicolon
-      if( name.type != TT_PUNCTUATION || name.subtype != P_SEMICOLON )
-        Parse_UnreadToken( source, &name );
-
-      return qtrue;
-    }
-
-    // ... but not for it to do anything else
-    if( name.type != TT_NAME )
-    {
-      Parse_SourceError( source, "Found %s when expecting identifier\n",
-                         name.string );
-      return qfalse;
-    }
-
-    if( !Parse_ReadToken( source, &newtoken ) )
-      break;
-
-    if( newtoken.type != TT_PUNCTUATION )
-    {
-      Parse_SourceError( source, "Found %s when expecting , or = or }\n",
-                         newtoken.string );
-      return qfalse;
-    }
-
-    if( newtoken.subtype == P_ASSIGN )
-    {
-      int neg = 1;
-
-      if( !Parse_ReadToken( source, &newtoken ) )
-        break;
-
-      // Parse_ReadToken doesn't seem to read negative numbers, so we do it
-      // ourselves
-      if( newtoken.type == TT_PUNCTUATION && newtoken.subtype == P_SUB )
-      {
-        neg = -1;
-
-        // the next token should be the number
-        if( !Parse_ReadToken( source, &newtoken ) )
-          break;
-      }
-
-      if( newtoken.type != TT_NUMBER || !( newtoken.subtype & TT_INTEGER ) )
-      {
-        Parse_SourceError( source, "Found %s when expecting integer\n",
-                           newtoken.string );
-        return qfalse;
-      }
-
-      // this is somewhat silly, but cheap to check
-      if( neg == -1 && ( newtoken.subtype & TT_UNSIGNED ) )
-      {
-        Parse_SourceWarning( source, "Value in enumeration is negative and "
-                                     "unsigned\n" );
-      }
-
-      // set the new define value
-      value = newtoken.intvalue * neg;
-
-      if( !Parse_ReadToken( source, &newtoken ) )
-        break;
-    }
-
-    if( newtoken.type != TT_PUNCTUATION || ( newtoken.subtype != P_COMMA &&
-        newtoken.subtype != P_BRACECLOSE ) )
-    {
-      Parse_SourceError( source, "Found %s when expecting , or }\n",
-                         newtoken.string );
-      return qfalse;
-    }
-
-    if( !Parse_AddDefineToSourceFromString( source, va( "%s %d\n", name.string,
-                                                        value ) ) )
-    {
-      Parse_SourceWarning( source, "Couldn't add define to source: %s = %d\n",
-                           name.string, value );
-      return qfalse;
-    }
-
-    if( newtoken.subtype == P_BRACECLOSE )
-    {
-      if( !Parse_ReadToken( source, &name ) )
-        break;
-
-      // ignore trailing semicolon
-      if( name.type != TT_PUNCTUATION || name.subtype != P_SEMICOLON )
-        Parse_UnreadToken( source, &name );
-
-      return qtrue;
-    }
-  }
-
-  // got here if a ReadToken returned false
-  return qfalse;
-}
-
-/*
-===============
 Parse_ReadToken
 ===============
 */
@@ -3364,12 +3240,6 @@ static int Parse_ReadToken(source_t *source, token_t *token)
         if (!Parse_ReadDollarDirective(source)) return qfalse;
         continue;
       }
-    }
-    if( token->type == TT_NAME && !Q_stricmp( token->string, "enum" ) )
-    {
-      if( !Parse_ReadEnumeration( source ) )
-        return qfalse;
-      continue;
     }
     // recursively concatenate strings that are behind each other still resolving defines
     if (token->type == TT_STRING)
@@ -3462,19 +3332,6 @@ static define_t *Parse_DefineFromString(char *string)
   if (src.defines) Parse_FreeDefine(def);
   //
   return NULL;
-}
-
-/*
-===============
-Parse_AddDefineToSourceFromString
-===============
-*/
-static qboolean Parse_AddDefineToSourceFromString( source_t *source,
-                                                   char *string )
-{
-  Parse_PushScript( source, Parse_LoadScriptMemory( string, strlen( string ),
-                                                    "*extern" ) );
-  return Parse_Directive_define( source );
 }
 
 /*
@@ -3656,6 +3513,7 @@ int Parse_LoadSourceHandle(const char *filename)
   }
   if (i >= MAX_SOURCEFILES)
     return 0;
+  Parse_SetBaseFolder("");
   source = Parse_LoadSourceFile(filename);
   if (!source)
     return 0;

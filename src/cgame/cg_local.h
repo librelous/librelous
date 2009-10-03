@@ -562,7 +562,7 @@ typedef struct
 
 typedef struct
 {
-  lerpFrame_t legs, torso, nonseg, weapon;
+  lerpFrame_t legs, torso, flag, nonseg;
   int         painTime;
   int         painDirection;  // flip from 0 to 1
 
@@ -702,7 +702,7 @@ typedef struct
   qboolean    infoValid;
 
   char        name[ MAX_QPATH ];
-  team_t      team;
+  pTeam_t     team;
 
   vec3_t      color1;
   vec3_t      color2;
@@ -756,9 +756,6 @@ typedef struct
 
   sfxHandle_t customFootsteps[ 4 ];
   sfxHandle_t customMetalFootsteps[ 4 ];
-
-  char        voice[ MAX_VOICE_NAME_LEN ];
-  int         voiceTime;
 } clientInfo_t;
 
 
@@ -811,13 +808,6 @@ typedef struct weaponInfo_s
   qhandle_t         weaponModel;
   qhandle_t         barrelModel;
   qhandle_t         flashModel;
-
-  qhandle_t         weaponModel3rdPerson;
-  qhandle_t         barrelModel3rdPerson;
-  qhandle_t         flashModel3rdPerson;
-
-  animation_t       animations[ MAX_WEAPON_ANIMATIONS ];
-  qboolean          noDrift;
 
   vec3_t            weaponMidpoint;   // so it will rotate centered instead of by tag
 
@@ -1025,6 +1015,7 @@ typedef struct
 
   // attacking player
   int           attackerTime;
+  int           voiceTime;
 
   // reward medals
   int           rewardStack;
@@ -1377,16 +1368,7 @@ typedef struct
 
   // media
   cgMedia_t           media;
-
-  voice_t       *voices;
-  clientList_t  ignoreList;
 } cgs_t;
-
-typedef struct
-{
-  char *cmd;
-  void ( *function )( void );
-} consoleCommand_t;
 
 //==============================================================================
 
@@ -1402,26 +1384,38 @@ extern  buildableInfo_t cg_buildables[ BA_NUM_BUILDABLES ];
 
 extern  markPoly_t      cg_markPolys[ MAX_MARK_POLYS ];
 
-extern  vmCvar_t    cg_teslaTrailTime;
 extern  vmCvar_t    cg_centertime;
 extern  vmCvar_t    cg_runpitch;
 extern  vmCvar_t    cg_runroll;
+extern  vmCvar_t    cg_bobup;
+extern  vmCvar_t    cg_bobpitch;
+extern  vmCvar_t    cg_bobroll;
 extern  vmCvar_t    cg_swingSpeed;
 extern  vmCvar_t    cg_shadows;
+extern  vmCvar_t    cg_gibs;
 extern  vmCvar_t    cg_drawTimer;
 extern  vmCvar_t    cg_drawClock;
 extern  vmCvar_t    cg_drawFPS;
 extern  vmCvar_t    cg_drawDemoState;
 extern  vmCvar_t    cg_drawSnapshot;
+extern  vmCvar_t    cg_draw3dIcons;
+extern  vmCvar_t    cg_drawIcons;
+extern  vmCvar_t    cg_drawAmmoWarning;
 extern  vmCvar_t    cg_drawCrosshair;
 extern  vmCvar_t    cg_drawCrosshairNames;
+extern  vmCvar_t    cg_drawRewards;
+extern  vmCvar_t    cg_drawTeamOverlay;
+extern  vmCvar_t    cg_teamOverlayUserinfo;
 extern  vmCvar_t    cg_crosshairX;
 extern  vmCvar_t    cg_crosshairY;
+extern  vmCvar_t    cg_drawStatus;
 extern  vmCvar_t    cg_draw2D;
 extern  vmCvar_t    cg_animSpeed;
 extern  vmCvar_t    cg_debugAnim;
 extern  vmCvar_t    cg_debugPosition;
 extern  vmCvar_t    cg_debugEvents;
+extern  vmCvar_t    cg_teslaTrailTime;
+extern  vmCvar_t    cg_railTrailTime;
 extern  vmCvar_t    cg_errorDecay;
 extern  vmCvar_t    cg_nopredict;
 extern  vmCvar_t    cg_debugMove;
@@ -1430,41 +1424,61 @@ extern  vmCvar_t    cg_showmiss;
 extern  vmCvar_t    cg_footsteps;
 extern  vmCvar_t    cg_addMarks;
 extern  vmCvar_t    cg_brassTime;
-extern  vmCvar_t    cg_viewsize;
-extern  vmCvar_t    cg_drawGun;
 extern  vmCvar_t    cg_gun_frame;
 extern  vmCvar_t    cg_gun_x;
 extern  vmCvar_t    cg_gun_y;
 extern  vmCvar_t    cg_gun_z;
+extern  vmCvar_t    cg_drawGun;
+extern  vmCvar_t    cg_viewsize;
 extern  vmCvar_t    cg_tracerChance;
 extern  vmCvar_t    cg_tracerWidth;
 extern  vmCvar_t    cg_tracerLength;
 extern  vmCvar_t    cg_autoswitch;
-extern  vmCvar_t    cg_thirdPerson;
+extern  vmCvar_t    cg_ignore;
+extern  vmCvar_t    cg_simpleItems;
+extern  vmCvar_t    cg_fov;
+extern  vmCvar_t    cg_zoomFov;
 extern  vmCvar_t    cg_thirdPersonRange;
 extern  vmCvar_t    cg_thirdPersonAngle;
+extern  vmCvar_t    cg_thirdPerson;
 extern  vmCvar_t    cg_stereoSeparation;
 extern  vmCvar_t    cg_lagometer;
+extern  vmCvar_t    cg_drawAttacker;
 extern  vmCvar_t    cg_synchronousClients;
 extern  vmCvar_t    cg_stats;
+extern  vmCvar_t    cg_forceModel;
+extern  vmCvar_t    cg_buildScript;
 extern  vmCvar_t    cg_paused;
 extern  vmCvar_t    cg_blood;
+extern  vmCvar_t    cg_deferPlayers;
 extern  vmCvar_t    cg_drawFriend;
 extern  vmCvar_t    cg_teamChatsOnly;
 extern  vmCvar_t    cg_noVoiceChats;
 extern  vmCvar_t    cg_noVoiceText;
-extern  vmCvar_t    cg_hudFiles;
+extern  vmCvar_t    cg_scorePlum;
 extern  vmCvar_t    cg_smoothClients;
 extern  vmCvar_t    pmove_fixed;
 extern  vmCvar_t    pmove_msec;
-extern  vmCvar_t    cg_cameraMode;
+extern  vmCvar_t    cg_cameraOrbit;
+extern  vmCvar_t    cg_cameraOrbitDelay;
 extern  vmCvar_t    cg_timescaleFadeEnd;
 extern  vmCvar_t    cg_timescaleFadeSpeed;
 extern  vmCvar_t    cg_timescale;
+extern  vmCvar_t    cg_cameraMode;
+extern  vmCvar_t    cg_smallFont;
+extern  vmCvar_t    cg_bigFont;
 extern  vmCvar_t    cg_noTaunt;
+extern  vmCvar_t    cg_noProjectileTrail;
+extern  vmCvar_t    cg_oldRail;
+extern  vmCvar_t    cg_oldRocket;
+extern  vmCvar_t    cg_oldPlasma;
+extern  vmCvar_t    cg_trueLightning;
 extern  vmCvar_t    cg_drawSurfNormal;
 extern  vmCvar_t    cg_drawBBOX;
+extern  vmCvar_t    cg_debugAlloc;
 extern  vmCvar_t    cg_wwSmoothTime;
+extern  vmCvar_t    cg_wwFollow;
+extern  vmCvar_t    cg_wwToggle;
 extern  vmCvar_t    cg_depthSortParticles;
 extern  vmCvar_t    cg_bounceParticles;
 extern  vmCvar_t    cg_consoleLatency;
@@ -1482,8 +1496,6 @@ extern  vmCvar_t    cg_painBlendMax;
 extern  vmCvar_t    cg_painBlendScale;
 extern  vmCvar_t    cg_painBlendZoom;
 
-extern  vmCvar_t    cg_debugVoices;
-
 extern  vmCvar_t    ui_currentClass;
 extern  vmCvar_t    ui_carriage;
 extern  vmCvar_t    ui_stages;
@@ -1496,10 +1508,6 @@ extern  vmCvar_t    cg_debugRandom;
 
 extern  vmCvar_t    cg_optimizePrediction;
 extern  vmCvar_t    cg_projectileNudge;
-
-extern  vmCvar_t    cg_voice;
-
-extern  vmCvar_t    cg_emoticons;
 
 //
 // cg_main.c
@@ -1532,7 +1540,7 @@ void        CG_AddNotifyText( void );
 //
 // cg_view.c
 //
-void        CG_addSmoothOp( vec3_t rotAxis, float rotAngle, float timeMod );
+void        CG_addSmoothOp( vec3_t rotAxis, float rotAngle, float timeMod ); //TA
 void        CG_TestModel_f( void );
 void        CG_TestGun_f( void );
 void        CG_TestModelNextFrame_f( void );
@@ -1579,8 +1587,8 @@ void        CG_CenterPrint( const char *str, int y, int charWidth );
 void        CG_DrawActive( stereoFrame_t stereoView );
 void        CG_OwnerDraw( float x, float y, float w, float h, float text_x,
                           float text_y, int ownerDraw, int ownerDrawFlags,
-                          int align, int textalign, int textvalign,
-                          float borderSize, float scale, vec4_t color,
+                          int align, int textalign, int textvalign, float special,
+                          float scale, vec4_t color,
                           qhandle_t shader, int textStyle );
 float       CG_GetValue(int ownerDraw);
 void        CG_RunMenuScript(char **args);
@@ -1601,8 +1609,7 @@ void        CG_Player( centity_t *cent );
 void        CG_Corpse( centity_t *cent );
 void        CG_ResetPlayerEntity( centity_t *cent );
 void        CG_NewClientInfo( int clientNum );
-void        CG_PrecacheClientInfo( class_t class, char *model, char *skin );
-void        CG_TeamJoinMessage( clientInfo_t *newInfo, clientInfo_t *ci );
+void        CG_PrecacheClientInfo( pClass_t class, char *model, char *skin );
 sfxHandle_t CG_CustomSound( int clientNum, const char *soundName );
 void        CG_PlayerDisconnect( vec3_t org );
 void        CG_Bleed( vec3_t origin, vec3_t normal, int entityNum );
@@ -1622,7 +1629,7 @@ void        CG_AlienBuildableExplosion( vec3_t origin, vec3_t dir );
 //
 // cg_animation.c
 //
-void        CG_RunLerpFrame( lerpFrame_t *lf, float scale );
+void        CG_RunLerpFrame( lerpFrame_t *lf );
 
 //
 // cg_animmapobj.c
@@ -1742,6 +1749,14 @@ void          CG_ShaderStateChanged(void);
 void          CG_Respawn( void );
 void          CG_TransitionPlayerState( playerState_t *ps, playerState_t *ops );
 void          CG_CheckChangedPredictableEvents( playerState_t *ps );
+
+//
+// cg_mem.c
+//
+void          CG_InitMemory( void );
+void          *CG_Alloc( int size );
+void          CG_Free( void *ptr );
+void          CG_DefragmentMemory( void );
 
 //
 // cg_attachment.c

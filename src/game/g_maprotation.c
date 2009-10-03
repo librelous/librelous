@@ -34,9 +34,17 @@ G_MapExists
 Check if a map exists
 ===============
 */
-qboolean G_MapExists( char *name )
+static qboolean G_MapExists( char *name )
 {
-  return trap_FS_FOpenFile( va( "maps/%s.bsp", name ), NULL, FS_READ );
+  fileHandle_t  f;
+
+  if( trap_FS_FOpenFile( va( "maps/%s.bsp", name ), &f, FS_READ ) > 0 )
+  {
+    trap_FS_FCloseFile( f );
+    return qtrue;
+  }
+  else
+    return qfalse;
 }
 
 /*
@@ -97,13 +105,6 @@ static qboolean G_ParseMapCommandSection( mapRotationEntry_t *mre, char **text_p
       continue;
     }
 
-    if( mre->numCmds == MAX_MAP_COMMANDS )
-    {
-      G_Printf( S_COLOR_RED "ERROR: maximum number of map commands (%d) reached\n",
-                MAX_MAP_COMMANDS );
-      return qfalse;
-    }
-
     Q_strncpyz( mre->postCmds[ mre->numCmds ], token, sizeof( mre->postCmds[ 0 ] ) );
     Q_strcat( mre->postCmds[ mre->numCmds ], sizeof( mre->postCmds[ 0 ] ), " " );
 
@@ -115,7 +116,15 @@ static qboolean G_ParseMapCommandSection( mapRotationEntry_t *mre, char **text_p
       Q_strcat( mre->postCmds[ mre->numCmds ], sizeof( mre->postCmds[ 0 ] ), " " );
       token = COM_ParseExt( text_p, qfalse );
     }
-    mre->numCmds++;
+
+    if( mre->numCmds == MAX_MAP_COMMANDS )
+    {
+      G_Printf( S_COLOR_RED "ERROR: maximum number of map commands (%d) reached\n",
+                MAX_MAP_COMMANDS );
+      return qfalse;
+    }
+    else
+      mre->numCmds++;
   }
 
   return qfalse;
@@ -170,16 +179,18 @@ static qboolean G_ParseMapRotation( mapRotation_t *mr, char **text_p )
       if( !token )
         break;
 
+      mrc = &mre->conditions[ mre->numConditions ];
+      mrc->unconditional = qtrue;
+      Q_strncpyz( mrc->dest, token, sizeof( mrc->dest ) );
+
       if( mre->numConditions == MAX_MAP_ROTATION_CONDS )
       {
         G_Printf( S_COLOR_RED "ERROR: maximum number of conditions for one map (%d) reached\n",
                   MAX_MAP_ROTATION_CONDS );
         return qfalse;
       }
-
-      mrc = &mre->conditions[ mre->numConditions++ ];
-      mrc->unconditional = qtrue;
-      Q_strncpyz( mrc->dest, token, sizeof( mrc->dest ) );
+      else
+        mre->numConditions++;
 
       continue;
     }
@@ -190,14 +201,7 @@ static qboolean G_ParseMapRotation( mapRotation_t *mr, char **text_p )
       if( !token )
         break;
 
-      if( mre->numConditions == MAX_MAP_ROTATION_CONDS )
-      {
-        G_Printf( S_COLOR_RED "ERROR: maximum number of conditions for one map (%d) reached\n",
-                  MAX_MAP_ROTATION_CONDS );
-        return qfalse;
-      }
-
-      mrc = &mre->conditions[ mre->numConditions++ ];
+      mrc = &mre->conditions[ mre->numConditions ];
 
       if( !Q_stricmp( token, "numClients" ) )
       {
@@ -237,9 +241,9 @@ static qboolean G_ParseMapRotation( mapRotation_t *mr, char **text_p )
           break;
 
         if( !Q_stricmp( token, "aliens" ) )
-          mrc->lastWin = TEAM_ALIENS;
+          mrc->lastWin = PTE_ALIENS;
         else if( !Q_stricmp( token, "humans" ) )
-          mrc->lastWin = TEAM_HUMANS;
+          mrc->lastWin = PTE_HUMANS;
         else
         {
           G_Printf( S_COLOR_RED "ERROR: invalid right hand side in expression: %s\n", token );
@@ -262,10 +266,21 @@ static qboolean G_ParseMapRotation( mapRotation_t *mr, char **text_p )
       mrc->unconditional = qfalse;
       Q_strncpyz( mrc->dest, token, sizeof( mrc->dest ) );
 
+      if( mre->numConditions == MAX_MAP_ROTATION_CONDS )
+      {
+        G_Printf( S_COLOR_RED "ERROR: maximum number of conditions for one map (%d) reached\n",
+                  MAX_MAP_ROTATION_CONDS );
+        return qfalse;
+      }
+      else
+        mre->numConditions++;
+
       continue;
     }
     else if( !Q_stricmp( token, "}" ) )
       return qtrue; //reached the end of this map rotation
+
+    mre = &mr->maps[ mr->numMaps ];
 
     if( mr->numMaps == MAX_MAP_ROTATION_MAPS )
     {
@@ -273,8 +288,8 @@ static qboolean G_ParseMapRotation( mapRotation_t *mr, char **text_p )
                 MAX_MAP_ROTATION_MAPS );
       return qfalse;
     }
-
-    mre = &mr->maps[ mr->numMaps++ ];
+    else
+      mr->numMaps++;
 
     Q_strncpyz( mre->name, token, sizeof( mre->name ) );
     mnSet = qtrue;
@@ -303,14 +318,12 @@ static qboolean G_ParseMapRotationFile( const char *fileName )
 
   // load the file
   len = trap_FS_FOpenFile( fileName, &f, FS_READ );
-  if( len < 0 )
+  if( len <= 0 )
     return qfalse;
 
-  if( len == 0 || len >= sizeof( text ) - 1 )
+  if( len >= sizeof( text ) - 1 )
   {
-    trap_FS_FCloseFile( f );
-    G_Printf( S_COLOR_RED "ERROR: map rotation file %s is %s\n", fileName,
-      len == 0 ? "empty" : "too long" );
+    G_Printf( S_COLOR_RED "ERROR: map rotation file %s too long\n", fileName );
     return qfalse;
   }
 
@@ -346,13 +359,6 @@ static qboolean G_ParseMapRotationFile( const char *fileName )
           }
         }
 
-        if( mapRotations.numRotations == MAX_MAP_ROTATIONS )
-        {
-          G_Printf( S_COLOR_RED "ERROR: maximum number of map rotations (%d) reached\n",
-                    MAX_MAP_ROTATIONS );
-          return qfalse;
-        }
-
         Q_strncpyz( mapRotations.rotations[ mapRotations.numRotations ].name, mrName, MAX_QPATH );
 
         if( !G_ParseMapRotation( &mapRotations.rotations[ mapRotations.numRotations ], &text_p ) )
@@ -361,16 +367,23 @@ static qboolean G_ParseMapRotationFile( const char *fileName )
           return qfalse;
         }
 
-        mapRotations.numRotations++;
-
         //start parsing map rotations again
         mrNameSet = qfalse;
+
+        if( mapRotations.numRotations == MAX_MAP_ROTATIONS )
+        {
+          G_Printf( S_COLOR_RED "ERROR: maximum number of map rotations (%d) reached\n",
+                    MAX_MAP_ROTATIONS );
+          return qfalse;
+        }
+        else
+          mapRotations.numRotations++;
 
         continue;
       }
       else
       {
-        G_Printf( S_COLOR_RED "ERROR: unnamed map rotation\n" );
+        G_Printf( S_COLOR_RED "ERROR: unamed map rotation\n" );
         return qfalse;
       }
     }
@@ -651,7 +664,7 @@ G_AdvanceMapRotation
 Increment the current map rotation
 ===============
 */
-void G_AdvanceMapRotation( void )
+qboolean G_AdvanceMapRotation( void )
 {
   mapRotation_t           *mr;
   mapRotationEntry_t      *mre;
@@ -661,7 +674,7 @@ void G_AdvanceMapRotation( void )
   mapConditionType_t      mct;
 
   if( ( currentRotation = g_currentMapRotation.integer ) == NOT_ROTATING )
-    return;
+    return qfalse;
 
   currentMap = G_GetCurrentMap( currentRotation );
 
@@ -685,7 +698,8 @@ void G_AdvanceMapRotation( void )
 
         case MCT_ROTATION:
           G_StartMapRotation( mrc->dest, qtrue );
-          return;
+          return qtrue;
+          break;
 
         default:
         case MCT_ERR:
@@ -698,6 +712,8 @@ void G_AdvanceMapRotation( void )
 
   G_SetCurrentMap( nextMap, currentRotation );
   G_IssueMapChange( currentRotation );
+
+  return qtrue;
 }
 
 /*
@@ -765,10 +781,13 @@ Load and intialise the map rotations
 void G_InitMapRotations( void )
 {
   const char    *fileName = "maprotation.cfg";
+  fileHandle_t  f;
 
   //load the file if it exists
-  if( trap_FS_FOpenFile( fileName, NULL, FS_READ ) )
+  if( trap_FS_FOpenFile( fileName, &f, FS_READ ) > 0 )
   {
+    trap_FS_FCloseFile( f );
+
     if( !G_ParseMapRotationFile( fileName ) )
       G_Printf( S_COLOR_RED "ERROR: failed to parse %s file\n", fileName );
   }

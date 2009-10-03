@@ -95,16 +95,6 @@ char *Sys_DefaultInstallPath(void)
 
 /*
 =================
-Sys_DefaultAppPath
-=================
-*/
-char *Sys_DefaultAppPath(void)
-{
-	return Sys_BinaryPath();
-}
-
-/*
-=================
 Sys_In_Restart_f
 
 Restart the input subsystem
@@ -112,7 +102,36 @@ Restart the input subsystem
 */
 void Sys_In_Restart_f( void )
 {
-	IN_Restart( );
+	IN_Shutdown();
+	IN_Init();
+}
+
+/*
+=================
+Sys_ConsoleInputInit
+
+Start the console input subsystem
+=================
+*/
+void Sys_ConsoleInputInit( void )
+{
+#ifdef DEDICATED
+	CON_Init( );
+#endif
+}
+
+/*
+=================
+Sys_ConsoleInputShutdown
+
+Shutdown the console input subsystem
+=================
+*/
+void Sys_ConsoleInputShutdown( void )
+{
+#ifdef DEDICATED
+	CON_Shutdown( );
+#endif
 }
 
 /*
@@ -124,7 +143,11 @@ Handle new console input
 */
 char *Sys_ConsoleInput(void)
 {
-	return CON_Input( );
+#ifdef DEDICATED
+	return CON_ConsoleInput( );
+#endif
+
+	return NULL;
 }
 
 /*
@@ -136,18 +159,18 @@ Single exit point (regular exit or in case of error)
 */
 void Sys_Exit( int ex )
 {
-	CON_Shutdown( );
+	Sys_ConsoleInputShutdown();
 
 #ifndef DEDICATED
 	SDL_Quit( );
 #endif
 
 #ifdef NDEBUG
-	exit( ex );
+	exit(ex);
 #else
 	// Cause a backtrace on error exits
 	assert( ex == 0 );
-	exit( ex );
+	exit(ex);
 #endif
 }
 
@@ -156,10 +179,10 @@ void Sys_Exit( int ex )
 Sys_Quit
 =================
 */
-void Sys_Quit( void )
+void Sys_Quit (void)
 {
-	CL_Shutdown( );
-	Sys_Exit( 0 );
+	CL_Shutdown ();
+	Sys_Exit(0);
 }
 
 /*
@@ -204,7 +227,7 @@ Sys_AnsiColorPrint
 Transform Q3 colour codes to ANSI escape sequences
 =================
 */
-void Sys_AnsiColorPrint( const char *msg )
+static void Sys_AnsiColorPrint( const char *msg )
 {
 	static char buffer[ MAXPRINTMSG ];
 	int         length = 0;
@@ -273,8 +296,18 @@ Sys_Print
 */
 void Sys_Print( const char *msg )
 {
-	CON_LogWrite( msg );
-	CON_Print( msg );
+#ifdef DEDICATED
+	CON_Hide();
+#endif
+
+	if( com_ansiColor && com_ansiColor->integer )
+		Sys_AnsiColorPrint( msg );
+	else
+		fputs(msg, stderr);
+
+#ifdef DEDICATED
+	CON_Show();
+#endif
 }
 
 /*
@@ -287,13 +320,16 @@ void Sys_Error( const char *error, ... )
 	va_list argptr;
 	char    string[1024];
 
+#ifdef DEDICATED
+	CON_Hide();
+#endif
+
 	CL_Shutdown ();
 
 	va_start (argptr,error);
 	Q_vsnprintf (string, sizeof(string), error, argptr);
 	va_end (argptr);
-
-	Sys_ErrorDialog( string );
+	fprintf(stderr, "Sys_Error: %s\n", string);
 
 	Sys_Exit( 1 );
 }
@@ -312,7 +348,15 @@ void Sys_Warn( char *warning, ... )
 	Q_vsnprintf (string, sizeof(string), warning, argptr);
 	va_end (argptr);
 
-	CON_Print( va( "Warning: %s", string ) );
+#ifdef DEDICATED
+	CON_Hide();
+#endif
+
+	fprintf(stderr, "Warning: %s", string);
+
+#ifdef DEDICATED
+	CON_Show();
+#endif
 }
 
 /*
@@ -440,6 +484,42 @@ void *Sys_LoadDll( const char *name, char *fqpath ,
 
 /*
 =================
+Sys_Idle
+=================
+*/
+static void Sys_Idle( void )
+{
+#ifndef DEDICATED
+	int appState = SDL_GetAppState( );
+	int sleep = 0;
+
+	// If we have no input focus at all, sleep a bit
+	if( !( appState & ( SDL_APPMOUSEFOCUS | SDL_APPINPUTFOCUS ) ) )
+	{
+		Cvar_SetValue( "com_unfocused", 1 );
+		sleep += 16;
+	}
+	else
+		Cvar_SetValue( "com_unfocused", 0 );
+
+	// If we're minimised, sleep a bit more
+	if( !( appState & SDL_APPACTIVE ) )
+	{
+		Cvar_SetValue( "com_minimized", 1 );
+		sleep += 32;
+	}
+	else
+		Cvar_SetValue( "com_minimized", 0 );
+
+	if( !com_dedicated->integer && sleep )
+		SDL_Delay( sleep );
+#else
+	// Dedicated server idles via NET_Sleep
+#endif
+}
+
+/*
+=================
 Sys_ParseArgs
 =================
 */
@@ -532,8 +612,6 @@ int main( int argc, char **argv )
 	}
 #endif
 
-	Sys_PlatformInit( );
-
 	Sys_ParseArgs( argc, argv );
 	Sys_SetBinaryPath( Sys_Dirname( argv[ 0 ] ) );
 	Sys_SetDefaultInstallPath( DEFAULT_BASEDIR );
@@ -546,9 +624,19 @@ int main( int argc, char **argv )
 	}
 
 	Com_Init( commandLine );
-	NET_Init( );
+	NET_Init();
 
-	CON_Init( );
+	Sys_ConsoleInputInit();
+
+#ifndef _WIN32
+	// Windows doesn't have these signals
+	// see CON_CtrlHandler() in con_win32.c
+	signal( SIGHUP, Sys_SigHandler );
+	signal( SIGQUIT, Sys_SigHandler );
+	signal( SIGTRAP, Sys_SigHandler );
+	signal( SIGIOT, Sys_SigHandler );
+	signal( SIGBUS, Sys_SigHandler );
+#endif
 
 	signal( SIGILL, Sys_SigHandler );
 	signal( SIGFPE, Sys_SigHandler );
@@ -557,13 +645,7 @@ int main( int argc, char **argv )
 
 	while( 1 )
 	{
-#ifndef DEDICATED
-		int appState = SDL_GetAppState( );
-
-		Cvar_SetValue( "com_unfocused",	!( appState & SDL_APPINPUTFOCUS ) );
-		Cvar_SetValue( "com_minimized", !( appState & SDL_APPACTIVE ) );
-#endif
-
+		Sys_Idle( );
 		IN_Frame( );
 		Com_Frame( );
 	}

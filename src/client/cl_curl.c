@@ -100,22 +100,13 @@ qboolean CL_cURL_Init()
 		return qfalse;
 #else
 		char fn[1024];
-
 		Q_strncpyz( fn, Sys_Cwd( ), sizeof( fn ) );
 		strncat(fn, "/", sizeof(fn)-strlen(fn)-1);
 		strncat(fn, cl_cURLLib->string, sizeof(fn)-strlen(fn)-1);
 
-		if((cURLLib = Sys_LoadLibrary(fn)) == 0)
+		if( (cURLLib = Sys_LoadLibrary(fn)) == 0 )
 		{
-#ifdef ALTERNATE_CURL_LIB
-			// On some linux distributions there is no libcurl.so.3, but only libcurl.so.4. That one works too.
-			if( (cURLLib = Sys_LoadLibrary(ALTERNATE_CURL_LIB)) == 0 )
-			{
-				return qfalse;
-			}
-#else
 			return qfalse;
-#endif
 		}
 #endif /* _WIN32 */
 	}
@@ -218,7 +209,7 @@ static int CL_cURL_CallbackProgress( void *dummy, double dltotal, double dlnow,
 	return 0;
 }
 
-static size_t CL_cURL_CallbackWrite(void *buffer, size_t size, size_t nmemb,
+static int CL_cURL_CallbackWrite(void *buffer, size_t size, size_t nmemb,
 	void *stream)
 {
 	FS_Write( buffer, size*nmemb, ((fileHandle_t*)stream)[0] );
@@ -265,8 +256,8 @@ void CL_cURL_BeginDownload( const char *localName, const char *remoteURL )
 		qcurl_easy_setopt(clc.downloadCURL, CURLOPT_VERBOSE, 1);
 	qcurl_easy_setopt(clc.downloadCURL, CURLOPT_URL, clc.downloadURL);
 	qcurl_easy_setopt(clc.downloadCURL, CURLOPT_TRANSFERTEXT, 0);
-	qcurl_easy_setopt(clc.downloadCURL, CURLOPT_REFERER,
-		va("Tremulous://%s", NET_AdrToString(clc.serverAddress)));
+	qcurl_easy_setopt(clc.downloadCURL, CURLOPT_REFERER, va("ioQ3://%s",
+		NET_AdrToString(clc.serverAddress)));
 	qcurl_easy_setopt(clc.downloadCURL, CURLOPT_USERAGENT, va("%s %s",
 		Q3_VERSION, qcurl_version()));
 	qcurl_easy_setopt(clc.downloadCURL, CURLOPT_WRITEFUNCTION,

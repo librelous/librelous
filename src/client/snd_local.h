@@ -59,7 +59,6 @@ typedef struct sfx_s {
 	int 			soundLength;
 	char 			soundName[MAX_QPATH];
 	int				lastTimeUsed;
-	int			duration;
 	struct sfx_s	*next;
 } sfx_t;
 
@@ -127,7 +126,7 @@ typedef struct
 	void (*StartLocalSound)( sfxHandle_t sfx, int channelNum );
 	void (*StartBackgroundTrack)( const char *intro, const char *loop );
 	void (*StopBackgroundTrack)( void );
-	void (*RawSamples)(int stream, int samples, int rate, int width, int channels, const byte *data, float volume);
+	void (*RawSamples)(int samples, int rate, int width, int channels, const byte *data, float volume);
 	void (*StopAllSounds)( void );
 	void (*ClearLoopingSounds)( qboolean killall );
 	void (*AddLoopingSound)( int entityNum, const vec3_t origin, const vec3_t velocity, sfxHandle_t sfx );
@@ -139,17 +138,9 @@ typedef struct
 	void (*DisableSounds)( void );
 	void (*BeginRegistration)( void );
 	sfxHandle_t (*RegisterSound)( const char *sample, qboolean compressed );
-	int  (*SoundDuration)( sfxHandle_t handle );
 	void (*ClearSoundBuffer)( void );
 	void (*SoundInfo)( void );
 	void (*SoundList)( void );
-#ifdef USE_VOIP
-	void (*StartCapture)( void );
-	int (*AvailableCaptureSamples)( void );
-	void (*Capture)( int samples, byte *data );
-	void (*StopCapture)( void );
-	void (*MasterGain)( float gain );
-#endif
 } soundInterface_t;
 
 
@@ -183,15 +174,14 @@ extern	channel_t   loop_channels[MAX_CHANNELS];
 extern	int		numLoopChannels;
 
 extern	int		s_paintedtime;
+extern	int		s_rawend;
 extern	vec3_t	listener_forward;
 extern	vec3_t	listener_right;
 extern	vec3_t	listener_up;
 extern	dma_t	dma;
 
 #define	MAX_RAW_SAMPLES	16384
-#define MAX_RAW_STREAMS 128
-extern	portable_samplepair_t s_rawsamples[MAX_RAW_STREAMS][MAX_RAW_SAMPLES];
-extern	int		s_rawend[MAX_RAW_STREAMS];
+extern	portable_samplepair_t	s_rawsamples[MAX_RAW_SAMPLES];
 
 extern cvar_t *s_volume;
 extern cvar_t *s_musicVolume;
@@ -208,6 +198,7 @@ void		SND_setup( void );
 void S_PaintChannels(int endtime);
 
 void S_memoryLoad(sfx_t *sfx);
+portable_samplepair_t *S_GetRawSamplePointer( void );
 
 // spatializes a channel
 void S_Spatialize(channel_t *ch);

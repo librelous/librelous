@@ -54,6 +54,7 @@ static void VM_Destroy_Compiled(vm_t* self);
 
 */
 
+// TTimo: initialised the statics, this fixes a crash when entering a compiled VM 
 static	byte	*buf = NULL;
 static	byte	*jused = NULL;
 static	int		compiledOfs = 0;
@@ -71,6 +72,9 @@ int _ftol( float );
 static	int		ftolPtr = (int)_ftol;
 #endif
 
+void AsmCall( void );
+static	int		asmCallPtr = (int)AsmCall;
+
 #else // _MSC_VER
 
 #if defined( FTOL_PTR )
@@ -85,10 +89,9 @@ int qftol0F7F( void );
 static	int		ftolPtr = (int)qftol0F7F;
 #endif // FTOL_PTR
 
+void doAsmCall( void );
+static	int		asmCallPtr = (int)doAsmCall;
 #endif
-
-void AsmCall(void);
-static void (*const asmCallPtr)(void) = AsmCall;
 
 
 static	int		callMask = 0;
@@ -122,7 +125,7 @@ vm_t*	savedVM;
 __asm {
 	mov		eax, dword ptr [edi]
 	sub		edi, 4
-	test	eax,eax
+	or		eax,eax
 	jl		systemCall
 	// calling another vm function
 	shl		eax,2
@@ -135,7 +138,8 @@ systemCall:
 
 	// convert negative num to system call number
 	// and store right before the first arg
-	not		eax
+	neg		eax
+	dec		eax
 
 	push    ebp
 	mov     ebp, esp
@@ -177,58 +181,68 @@ _asm {
 #else //!_MSC_VER
 
 #if defined(__MINGW32__) || defined(MACOS_X) // _ is prepended to compiled symbols
-#	define CMANG(sym) "_"#sym
+#define CMANG(sym) "_"#sym
 #else
-#	define CMANG(sym) #sym
+#define CMANG(sym) #sym
 #endif
 
-static void __attribute__((cdecl, used)) CallAsmCall(int const syscallNum,
-		int const programStack, int* const opStack)
+static	int		callProgramStack;
+static	int		*callOpStack;
+static	int		callSyscallNum;
+
+void callAsmCall(void)
 {
-	vm_t     *const vm   = currentVM;
-	intptr_t *const data = (intptr_t*)(vm->dataBase + programStack + 4);
+	vm_t	*savedVM;
+	int		*callOpStack2;
+
+	savedVM = currentVM;
+	callOpStack2 = callOpStack;
 
 	// save the stack to allow recursive VM entry
-	vm->programStack = programStack - 4;
-	*data = syscallNum;
-	opStack[1] = vm->systemCall(data);
+	currentVM->programStack = callProgramStack - 4;
+	*(int *)((byte *)currentVM->dataBase + callProgramStack + 4) = callSyscallNum;
+	//VM_LogSyscalls((int *)((byte *)currentVM->dataBase + callProgramStack + 4) );
+	*(callOpStack2+1) = currentVM->systemCall( (intptr_t *)((byte *)currentVM->dataBase + callProgramStack + 4) );
 
-	currentVM = vm;
+ 	currentVM = savedVM;
 }
 
-__asm__(
-	".text\n\t"
-	".p2align 4,,15\n\t"
-#if defined __ELF__
-	".type " CMANG(AsmCall) ", @function\n"
-#endif
-	CMANG(AsmCall) ":\n\t"
-	"movl  (%edi), %eax\n\t"
-	"subl  $4, %edi\n\t"
-	"testl %eax, %eax\n\t"
-	"jl    0f\n\t"
-	"shll  $2, %eax\n\t"
-	"addl  " CMANG(instructionPointers) ", %eax\n\t"
-	"call  *(%eax)\n\t"
-	"movl  (%edi), %eax\n\t"
-	"andl  " CMANG(callMask) ", %eax\n\t"
-	"ret\n"
-	"0:\n\t" // system call
-	"notl  %eax\n\t"
-	"pushl %ecx\n\t"
-	"pushl %edi\n\t" // opStack
-	"pushl %esi\n\t" // programStack
-	"pushl %eax\n\t" // syscallNum
-	"call  " CMANG(CallAsmCall) "\n\t"
-	"addl  $12, %esp\n\t"
-	"popl  %ecx\n\t"
-	"addl  $4, %edi\n\t"
-	"ret\n\t"
-#if defined __ELF__
-	".size " CMANG(AsmCall)", .-" CMANG(AsmCall)
-#endif
-);
-
+// Note the C space function AsmCall is never actually called, and is in fact
+// arbitrarily named (though this is not true for the MSC version).  When a vm
+// makes a system call, control jumps straight to the doAsmCall label.
+void AsmCall( void ) {
+	__asm__( CMANG(doAsmCall) ":				\n\t" \
+		"	movl (%%edi),%%eax			\n\t" \
+		"	subl $4,%%edi				\n\t" \
+		"	orl %%eax,%%eax				\n\t" \
+		"	jl systemCall				\n\t" \
+		"	shll $2,%%eax				\n\t" \
+		"	addl %3,%%eax				\n\t" \
+		"	call *(%%eax)				\n\t" \
+		"	movl (%%edi),%%eax			\n\t" \
+		"	andl " CMANG(callMask) ", %%eax		\n\t" \
+		"	jmp doret				\n\t" \
+		"systemCall:					\n\t" \
+		"	negl %%eax				\n\t" \
+		"	decl %%eax				\n\t" \
+		"	movl %%eax,%0				\n\t" \
+		"	movl %%esi,%1				\n\t" \
+		"	movl %%edi,%2				\n\t" \
+		"	pushl %%ecx				\n\t" \
+		"	pushl %%esi				\n\t" \
+		"	pushl %%edi				\n\t" \
+		"	call " CMANG(callAsmCall) "		\n\t" \
+		"	popl %%edi				\n\t" \
+		"	popl %%esi				\n\t" \
+		"	popl %%ecx				\n\t" \
+		"	addl $4,%%edi				\n\t" \
+		"doret:						\n\t" \
+		"	ret					\n\t" \
+		: "=rm" (callSyscallNum), "=rm" (callProgramStack), "=rm" (callOpStack) \
+		: "m" (instructionPointers) \
+		: "ax", "di", "si", "cx" \
+	);
+}
 #endif
 
 static int	Constant4( void ) {
@@ -1110,7 +1124,7 @@ void VM_Destroy_Compiled(vm_t* self)
 #ifdef VM_X86_MMAP
 	munmap(self->codeBase, self->codeLength);
 #elif _WIN32
-	VirtualFree(self->codeBase, 0, MEM_RELEASE);
+	VirtualFree(self->codeBase, self->codeLength, MEM_RELEASE);
 #else
 	free(self->codeBase);
 #endif
@@ -1129,6 +1143,7 @@ int	VM_CallCompiled( vm_t *vm, int *args ) {
 	int		programStack;
 	int		stackOnEntry;
 	byte	*image;
+	void	*entryPoint;
 	void	*opStack;
 	int		*oldInstructionPointers;
 
@@ -1167,38 +1182,45 @@ int	VM_CallCompiled( vm_t *vm, int *args ) {
 	*(int *)&image[ programStack ] = -1;	// will terminate the loop on return
 
 	// off we go into generated code...
+	entryPoint = vm->codeBase;
 	opStack = &stack;
 
-	{
 #ifdef _MSC_VER
-		void *entryPoint = vm->codeBase;
-
-		__asm {
-			pushad
-			mov    esi, programStack
-			mov    edi, opStack
-			call   entryPoint
-			mov    programStack, esi
-			mov    opStack, edi
-			popad
-		}
-#else
-		/* These registers are used as scratch registers and are destroyed after the
-		 * call.  Do not use clobber, so they can be used as input for the asm. */
-		unsigned eax;
-		unsigned ebx;
-		unsigned ecx;
-		unsigned edx;
-
-		__asm__ volatile(
-			"call *%6"
-			: "+S" (programStack), "+D" (opStack),
-			  "=a" (eax), "=b" (ebx), "=c" (ecx), "=d" (edx)
-			: "mr" (vm->codeBase)
-			: "cc", "memory"
-		);
-#endif
+	__asm  {
+		pushad
+		mov		esi, programStack;
+		mov		edi, opStack
+		call	entryPoint
+		mov		programStack, esi
+		mov		opStack, edi
+		popad
 	}
+#else
+	{
+		static int memProgramStack;
+		static void *memOpStack;
+		static void *memEntryPoint;
+
+		memProgramStack	= programStack;
+		memOpStack      = opStack;     
+		memEntryPoint   = entryPoint;  
+		
+		__asm__("	pushal				\n" \
+				"	movl %0,%%esi		\n" \
+				"	movl %1,%%edi		\n" \
+				"	call *%2			\n" \
+				"	movl %%esi,%0		\n" \
+				"	movl %%edi,%1		\n" \
+				"	popal				\n" \
+				: "=m" (memProgramStack), "=m" (memOpStack) \
+				: "m" (memEntryPoint), "m" (memProgramStack), "m" (memOpStack) \
+				: "si", "di" \
+		);
+
+		programStack = memProgramStack;
+		opStack      = memOpStack;
+	}
+#endif
 
 	if ( opStack != &stack[1] ) {
 		Com_Error( ERR_DROP, "opStack corrupted in compiled code" );

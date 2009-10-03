@@ -42,10 +42,7 @@ static char *S_FileExtension(const char *fni)
 	while(*fn != '/' && fn != fni)
 	{
 		if(*fn == '.')
-		{
 			eptr = fn;
-			break;
-		}
 		fn--;
 	}
 

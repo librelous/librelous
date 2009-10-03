@@ -132,7 +132,10 @@ SquareRootFloat
 ================
 */
 float SquareRootFloat(float number) {
-	floatint_t t;
+	union {
+		float f;
+		int i;
+	} t;
 	float x, y;
 	const float f = 1.5F;
 

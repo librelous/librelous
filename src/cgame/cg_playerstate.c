@@ -248,7 +248,7 @@ void CG_CheckLocalSounds( playerState_t *ps, playerState_t *ops )
   int reward;
 
   // don't play the sounds if the player just changed teams
-  if( ps->persistant[ PERS_SPECSTATE ] != ops->persistant[ PERS_SPECSTATE ] )
+  if( ps->persistant[ PERS_TEAM ] != ops->persistant[ PERS_TEAM ] )
     return;
 
   // health changes of more than -1 should make pain sounds
@@ -301,7 +301,7 @@ void CG_TransitionPlayerState( playerState_t *ps, playerState_t *ops )
   }
 
   if( cg.snap->ps.pm_type != PM_INTERMISSION &&
-      ps->persistant[ PERS_SPECSTATE ] == SPECTATOR_NOT )
+      ps->persistant[ PERS_TEAM ] != TEAM_SPECTATOR )
     CG_CheckLocalSounds( ps, ops );
 
   // run events

@@ -152,7 +152,7 @@ G_TeamCommand
 Broadcasts a command to only a specific team
 ================
 */
-void G_TeamCommand( team_t team, char *cmd )
+void G_TeamCommand( pTeam_t team, char *cmd )
 {
   int   i;
 
@@ -161,7 +161,7 @@ void G_TeamCommand( team_t team, char *cmd )
     if( level.clients[ i ].pers.connected == CON_CONNECTED )
     {
       if( level.clients[ i ].pers.teamSelection == team ||
-        ( level.clients[ i ].pers.teamSelection == TEAM_NONE &&
+        ( level.clients[ i ].pers.teamSelection == PTE_NONE &&
           G_admin_permission( &g_entities[ i ], ADMF_SPEC_ALLCHAT ) ) )
         trap_SendServerCommand( i, cmd );
     }
@@ -642,8 +642,8 @@ void G_AddEvent( gentity_t *ent, int event, int eventParm )
   // eventParm is converted to uint8_t (0 - 255) in msg.c 
   if( eventParm & ~0xFF )
   {
-    G_Printf( S_COLOR_YELLOW "WARNING: G_AddEvent( %s ) has eventParm %d, "
-              "which will overflow\n", BG_EventName( event ), eventParm );
+    G_Printf( S_COLOR_YELLOW "WARNING: G_AddEvent: event %d "
+      " eventParm uint8_t overflow (given %d)\n", event, eventParm );
   }
 
   // clients need to add the event in playerState_t instead of entityState_t
@@ -804,8 +804,7 @@ gentity_t *G_ClosestEnt( vec3_t origin, gentity_t **entities, int numEntities )
   {
     gentity_t *ent = entities[ i ];
 
-    nd = DistanceSquared( origin, ent->s.origin );
-    if( i == 0 || nd < d )
+    if( ( nd = Distance( origin, ent->s.origin ) ) < d )
     {
       d = nd;
       closestEnt = ent;

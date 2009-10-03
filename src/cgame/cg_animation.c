@@ -31,7 +31,7 @@ Sets cg.snap, cg.oldFrame, and cg.backlerp
 cg.time should be between oldFrameTime and frameTime after exit
 ===============
 */
-void CG_RunLerpFrame( lerpFrame_t *lf, float scale )
+void CG_RunLerpFrame( lerpFrame_t *lf )
 {
   int     f, numFrames;
   animation_t *anim;
@@ -61,9 +61,7 @@ void CG_RunLerpFrame( lerpFrame_t *lf, float scale )
       lf->frameTime = lf->oldFrameTime + anim->frameLerp;
 
     f = ( lf->frameTime - lf->animationTime ) / anim->frameLerp;
-    f *= scale;
     numFrames = anim->numFrames;
-
     if( anim->flipflop )
       numFrames *= 2;
 

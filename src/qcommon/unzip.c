@@ -7,8 +7,7 @@
  *
  *****************************************************************************/
 
-#include "../qcommon/q_shared.h"
-#include "../qcommon/qcommon.h"
+#include "../client/client.h"
 #include "unzip.h"
 
 /* unzip.h -- IO for uncompress .zip files using zlib 
@@ -1109,8 +1108,7 @@ static int unzlocal_getShort (FILE* fin, uLong *pX)
 {
 	short	v;
 
-	size_t size;
-	size = fread( &v, sizeof(v), 1, fin );
+	fread( &v, sizeof(v), 1, fin );
 
 	*pX = LittleShort( v);
 	return UNZ_OK;
@@ -1139,8 +1137,7 @@ static int unzlocal_getLong (FILE *fin, uLong *pX)
 {
 	int		v;
 
-	size_t size;
-	size = fread( &v, sizeof(v), 1, fin );
+	fread( &v, sizeof(v), 1, fin );
 
 	*pX = LittleLong( v);
 	return UNZ_OK;
@@ -4051,7 +4048,7 @@ int inflateInit2_(z_streamp z, int w, const char *version, int stream_size)
 
   /* create inflate_blocks state */
   if ((z->state->blocks =
-      inflate_blocks_new(z, z->state->nowrap ? ((check_func)0) : adler32, (uInt)1 << w))
+      inflate_blocks_new(z, z->state->nowrap ? Z_NULL : adler32, (uInt)1 << w))
       == Z_NULL)
   {
     inflateEnd(z);

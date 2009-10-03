@@ -82,21 +82,10 @@ static void CG_ParseTeamInfo( void )
   int   client;
 
   numSortedTeamPlayers = atoi( CG_Argv( 1 ) );
-  if( numSortedTeamPlayers < 0 || numSortedTeamPlayers > TEAM_MAXOVERLAY )
-  {
-    CG_Error( "CG_ParseTeamInfo: numSortedTeamPlayers out of range (%d)",
-      numSortedTeamPlayers );
-    return;
-  }
 
   for( i = 0; i < numSortedTeamPlayers; i++ )
   {
     client = atoi( CG_Argv( i * 5 + 2 ) );
-    if( client < 0 || client >= MAX_CLIENTS )
-    {
-      CG_Error( "CG_ParseTeamInfo: bad client number: %d", client );
-      return;
-    }
 
     sortedTeamPlayers[ i ] = client;
 
@@ -233,7 +222,7 @@ CG_AnnounceAlienStageTransistion
 */
 static void CG_AnnounceAlienStageTransistion( stage_t from, stage_t to )
 {
-  if( cg.predictedPlayerState.stats[ STAT_TEAM ] != TEAM_ALIENS )
+  if( cg.predictedPlayerState.stats[ STAT_PTEAM ] != PTE_ALIENS )
     return;
 
   trap_S_StartLocalSound( cgs.media.alienStageTransition, CHAN_ANNOUNCER );
@@ -247,7 +236,7 @@ CG_AnnounceHumanStageTransistion
 */
 static void CG_AnnounceHumanStageTransistion( stage_t from, stage_t to )
 {
-  if( cg.predictedPlayerState.stats[ STAT_TEAM ] != TEAM_HUMANS )
+  if( cg.predictedPlayerState.stats[ STAT_PTEAM ] != PTE_HUMANS )
     return;
 
   trap_S_StartLocalSound( cgs.media.humanStageTransition, CHAN_ANNOUNCER );
@@ -440,6 +429,27 @@ static void CG_MapRestart( void )
 }
 
 /*
+=================
+CG_RemoveChatEscapeChar
+=================
+*/
+static void CG_RemoveChatEscapeChar( char *text )
+{
+  int i, l;
+
+  l = 0;
+  for( i = 0; text[ i ]; i++ )
+  {
+    if( text[ i ] == '\x19' )
+      continue;
+
+    text[ l++ ] = text[ i ];
+  }
+
+  text[ l ] = '\0';
+}
+
+/*
 ==============
 CG_Menu
 ==============
@@ -508,7 +518,7 @@ void CG_Menu( int menu )
 
     case MN_H_NOROOM:
       longMsg   = "There is no room to build here. Move until the buildable turns "
-                  "translucent green, indicating a valid build location.";
+                  "translucent green indicating a valid build location.";
       shortMsg  = "There is no room to build here\n";
       cmd       = "menu tremulous_human_dialog\n";
       break;
@@ -529,7 +539,7 @@ void CG_Menu( int menu )
 
     case MN_H_NORMAL:
       longMsg   = "Cannot build on this surface. The surface is too steep or "
-                  "unsuitable for building. Please choose another site for this "
+                  "unsuitable to build on. Please choose another site for this "
 	                "structure.";
       shortMsg  = "Cannot build on this surface\n";
       cmd       = "menu tremulous_human_dialog\n";
@@ -638,7 +648,7 @@ void CG_Menu( int menu )
 
     case MN_A_NOROOM:
       longMsg   = "There is no room to build here. Move until the structure turns "
-                  "translucent green, indicating a valid build location.";
+                  "translucent green indicating a valid build location.";
       shortMsg  = "There is no room to build here\n";
       cmd       = "menu tremulous_alien_dialog\n";
       break;
@@ -652,7 +662,7 @@ void CG_Menu( int menu )
 
     case MN_A_NOOVMND:
       longMsg   = "There is no Overmind. An Overmind must be built to control "
-                  "the structure you tried to place.";
+                  "the structure you tried to place";
       shortMsg  = "There is no Overmind\n";
       cmd       = "menu tremulous_alien_dialog\n";
       break;
@@ -687,7 +697,7 @@ void CG_Menu( int menu )
 
     case MN_A_NORMAL:
       longMsg   = "Cannot build on this surface. This surface is too steep or "
-                  "unsuitable for building. Please choose another site for this "
+                  "unsuitable to build on. Please choose another site for this "
 	                "structure.";
       shortMsg  = "Cannot build on this surface\n";
       cmd       = "menu tremulous_alien_dialog\n";
@@ -702,7 +712,8 @@ void CG_Menu( int menu )
 
     case MN_A_TOOCLOSE:
       longMsg   = "This location is too close to the enemy to evolve. Move away "
-                  "from the enemy's presence and try again.";
+                  "until you are no longer aware of the enemy's presence and try "
+	                "again.";
       shortMsg  = "This location is too close to the enemy to evolve\n";
       cmd       = "menu tremulous_alien_dialog\n";
       break;
@@ -741,7 +752,7 @@ void CG_Menu( int menu )
       break;
 
     case MN_A_INFEST:
-      trap_Cvar_Set( "ui_currentClass", va( "%d %d",  cg.snap->ps.stats[ STAT_CLASS ],
+      trap_Cvar_Set( "ui_currentClass", va( "%d %d",  cg.snap->ps.stats[ STAT_PCLASS ],
                                                       cg.snap->ps.persistant[ PERS_CREDIT ] ) );
       cmd       = "menu tremulous_alienupgrade\n";
       break;
@@ -770,290 +781,6 @@ void CG_Menu( int menu )
 
 /*
 =================
-CG_Say
-=================
-*/
-static void CG_Say( int clientNum, char *text )
-{
-  clientInfo_t *ci;
-  char sayText[ MAX_SAY_TEXT ] = {""};
-  
-  if( clientNum < 0 || clientNum >= MAX_CLIENTS )
-    return;
-
-  ci = &cgs.clientinfo[ clientNum ];
-  Com_sprintf( sayText, sizeof( sayText ),
-    "%s: " S_COLOR_WHITE S_COLOR_GREEN "%s" S_COLOR_WHITE "\n",
-    ci->name, text );
-  
-  if( BG_ClientListTest( &cgs.ignoreList, clientNum ) )
-    CG_Printf( "[skipnotify]%s", sayText );
-  else
-    CG_Printf( "%s", sayText );
-}
-
-/*
-=================
-CG_SayTeam
-=================
-*/
-static void CG_SayTeam( int clientNum, char *text )
-{
-  clientInfo_t *ci;
-  char sayText[ MAX_SAY_TEXT ] = {""};
-
-  if( clientNum < 0 || clientNum >= MAX_CLIENTS )
-    return;
-
-  ci = &cgs.clientinfo[ clientNum ];
-  Com_sprintf( sayText, sizeof( sayText ),
-    "%s: " S_COLOR_CYAN "%s" S_COLOR_WHITE "\n",
-    ci->name, text );
-
-  if( BG_ClientListTest( &cgs.ignoreList, clientNum ) )
-    CG_Printf( "[skipnotify]%s", sayText );
-  else
-    CG_Printf( "%s", sayText );
-}
-
-/*
-=================
-CG_VoiceTrack
-
-return the voice indexed voice track or print errors quietly to console
-in case someone is on an unpure server and wants to know which voice pak
-is missing or incomplete
-=================
-*/
-static voiceTrack_t *CG_VoiceTrack( char *voice, int cmd, int track )
-{
-  voice_t *v;
-  voiceCmd_t *c;
-  voiceTrack_t *t;
-
-  v = BG_VoiceByName( cgs.voices, voice );
-  if( !v )
-  {
-    CG_Printf( "[skipnotify]WARNING: could not find voice \"%s\"\n", voice );
-    return NULL;
-  }
-  c = BG_VoiceCmdByNum( v->cmds, cmd );
-  if( !c )
-  {
-    CG_Printf( "[skipnotify]WARNING: could not find command %d "
-      "in voice \"%s\"\n", cmd, voice );
-    return NULL;
-  }
-  t = BG_VoiceTrackByNum( c->tracks, track );
-  if( !t )
-  {
-    CG_Printf( "[skipnotify]WARNING: could not find track %d for command %d in "
-      "voice \"%s\"\n", track, cmd, voice );
-    return NULL;
-  }
-  return t;
-}
-
-/*
-=================
-CG_ParseVoice
-
-voice clientNum vChan cmdNum trackNum [sayText]
-=================
-*/
-static void CG_ParseVoice( void )
-{
-  int clientNum;
-  voiceChannel_t vChan;
-  char sayText[ MAX_SAY_TEXT] = {""};
-  voiceTrack_t *track;
-  clientInfo_t *ci;
-
-  if( trap_Argc() < 5 || trap_Argc() > 6 )
-    return;
-
-  if( trap_Argc() == 6 )
-    Q_strncpyz( sayText, CG_Argv( 5 ), sizeof( sayText ) );
-
-  clientNum = atoi( CG_Argv( 1 ) );
-  if( clientNum < 0 || clientNum >= MAX_CLIENTS )
-    return;
-
-  vChan = atoi( CG_Argv( 2 ) );
-  if( vChan < 0 || vChan >= VOICE_CHAN_NUM_CHANS )
-    return;
-
-  if( cg_teamChatsOnly.integer && vChan != VOICE_CHAN_TEAM )
-    return;
-
-  ci = &cgs.clientinfo[ clientNum ];
-
-  // this joker is still talking
-  if( ci->voiceTime > cg.time )
-    return;
-
-  track = CG_VoiceTrack( ci->voice, atoi( CG_Argv( 3 ) ), atoi( CG_Argv( 4 ) ) );
-
-  // keep track of how long the player will be speaking
-  // assume it takes 3s to say "*unintelligible gibberish*" 
-  if( track )
-    ci->voiceTime = cg.time + track->duration;
-  else
-    ci->voiceTime = cg.time + 3000;
-
-  if( !sayText[ 0 ] )
-  {
-    if( track )
-      Q_strncpyz( sayText, track->text, sizeof( sayText ) );
-    else
-      Q_strncpyz( sayText, "*unintelligible gibberish*", sizeof( sayText ) );
-  }
- 
-  if( !cg_noVoiceText.integer ) 
-  {
-    switch( vChan )
-    {
-      case VOICE_CHAN_ALL:
-        CG_Say( clientNum, sayText );
-        break;
-      case VOICE_CHAN_TEAM:
-        CG_SayTeam( clientNum, sayText );
-        break;
-      default:
-        break;
-    }
-  }
-
-  // playing voice audio tracks disabled
-  if( cg_noVoiceChats.integer )
-    return;
-
-  // no audio track to play
-  if( !track )
-    return;
-
-  // don't play audio track for lamers
-  if( BG_ClientListTest( &cgs.ignoreList, clientNum ) )
-    return;
-
-  switch( vChan )
-  {
-    case VOICE_CHAN_ALL:
-      trap_S_StartLocalSound( track->track, CHAN_VOICE );
-      break;
-    case VOICE_CHAN_TEAM:
-      trap_S_StartLocalSound( track->track, CHAN_VOICE );
-      break;
-    case VOICE_CHAN_LOCAL:
-      trap_S_StartSound( NULL, clientNum, CHAN_VOICE, track->track );
-      break;
-    default:
-        break;
-  } 
-}
-
-static void CG_CenterPrint_f( void )
-{
-  CG_CenterPrint( CG_Argv( 1 ), SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH );
-}
-
-static void CG_Print_f( void )
-{
-  CG_Printf( "%s", CG_Argv( 1 ) );
-}
-
-static void CG_Chat_f( void )
-{
-  char     cmd[ 6 ], text[ MAX_SAY_TEXT ];
-  qboolean team;
-
-  trap_Argv( 0, cmd, sizeof( cmd ) );
-  team = Q_stricmp( cmd, "chat" );
-
-  if( team && cg_teamChatsOnly.integer )
-    return;
-
-  Q_strncpyz( text, CG_Argv( 1 ), sizeof( text ) );
-
-  if( Q_stricmpn( text, "[skipnotify]", 12 ) )
-  {
-    if( team && cg.snap->ps.stats[ STAT_TEAM ] == TEAM_ALIENS )
-      trap_S_StartLocalSound( cgs.media.alienTalkSound, CHAN_LOCAL_SOUND );
-    else if( team && cg.snap->ps.stats[ STAT_TEAM ] == TEAM_HUMANS )
-      trap_S_StartLocalSound( cgs.media.humanTalkSound, CHAN_LOCAL_SOUND );
-    else
-      trap_S_StartLocalSound( cgs.media.talkSound, CHAN_LOCAL_SOUND );
-  }
-
-  CG_Printf( "%s\n", text );
-}
-
-static void CG_ClientLevelShot_f( void )
-{
-  cg.levelShot = qtrue;
-}
-
-static void CG_ServerMenu_f( void )
-{
-  if( trap_Argc( ) == 2 && !cg.demoPlayback )
-    CG_Menu( atoi( CG_Argv( 1 ) ) );
-}
-
-static void CG_ServerCloseMenus_f( void )
-{
-  trap_SendConsoleCommand( "closemenus\n" );
-}
-
-static void CG_PoisonCloud_f( void )
-{
-  cg.poisonedTime = cg.time;
-
-  if( CG_IsParticleSystemValid( &cg.poisonCloudPS ) )
-  {
-    cg.poisonCloudPS = CG_SpawnNewParticleSystem( cgs.media.poisonCloudPS );
-    CG_SetAttachmentCent( &cg.poisonCloudPS->attachment, &cg.predictedPlayerEntity );
-    CG_AttachToCent( &cg.poisonCloudPS->attachment );
-  }
-}
-
-static void CG_PTRRequest_f( void )
-{
-  trap_SendClientCommand( va( "ptrcverify %d", CG_ReadPTRCode( ) ) );
-}
-
-static void CG_PTRIssue_f( void )
-{
-  if( trap_Argc( ) == 2 )
-    CG_WritePTRCode( atoi( CG_Argv( 1 ) ) );
-}
-
-static void CG_PTRConfirm_f( void )
-{
-  trap_SendConsoleCommand( "menu ptrc_popmenu\n" );
-}
-
-static consoleCommand_t svcommands[ ] =
-{
-  { "cp", CG_CenterPrint_f },
-  { "cs", CG_ConfigStringModified },
-  { "print", CG_Print_f },
-  { "chat", CG_Chat_f },
-  { "tchat", CG_Chat_f },
-  { "scores", CG_ParseScores },
-  { "tinfo", CG_ParseTeamInfo },
-  { "map_restart", CG_MapRestart },
-  { "clientLevelShot", CG_ClientLevelShot_f },
-  { "servermenu", CG_ServerMenu_f },
-  { "serverclosemenus", CG_ServerCloseMenus_f },
-  { "poisoncloud", CG_PoisonCloud_f },
-  { "voice", CG_ParseVoice },
-  { "ptrcrequest", CG_PTRRequest_f },
-  { "ptrcissue", CG_PTRIssue_f },
-  { "ptrcconfirm", CG_PTRConfirm_f }
-};
-
-/*
-=================
 CG_ServerCommand
 
 The string has been tokenized and can be retrieved with
@@ -1063,17 +790,156 @@ Cmd_Argc() / Cmd_Argv()
 static void CG_ServerCommand( void )
 {
   const char  *cmd;
-  int         i;
+  char        text[ MAX_SAY_TEXT ];
 
   cmd = CG_Argv( 0 );
 
-  for( i = 0; i < sizeof( svcommands ) / sizeof( svcommands[ 0 ] ); i++ )
+  if( !cmd[ 0 ] )
   {
-    if( !Q_stricmp( cmd, svcommands[ i ].cmd ) )
+    // server claimed the command
+    return;
+  }
+
+  if( !strcmp( cmd, "cp" ) )
+  {
+    CG_CenterPrint( CG_Argv( 1 ), SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH );
+    return;
+  }
+
+  if( !strcmp( cmd, "cs" ) )
+  {
+    CG_ConfigStringModified( );
+    return;
+  }
+
+  if( !strcmp( cmd, "print" ) )
+  {
+    CG_Printf( "%s", CG_Argv( 1 ) );
+    return;
+  }
+
+  if( !strcmp( cmd, "chat" ) )
+  {
+    if( !cg_teamChatsOnly.integer )
     {
-      svcommands[ i ].function( );
-      return;
+      Q_strncpyz( text, CG_Argv( 1 ), MAX_SAY_TEXT );
+      if( Q_stricmpn( text, "[skipnotify]", 12 ) )
+        trap_S_StartLocalSound( cgs.media.talkSound, CHAN_LOCAL_SOUND );
+      CG_RemoveChatEscapeChar( text );
+      CG_Printf( "%s\n", text );
     }
+
+    return;
+  }
+
+  if( !strcmp( cmd, "tchat" ) )
+  {
+    Q_strncpyz( text, CG_Argv( 1 ), MAX_SAY_TEXT );
+    if( Q_stricmpn( text, "[skipnotify]", 12 ) )
+    {
+      if( cg.snap->ps.stats[ STAT_PTEAM ] == PTE_ALIENS )
+        trap_S_StartLocalSound( cgs.media.alienTalkSound, CHAN_LOCAL_SOUND );
+      else if( cg.snap->ps.stats[ STAT_PTEAM ] == PTE_HUMANS )
+        trap_S_StartLocalSound( cgs.media.humanTalkSound, CHAN_LOCAL_SOUND );
+      else
+        trap_S_StartLocalSound( cgs.media.talkSound, CHAN_LOCAL_SOUND );
+    }
+    CG_RemoveChatEscapeChar( text );
+    CG_Printf( "%s\n", text );
+    return;
+  }
+
+  if( !strcmp( cmd, "scores" ) )
+  {
+    CG_ParseScores( );
+    return;
+  }
+
+  if( !strcmp( cmd, "tinfo" ) )
+  {
+    CG_ParseTeamInfo( );
+    return;
+  }
+
+  if( !strcmp( cmd, "map_restart" ) )
+  {
+    CG_MapRestart( );
+    return;
+  }
+
+  if( Q_stricmp( cmd, "remapShader" ) == 0 )
+  {
+    if( trap_Argc( ) == 4 )
+      trap_R_RemapShader( CG_Argv( 1 ), CG_Argv( 2 ), CG_Argv( 3 ) );
+  }
+
+  // clientLevelShot is sent before taking a special screenshot for
+  // the menu system during development
+  if( !strcmp( cmd, "clientLevelShot" ) )
+  {
+    cg.levelShot = qtrue;
+    return;
+  }
+
+  //the server has triggered a menu
+  if( !strcmp( cmd, "servermenu" ) )
+  {
+    if( trap_Argc( ) == 2 && !cg.demoPlayback )
+      CG_Menu( atoi( CG_Argv( 1 ) ) );
+
+    return;
+  }
+
+  //the server thinks this client should close all menus
+  if( !strcmp( cmd, "serverclosemenus" ) )
+  {
+    trap_SendConsoleCommand( "closemenus\n" );
+    return;
+  }
+
+  //poison cloud effect needs to be reliable
+  if( !strcmp( cmd, "poisoncloud" ) )
+  {
+    cg.poisonedTime = cg.time;
+
+    if( CG_IsParticleSystemValid( &cg.poisonCloudPS ) )
+    {
+      cg.poisonCloudPS = CG_SpawnNewParticleSystem( cgs.media.poisonCloudPS );
+      CG_SetAttachmentCent( &cg.poisonCloudPS->attachment, &cg.predictedPlayerEntity );
+      CG_AttachToCent( &cg.poisonCloudPS->attachment );
+    }
+
+    return;
+  }
+
+  // server requests a ptrc
+  if( !strcmp( cmd, "ptrcrequest" ) )
+  {
+    int   code = CG_ReadPTRCode( );
+
+    trap_SendClientCommand( va( "ptrcverify %d", code ) );
+    return;
+  }
+
+  // server issues a ptrc
+  if( !strcmp( cmd, "ptrcissue" ) )
+  {
+    if( trap_Argc( ) == 2 )
+    {
+      int code = atoi( CG_Argv( 1 ) );
+
+      CG_WritePTRCode( code );
+    }
+
+    return;
+  }
+
+  // reply to ptrcverify
+  if( !strcmp( cmd, "ptrcconfirm" ) )
+  {
+    trap_SendConsoleCommand( "menu ptrc_popmenu\n" );
+
+    return;
   }
 
   CG_Printf( "Unknown client game command: %s\n", cmd );

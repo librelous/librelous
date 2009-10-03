@@ -7323,11 +7323,11 @@ g_adminTempBan
 
 \layout Standard
 
-Set this to the time a player should be automatically banned
+Set this to the number of seconds a player should be automatically banned
  for when he/she is vote kicked or kicked with the !kick command.
 \layout Standard
 
-Default is 2m (two minutes)
+Default is 120 (two minutes)
 \end_inset 
 </cell>
 </row>
@@ -7400,8 +7400,8 @@ This grants the user bill all the rights of a level 3 user, plus the 'B'
  !unmute (m) commands.
 \layout Standard
 
-The [ban] block is created with the !ban command, removed with the !unban
- command (or when it expires), and modified with the !adjustban command.
+The [ban] block is created with the !ban command, and removed with the !unban
+ command (or when it expires).
  Both the guid and the ip parameters are used for ban enforement.
  The ip parameter can also be used to crudely widen the scope of the IP
  ban.
@@ -7552,7 +7552,7 @@ b
 
 \layout Standard
 
-!ban/!unban/!adjustban
+!ban/!unban
 \end_inset 
 </cell>
 </row>
@@ -7892,7 +7892,7 @@ The following table shows the flags for RIGHTS:
 
 
 \begin_inset  Tabular
-<lyxtabular version="3" rows="13" columns="2">
+<lyxtabular version="3" rows="12" columns="2">
 <features islongtable="true">
 <column alignment="center" valignment="top" leftline="true" width="0">
 <column alignment="left" valignment="top" leftline="true" rightline="true" width="0">
@@ -8108,25 +8108,7 @@ no ! commands can be used on a player with this flag
 
 \layout Standard
 
-does not show up as an admin in the output of !listplayers
-\end_inset 
-</cell>
-</row>
-<row topline="true" bottomline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-$
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-sees additional player info in the output of !listplayers
+does not show up as an admin in the output of listplayers
 \end_inset 
 </cell>
 </row>

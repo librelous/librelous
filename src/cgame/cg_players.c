@@ -107,12 +107,12 @@ static qboolean CG_ParseAnimationFile( const char *filename, clientInfo_t *ci )
 
   // load the file
   len = trap_FS_FOpenFile( filename, &f, FS_READ );
-  if( len < 0 )
+  if( len <= 0 )
     return qfalse;
 
-  if( len == 0 || len >= sizeof( text ) - 1 )
+  if( len >= sizeof( text ) - 1 )
   {
-    CG_Printf( "File %s is %s\n", filename, len == 0 ? "empty" : "too long" );
+    CG_Printf( "File %s too long\n", filename );
     trap_FS_FCloseFile( f );
     return qfalse;
   }
@@ -628,15 +628,15 @@ static void CG_CopyClientInfoModel( clientInfo_t *from, clientInfo_t *to )
 CG_GetCorpseNum
 ======================
 */
-static int CG_GetCorpseNum( class_t class )
+static int CG_GetCorpseNum( pClass_t class )
 {
   int           i;
   clientInfo_t  *match;
   char          *modelName;
   char          *skinName;
 
-  modelName = BG_ClassConfig( class )->modelName;
-  skinName = BG_ClassConfig( class )->skinName;
+  modelName = BG_FindModelNameForClass( class );
+  skinName = BG_FindSkinNameForClass( class );
 
   for( i = PCL_NONE + 1; i < PCL_NUM_CLASSES; i++ )
   {
@@ -695,7 +695,7 @@ static qboolean CG_ScanForExistingClientInfo( clientInfo_t *ci )
 CG_PrecacheClientInfo
 ======================
 */
-void CG_PrecacheClientInfo( class_t class, char *model, char *skin )
+void CG_PrecacheClientInfo( pClass_t class, char *model, char *skin )
 {
   clientInfo_t  *ci;
   clientInfo_t  newInfo;
@@ -723,51 +723,6 @@ void CG_PrecacheClientInfo( class_t class, char *model, char *skin )
 
 
 /*
-=============
-CG_TeamJoinMessage
-
-Prints messages when players change teams
-=============
-*/
-void CG_TeamJoinMessage( clientInfo_t *newInfo, clientInfo_t *ci )
-{
-  int  team;
-  int  oldteam;
-  char *playerName;
-
-  if( !ci->infoValid )
-    return;
-
-  // Collect info
-  team = newInfo->team;
-  oldteam = ci->team;
-
-  // If no change occurred, print nothing
-  if( team == oldteam )
-    return;
-
-  playerName = newInfo->name;
-
-  // Print the appropriate message
-  if( team == TEAM_NONE )
-  {
-    CG_Printf( "%s" S_COLOR_WHITE " left the %ss\n",
-      playerName, BG_TeamName( oldteam ) );
-  }
-  else if( oldteam == TEAM_NONE )
-  {
-    CG_Printf( "%s" S_COLOR_WHITE " joined the %ss\n",
-      playerName, BG_TeamName( team ) );
-  }
-  else
-  {
-    CG_Printf( "%s" S_COLOR_WHITE " left the %ss and joined the %ss\n",
-      playerName, BG_TeamName( oldteam ), BG_TeamName( team ) );
-  }
-}
-
-
-/*
 ======================
 CG_NewClientInfo
 ======================
@@ -791,13 +746,6 @@ void CG_NewClientInfo( int clientNum )
 
   // the old value
   memset( &newInfo, 0, sizeof( newInfo ) );
- 
-  // grab our own ignoreList 
-  if( clientNum == cg.predictedPlayerState.clientNum )
-  {
-    v = Info_ValueForKey( configstring, "ig" );
-    BG_ClientListParse( &cgs.ignoreList, v );
-  }
 
   // isolate the player's name
   v = Info_ValueForKey( configstring, "n" );
@@ -817,21 +765,6 @@ void CG_NewClientInfo( int clientNum )
   // team
   v = Info_ValueForKey( configstring, "t" );
   newInfo.team = atoi( v );
-  CG_TeamJoinMessage( &newInfo, ci );
-
-  // if this is us, execute team-specific config files
-  // unfortunately, these get re-executed after a vid_restart, because the
-  // cgame can't tell the difference between that and joining a new server
-  if( clientNum == cg.clientNum &&
-    ( !ci->infoValid || ci->team != newInfo.team ) )
-  {
-    char config[ MAX_STRING_CHARS ];
-    trap_Cvar_VariableStringBuffer( va( "cg_%sConfig",
-                                        BG_TeamName( newInfo.team ) ),
-                                    config, sizeof( config ) );
-    if( config[ 0 ] )
-      trap_SendConsoleCommand( va( "exec %s\n", config ) );
-  }
 
   // model
   v = Info_ValueForKey( configstring, "model" );
@@ -850,10 +783,6 @@ void CG_NewClientInfo( int clientNum )
     // truncate modelName
     *slash = 0;
   }
-
-  // voice
-  v = Info_ValueForKey( configstring, "v" );
-  Q_strncpyz( newInfo.voice, v, sizeof( newInfo.voice ) );
 
   // replace whatever was there with the new one
   newInfo.infoValid = qtrue;
@@ -912,11 +841,90 @@ cg.time should be between oldFrameTime and frameTime after exit
 */
 static void CG_RunPlayerLerpFrame( clientInfo_t *ci, lerpFrame_t *lf, int newAnimation, float speedScale )
 {
+  int         f, numFrames;
+  animation_t *anim;
+
+  // debugging tool to get no animations
+  if( cg_animSpeed.integer == 0 )
+  {
+    lf->oldFrame = lf->frame = lf->backlerp = 0;
+    return;
+  }
+
   // see if the animation sequence is switching
   if( newAnimation != lf->animationNumber || !lf->animation )
+  {
     CG_SetLerpFrameAnimation( ci, lf, newAnimation );
+  }
 
-  CG_RunLerpFrame( lf, speedScale );
+  // if we have passed the current frame, move it to
+  // oldFrame and calculate a new frame
+  if( cg.time >= lf->frameTime )
+  {
+    lf->oldFrame = lf->frame;
+    lf->oldFrameTime = lf->frameTime;
+
+    // get the next frame based on the animation
+    anim = lf->animation;
+    if( !anim->frameLerp )
+      return;   // shouldn't happen
+
+    if( cg.time < lf->animationTime )
+      lf->frameTime = lf->animationTime;    // initial lerp
+    else
+      lf->frameTime = lf->oldFrameTime + anim->frameLerp;
+
+    f = ( lf->frameTime - lf->animationTime ) / anim->frameLerp;
+    f *= speedScale;    // adjust for haste, etc
+    numFrames = anim->numFrames;
+
+    if( anim->flipflop )
+      numFrames *= 2;
+
+    if( f >= numFrames )
+    {
+      f -= numFrames;
+      if( anim->loopFrames )
+      {
+        f %= anim->loopFrames;
+        f += anim->numFrames - anim->loopFrames;
+      }
+      else
+      {
+        f = numFrames - 1;
+        // the animation is stuck at the end, so it
+        // can immediately transition to another sequence
+        lf->frameTime = cg.time;
+      }
+    }
+
+    if( anim->reversed )
+      lf->frame = anim->firstFrame + anim->numFrames - 1 - f;
+    else if( anim->flipflop && f>=anim->numFrames )
+      lf->frame = anim->firstFrame + anim->numFrames - 1 - ( f % anim->numFrames );
+    else
+      lf->frame = anim->firstFrame + f;
+
+    if( cg.time > lf->frameTime )
+    {
+      lf->frameTime = cg.time;
+
+      if( cg_debugAnim.integer )
+        CG_Printf( "Clamp lf->frameTime\n" );
+    }
+  }
+
+  if( lf->frameTime > cg.time + 200 )
+    lf->frameTime = cg.time;
+
+  if( lf->oldFrameTime > cg.time )
+    lf->oldFrameTime = cg.time;
+
+  // calculate current lerp value
+  if( lf->frameTime == lf->oldFrameTime )
+    lf->backlerp = 0;
+  else
+    lf->backlerp = 1.0 - (float)( cg.time - lf->oldFrameTime ) / ( lf->frameTime - lf->oldFrameTime );
 }
 
 
@@ -1678,7 +1686,7 @@ Returns the Z component of the surface being shadowed
 ===============
 */
 #define SHADOW_DISTANCE   128
-static qboolean CG_PlayerShadow( centity_t *cent, float *shadowPlane, class_t class )
+static qboolean CG_PlayerShadow( centity_t *cent, float *shadowPlane, pClass_t class )
 {
   vec3_t        end, mins, maxs;
   trace_t       trace;
@@ -1686,7 +1694,7 @@ static qboolean CG_PlayerShadow( centity_t *cent, float *shadowPlane, class_t cl
   entityState_t *es = &cent->currentState;
   vec3_t        surfNormal = { 0.0f, 0.0f, 1.0f };
 
-  BG_ClassBoundingBox( class, mins, maxs, NULL, NULL, NULL );
+  BG_FindBBoxForClass( class, mins, maxs, NULL, NULL, NULL );
   mins[ 2 ] = 0.0f;
   maxs[ 2 ] = 2.0f;
 
@@ -1732,7 +1740,7 @@ static qboolean CG_PlayerShadow( centity_t *cent, float *shadowPlane, class_t cl
   // without taking a spot in the cg_marks array
   CG_ImpactMark( cgs.media.shadowMarkShader, trace.endpos, trace.plane.normal,
                  cent->pe.legs.yawAngle, 0.0f, 0.0f, 0.0f, alpha, qfalse,
-                 24.0f * BG_ClassConfig( class )->shadowScale, qtrue );
+                 24.0f * BG_FindShadowScaleForClass( class ), qtrue );
 
   return qtrue;
 }
@@ -1745,7 +1753,7 @@ CG_PlayerSplash
 Draw a mark at the water surface
 ===============
 */
-static void CG_PlayerSplash( centity_t *cent, class_t class )
+static void CG_PlayerSplash( centity_t *cent, pClass_t class )
 {
   vec3_t      start, end;
   vec3_t      mins, maxs;
@@ -1755,7 +1763,7 @@ static void CG_PlayerSplash( centity_t *cent, class_t class )
   if( !cg_shadows.integer )
     return;
 
-  BG_ClassBoundingBox( class, mins, maxs, NULL, NULL, NULL );
+  BG_FindBBoxForClass( class, mins, maxs, NULL, NULL, NULL );
 
   VectorCopy( cent->lerpOrigin, end );
   end[ 2 ] += mins[ 2 ];
@@ -1785,7 +1793,7 @@ static void CG_PlayerSplash( centity_t *cent, class_t class )
 
   CG_ImpactMark( cgs.media.wakeMarkShader, trace.endpos, trace.plane.normal,
                  cent->pe.legs.yawAngle, 1.0f, 1.0f, 1.0f, 1.0f, qfalse,
-                 32.0f * BG_ClassConfig( class )->shadowScale, qtrue );
+                 32.0f * BG_FindShadowScaleForClass( class ), qtrue );
 }
 
 
@@ -1934,9 +1942,9 @@ void CG_Player( centity_t *cent )
   int           clientNum;
   int           renderfx;
   qboolean      shadow = qfalse;
-  float         shadowPlane = 0.0f;
+  float         shadowPlane;
   entityState_t *es = &cent->currentState;
-  class_t       class = ( es->misc >> 8 ) & 0xFF;
+  pClass_t      class = ( es->misc >> 8 ) & 0xFF;
   float         scale;
   vec3_t        tempAxis[ 3 ], tempAxis2[ 3 ];
   vec3_t        angles;
@@ -1975,7 +1983,7 @@ void CG_Player( centity_t *cent )
   {
     vec3_t  mins, maxs;
 
-    BG_ClassBoundingBox( class, mins, maxs, NULL, NULL, NULL );
+    BG_FindBBoxForClass( class, mins, maxs, NULL, NULL, NULL );
     CG_DrawBoundingBox( cent->lerpOrigin, mins, maxs );
   }
 
@@ -2074,7 +2082,7 @@ void CG_Player( centity_t *cent )
     else
       VectorCopy( es->angles2, surfNormal );
 
-    BG_ClassBoundingBox( class, mins, maxs, NULL, NULL, NULL );
+    BG_FindBBoxForClass( class, mins, maxs, NULL, NULL, NULL );
 
     VectorMA( legs.origin, -TRACE_DEPTH, surfNormal, end );
     VectorMA( legs.origin, 1.0f, surfNormal, start );
@@ -2090,7 +2098,7 @@ void CG_Player( centity_t *cent )
   }
 
   //rescale the model
-  scale = BG_ClassConfig( class )->modelScale;
+  scale = BG_FindModelScaleForClass( class );
 
   if( scale != 1.0f )
   {
@@ -2102,7 +2110,7 @@ void CG_Player( centity_t *cent )
   }
 
   //offset on the Z axis if required
-  VectorMA( legs.origin, BG_ClassConfig( class )->zOffset, surfNormal, legs.origin );
+  VectorMA( legs.origin, BG_FindZOffsetForClass( class ), surfNormal, legs.origin );
   VectorCopy( legs.origin, legs.lightingOrigin );
   VectorCopy( legs.origin, legs.oldorigin ); // don't positionally lerp at all
 
@@ -2221,7 +2229,7 @@ void CG_Corpse( centity_t *cent )
   memset( &head, 0, sizeof( head ) );
 
   VectorCopy( cent->lerpOrigin, origin );
-  BG_ClassBoundingBox( es->clientNum, liveZ, NULL, NULL, deadZ, NULL );
+  BG_FindBBoxForClass( es->clientNum, liveZ, NULL, NULL, deadZ, NULL );
   origin[ 2 ] -= ( liveZ[ 2 ] - deadZ[ 2 ] );
 
   VectorCopy( es->angles, cent->lerpAngles );
@@ -2288,11 +2296,11 @@ void CG_Corpse( centity_t *cent )
   VectorCopy( origin, legs.lightingOrigin );
   legs.shadowPlane = shadowPlane;
   legs.renderfx = renderfx;
-  legs.origin[ 2 ] += BG_ClassConfig( es->clientNum )->zOffset;
+  legs.origin[ 2 ] += BG_FindZOffsetForClass( es->clientNum );
   VectorCopy( legs.origin, legs.oldorigin ); // don't positionally lerp at all
 
   //rescale the model
-  scale = BG_ClassConfig( es->clientNum )->modelScale;
+  scale = BG_FindModelScaleForClass( es->clientNum );
 
   if( scale != 1.0f )
   {
@@ -2430,16 +2438,16 @@ This is the spurt of blood when a character gets hit
 */
 void CG_Bleed( vec3_t origin, vec3_t normal, int entityNum )
 {
-  team_t            team = cgs.clientinfo[ entityNum ].team;
+  pTeam_t           team = cgs.clientinfo[ entityNum ].team;
   qhandle_t         bleedPS;
   particleSystem_t  *ps;
 
   if( !cg_blood.integer )
     return;
 
-  if( team == TEAM_ALIENS )
+  if( team == PTE_ALIENS )
     bleedPS = cgs.media.alienBleedPS;
-  else if( team == TEAM_HUMANS )
+  else if( team == PTE_HUMANS )
     bleedPS = cgs.media.humanBleedPS;
   else
     return;
@@ -2471,9 +2479,9 @@ qboolean CG_AtHighestClass( void )
   for( i = PCL_NONE + 1; i < PCL_NUM_CLASSES; i++ )
   {
     if( BG_ClassCanEvolveFromTo(
-          cg.predictedPlayerState.stats[ STAT_CLASS ], i,
+          cg.predictedPlayerState.stats[ STAT_PCLASS ], i,
           ALIEN_MAX_KILLS, 0 ) >= 0 &&
-        BG_ClassAllowedInStage( i, cgs.alienStage ) &&
+        BG_FindStagesForClass( i, cgs.alienStage ) &&
         BG_ClassIsAllowed( i ) )
     {
       superiorClasses = qtrue;

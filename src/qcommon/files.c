@@ -235,12 +235,6 @@ typedef struct searchpath_s {
 static	char		fs_gamedir[MAX_OSPATH];	// this will be a single file name with no separators
 static	cvar_t		*fs_debug;
 static	cvar_t		*fs_homepath;
-
-#ifdef MACOS_X
-// Also search the .app bundle for .pk3 files
-static  cvar_t          *fs_apppath;
-#endif
-
 static	cvar_t		*fs_basepath;
 static	cvar_t		*fs_basegame;
 static	cvar_t		*fs_gamedirvar;
@@ -297,11 +291,6 @@ char lastValidGame[MAX_OSPATH];
 
 #ifdef FS_MISSING
 FILE*		missingFiles = NULL;
-#endif
-
-/* C99 defines __func__ */
-#ifndef __func__
-#define __func__ "(unknown)"
 #endif
 
 /*
@@ -387,7 +376,7 @@ static fileHandle_t	FS_HandleForFile(void) {
 
 static FILE	*FS_FileForHandle( fileHandle_t f ) {
 	if ( f < 0 || f > MAX_FILE_HANDLES ) {
-		Com_Error( ERR_DROP, "FS_FileForHandle: out of range" );
+		Com_Error( ERR_DROP, "FS_FileForHandle: out of reange" );
 	}
 	if (fsh[f].zipFile == qtrue) {
 		Com_Error( ERR_DROP, "FS_FileForHandle: can't get FILE on zip file" );
@@ -502,24 +491,6 @@ static qboolean FS_CreatePath (char *OSPath) {
 
 /*
 =================
-FS_FilenameIsExecutable
-
-ERR_FATAL if trying to maniuplate a file with the platform library extension
-=================
- */
-static void FS_FilenameIsExecutable( const char *filename, const char *function )
-{
-	// Check if the filename ends with the library extension
-	if( !Q_stricmp( filename + strlen( filename ) - strlen( DLL_EXT ), DLL_EXT ) )
-	{
-		Com_Error( ERR_FATAL, "%s: Not allowed to write '%s' due to %s extension\n",
-			function, filename, DLL_EXT );
-	}
-}
-
-
-/*
-=================
 FS_CopyFile
 
 Copy a fully specified file from one place to another
@@ -531,8 +502,6 @@ static void FS_CopyFile( char *fromOSPath, char *toOSPath ) {
 	byte	*buf;
 
 	Com_Printf( "copy %s to %s\n", fromOSPath, toOSPath );
-
-	FS_FilenameIsExecutable( toOSPath, __func__ );
 
 	if (strstr(fromOSPath, "journal.dat") || strstr(fromOSPath, "journaldata.dat")) {
 		Com_Printf( "Ignoring journal files\n");
@@ -575,8 +544,6 @@ FS_Remove
 ===========
 */
 void FS_Remove( const char *osPath ) {
-	FS_FilenameIsExecutable( osPath, __func__ );
-
 	remove( osPath );
 }
 
@@ -587,8 +554,6 @@ FS_HomeRemove
 ===========
 */
 void FS_HomeRemove( const char *homePath ) {
-	FS_FilenameIsExecutable( homePath, __func__ );
-
 	remove( FS_BuildOSPath( fs_homepath->string,
 			fs_gamedir, homePath ) );
 }
@@ -665,8 +630,6 @@ fileHandle_t FS_SV_FOpenFileWrite( const char *filename ) {
 	if ( fs_debug->integer ) {
 		Com_Printf( "FS_SV_FOpenFileWrite: %s\n", ospath );
 	}
-
-	FS_FilenameIsExecutable( ospath, __func__ );
 
 	if( FS_CreatePath( ospath ) ) {
 		return 0;
@@ -747,8 +710,7 @@ int FS_SV_FOpenFileRead( const char *filename, fileHandle_t *fp ) {
 	if (f) {
 		return FS_filelength(f);
 	}
-
-	return -1;
+	return 0;
 }
 
 
@@ -776,8 +738,6 @@ void FS_SV_Rename( const char *from, const char *to ) {
 	if ( fs_debug->integer ) {
 		Com_Printf( "FS_SV_Rename: %s --> %s\n", from_ospath, to_ospath );
 	}
-
-	FS_FilenameIsExecutable( to_ospath, __func__ );
 
 	if (rename( from_ospath, to_ospath )) {
 		// Failed, try copying it and deleting the original
@@ -810,8 +770,6 @@ void FS_Rename( const char *from, const char *to ) {
 	if ( fs_debug->integer ) {
 		Com_Printf( "FS_Rename: %s --> %s\n", from_ospath, to_ospath );
 	}
-
-	FS_FilenameIsExecutable( to_ospath, __func__ );
 
 	if (rename( from_ospath, to_ospath )) {
 		// Failed, try copying it and deleting the original
@@ -874,8 +832,6 @@ fileHandle_t FS_FOpenFileWrite( const char *filename ) {
 		Com_Printf( "FS_FOpenFileWrite: %s\n", ospath );
 	}
 
-	FS_FilenameIsExecutable( ospath, __func__ );
-
 	if( FS_CreatePath( ospath ) ) {
 		return 0;
 	}
@@ -921,8 +877,6 @@ fileHandle_t FS_FOpenFileAppend( const char *filename ) {
 	if ( fs_debug->integer ) {
 		Com_Printf( "FS_FOpenFileAppend: %s\n", ospath );
 	}
-
-	FS_FilenameIsExecutable( ospath, __func__ );
 
 	if( FS_CreatePath( ospath ) ) {
 		return 0;
@@ -1126,10 +1080,8 @@ int FS_FOpenFileRead( const char *filename, fileHandle_t *file, qboolean uniqueF
 					temp = zfi->file;
 					// set the file position in the zip file (also sets the current file info)
 					unzSetCurrentFileInfoPosition(pak->handle, pakFile->pos);
-                                        if ( zfi != pak->handle ) {
-						// copy the file info into the unzip structure
-						Com_Memcpy( zfi, pak->handle, sizeof(unz_s) );
-                                        }
+					// copy the file info into the unzip structure
+					Com_Memcpy( zfi, pak->handle, sizeof(unz_s) );
 					// we copy this back into the structure
 					zfi->file = temp;
 					// open the file in the zip
@@ -2434,7 +2386,7 @@ Sets fs_gamedir, adds the directory to the head of the path,
 then loads the zip headers
 ================
 */
-void FS_AddGameDirectory( const char *path, const char *dir ) {
+static void FS_AddGameDirectory( const char *path, const char *dir ) {
 	searchpath_t	*sp;
 	int				i;
 	searchpath_t	*search;
@@ -2509,7 +2461,7 @@ qboolean FS_idPak( char *pak, char *base ) {
 
 /*
 ================
-FS_CheckDirTraversal
+FS_idPak
 
 Check whether the string contains stuff like "../" to prevent directory traversal bugs
 and return qtrue if it does.
@@ -2761,14 +2713,6 @@ static void FS_Startup( const char *gameName )
 		FS_AddGameDirectory( fs_basepath->string, gameName );
 	}
 	// fs_homepath is somewhat particular to *nix systems, only add if relevant
-	
-	#ifdef MACOS_X
-	fs_apppath = Cvar_Get ("fs_apppath", Sys_DefaultAppPath(), CVAR_INIT );
-	// Make MacOSX also include the base path included with the .app bundle
-	if (fs_apppath->string[0])
-		FS_AddGameDirectory(fs_apppath->string, gameName);
-	#endif
-	
 	// NOTE: same filtering below for mods and basegame
 	if (fs_homepath->string[0] && Q_stricmp(fs_homepath->string,fs_basepath->string)) {
 		FS_AddGameDirectory ( fs_homepath->string, gameName );
@@ -2818,7 +2762,6 @@ static void FS_Startup( const char *gameName )
 #endif
 	Com_Printf( "%d files in pk3 files\n", fs_packFiles );
 }
-
 
 /*
 =====================
@@ -3024,10 +2967,10 @@ const char *FS_ReferencedPakNames( void ) {
 	for ( search = fs_searchpaths ; search ; search = search->next ) {
 		// is the element a pak file?
 		if ( search->pack ) {
+			if (*info) {
+				Q_strcat(info, sizeof( info ), " " );
+			}
 			if (search->pack->referenced || Q_stricmpn(search->pack->pakGamename, BASEGAME, strlen(BASEGAME))) {
-				if (*info) {
-					Q_strcat(info, sizeof( info ), " " );
-				}
 				Q_strcat( info, sizeof( info ), search->pack->pakGamename );
 				Q_strcat( info, sizeof( info ), "/" );
 				Q_strcat( info, sizeof( info ), search->pack->pakBasename );
@@ -3243,7 +3186,7 @@ void FS_Restart( int checksumFeed ) {
 	if ( Q_stricmp(fs_gamedirvar->string, lastValidGame) ) {
 		// skip the autogen.cfg if "safe" is on the command line
 		if ( !Com_SafeMode() ) {
-			Cbuf_AddText ("exec " Q3CONFIG_CFG "\n");
+			Cbuf_AddText ("exec autogen.cfg\n");
 		}
 	}
 
@@ -3301,7 +3244,7 @@ int		FS_FOpenFileByMode( const char *qpath, fileHandle_t *f, fsMode_t mode ) {
 		}
 		break;
 	default:
-		Com_Error( ERR_FATAL, "FS_FOpenFileByMode: bad mode" );
+		Com_Error( ERR_FATAL, "FSH_FOpenFile: bad mode" );
 		return -1;
 	}
 

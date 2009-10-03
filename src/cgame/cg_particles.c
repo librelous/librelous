@@ -1602,14 +1602,12 @@ static qboolean CG_ParseParticleFile( const char *fileName )
 
   // load the file
   len = trap_FS_FOpenFile( fileName, &f, FS_READ );
-  if( len < 0 )
+  if( len <= 0 )
     return qfalse;
 
-  if( len == 0 || len >= sizeof( text ) - 1 )
+  if( len >= sizeof( text ) - 1 )
   {
-    trap_FS_FCloseFile( f );
-    CG_Printf( S_COLOR_RED "ERROR: particle file %s is %s\n", fileName,
-      len == 0 ? "empty" : "too long" );
+    CG_Printf( S_COLOR_RED "ERROR: particle file %s too long\n", fileName );
     return qfalse;
   }
 
@@ -2396,7 +2394,7 @@ static void CG_RenderParticle( particle_t *p )
     p->lf.animation = &bp->modelAnimation;
 
     //run animation
-    CG_RunLerpFrame( &p->lf, 1.0f );
+    CG_RunLerpFrame( &p->lf );
 
     re.oldframe = p->lf.oldFrame;
     re.frame    = p->lf.frame;

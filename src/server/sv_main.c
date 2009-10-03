@@ -23,10 +23,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "server.h"
 
-#ifdef USE_VOIP
-cvar_t *sv_voip;
-#endif
-
 serverStatic_t	svs;				// persistant server info
 server_t		sv;					// local server
 vm_t			*gvm = NULL;				// game virtual machine
@@ -223,7 +219,6 @@ but not on every player enter or exit.
 void SV_MasterHeartbeat( void ) {
 	static netadr_t	adr[MAX_MASTER_SERVERS];
 	int			i;
-	int			res;
 
 	// "dedicated 1" is for lan play, "dedicated 2" is for inet public play
 	if ( !com_dedicated || com_dedicated->integer != 2 ) {
@@ -250,16 +245,16 @@ void SV_MasterHeartbeat( void ) {
 			sv_master[i]->modified = qfalse;
 	
 			Com_Printf( "Resolving %s\n", sv_master[i]->string );
-			res = NET_StringToAdr( sv_master[i]->string, &adr[i], NA_UNSPEC );
-			if ( !res ) {
+			if ( !NET_StringToAdr( sv_master[i]->string, &adr[i] ) ) {
 				Com_Printf( "Couldn't resolve address: %s\n", sv_master[i]->string );
 				continue;
 			}
-			if ( res == 2 ) {
-				// if no port was specified, use the default master port
+			if ( !strchr( sv_master[i]->string, ':' ) ) {
 				adr[i].port = BigShort( PORT_MASTER );
 			}
-			Com_Printf( "%s resolved to %s\n", sv_master[i]->string, NET_AdrToStringwPort(adr[i]));
+			Com_Printf( "%s resolved to %i.%i.%i.%i:%i\n", sv_master[i]->string,
+				adr[i].ip[0], adr[i].ip[1], adr[i].ip[2], adr[i].ip[3],
+				BigShort( adr[i].port ) );
 		}
 
 
@@ -297,29 +292,28 @@ SV_MasterGameStat
 */
 void SV_MasterGameStat( const char *data )
 {
-  netadr_t adr;
+	static netadr_t	adr;
 
-  if( !com_dedicated || com_dedicated->integer != 2 )
-    return; // only dedicated servers send stats
+	if( !com_dedicated || com_dedicated->integer != 2 )
+		return;		// only dedicated servers send stats
 
   Com_Printf( "Resolving %s\n", MASTER_SERVER_NAME );
-
-  switch( NET_StringToAdr( MASTER_SERVER_NAME, &adr, NA_UNSPEC ) )
+  if( !NET_StringToAdr( MASTER_SERVER_NAME, &adr ) )
   {
-    case 0:
-      Com_Printf( "Couldn't resolve master address: %s\n", MASTER_SERVER_NAME );
-      return;
-
-    case 2:
+    Com_Printf( "Couldn't resolve address: %s\n", MASTER_SERVER_NAME );
+    return;
+  }
+  else
+  {
+    if( !strstr( ":", MASTER_SERVER_NAME ) )
       adr.port = BigShort( PORT_MASTER );
-    default:
-      break;
+
+    Com_Printf( "%s resolved to %i.%i.%i.%i:%i\n", MASTER_SERVER_NAME,
+      adr.ip[0], adr.ip[1], adr.ip[2], adr.ip[3],
+      BigShort( adr.port ) );
   }
 
-  Com_Printf( "%s resolved to %s\n", MASTER_SERVER_NAME,
-              NET_AdrToStringwPort( adr ) );
-
-  Com_Printf( "Sending gamestat to %s\n", MASTER_SERVER_NAME );
+  Com_Printf ("Sending gamestat to %s\n", MASTER_SERVER_NAME );
   NET_OutOfBandPrint( NS_SERVER, adr, "gamestat %s", data );
 }
 
@@ -420,12 +414,6 @@ void SVC_Info( netadr_t from ) {
 	Info_SetValueForKey( infostring, "sv_maxclients", 
 		va("%i", sv_maxclients->integer - sv_privateClients->integer ) );
 	Info_SetValueForKey( infostring, "pure", va("%i", sv_pure->integer ) );
-
-#ifdef USE_VOIP
-	if (sv_voip->integer) {
-		Info_SetValueForKey( infostring, "voip", va("%i", sv_voip->integer ) );
-	}
-#endif
 
 	if( sv_minPing->integer ) {
 		Info_SetValueForKey( infostring, "minPing", va("%i", sv_minPing->integer) );

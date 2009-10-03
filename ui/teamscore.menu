@@ -117,7 +117,6 @@
 
     itemDef
     {
-      type ITEM_TYPE_TEXT
       text "Status"
       textscale .33
       style WINDOW_STYLE_EMPTY
@@ -132,7 +131,6 @@
 
     itemDef
     {
-      type ITEM_TYPE_TEXT
       text "Name"
       textscale .33
       style WINDOW_STYLE_EMPTY
@@ -147,7 +145,6 @@
 
     itemDef
     {
-      type ITEM_TYPE_TEXT
       text "Kills"
       textscale .33
       style WINDOW_STYLE_EMPTY
@@ -162,7 +159,6 @@
 
     itemDef
     {
-      type ITEM_TYPE_TEXT
       text "Time"
       textscale .33
       style WINDOW_STYLE_EMPTY
@@ -177,7 +173,6 @@
 
     itemDef
     {
-      type ITEM_TYPE_TEXT
       text "Ping"
       textscale .33
       style WINDOW_STYLE_EMPTY
@@ -192,7 +187,6 @@
 
     itemDef
     {
-      type ITEM_TYPE_TEXT
       text "Status"
       textscale .33
       style WINDOW_STYLE_EMPTY
@@ -207,7 +201,6 @@
 
     itemDef
     {
-      type ITEM_TYPE_TEXT
       text "Name"
       textscale .33
       style WINDOW_STYLE_EMPTY
@@ -222,7 +215,6 @@
 
     itemDef
     {
-      type ITEM_TYPE_TEXT
       text "Kills"
       textscale .33
       style WINDOW_STYLE_EMPTY
@@ -237,7 +229,6 @@
 
     itemDef
     {
-      type ITEM_TYPE_TEXT
       text "Time"
       textscale .33
       style WINDOW_STYLE_EMPTY
@@ -252,7 +243,6 @@
 
     itemDef
     {
-      type ITEM_TYPE_TEXT
       text "Ping"
       textscale .33
       style WINDOW_STYLE_EMPTY
@@ -364,20 +354,6 @@
       textvalign VALIGN_CENTER
       visible MENU_TRUE
       ownerdraw CG_SPECTATORS
-      decoration
-    }
-
-    itemDef
-    {
-      name winner
-      rect (W/2) (H+BAR_H) 0 0
-      style WINDOW_STYLE_EMPTY
-      forecolor 1 1 1 1
-      textscale 0.5
-      textalign ALIGN_CENTER
-      textvalign VALIGN_TOP
-      visible MENU_TRUE
-      cvar "ui_winner"
       decoration
     }
   }

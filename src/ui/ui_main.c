@@ -51,7 +51,7 @@ static const char *netSources[ ] =
 
 static const int numNetSources = sizeof( netSources ) / sizeof( const char* );
 
-static const char *netnames[ ] =
+static const char* netnames[ ] =
 {
   "???",
   "UDP",
@@ -98,8 +98,6 @@ vmCvar_t  ui_developer;
 
 vmCvar_t  ui_winner;
 
-vmCvar_t  ui_emoticons;
-
 static cvarTable_t    cvarTable[ ] =
 {
   { &ui_browserShowFull, "ui_browserShowFull", "1", CVAR_ARCHIVE },
@@ -122,8 +120,6 @@ static cvarTable_t    cvarTable[ ] =
   { &ui_serverStatusTimeOut, "ui_serverStatusTimeOut", "7000", CVAR_ARCHIVE},
   { &ui_textWrapCache, "ui_textWrapCache", "1", CVAR_ARCHIVE },
   { &ui_developer, "ui_developer", "0", CVAR_ARCHIVE | CVAR_CHEAT },
-  { &ui_emoticons, "cg_emoticons", "1", CVAR_LATCH | CVAR_ARCHIVE },
-  { &ui_winner, "ui_winner", "", CVAR_ROM }
 };
 
 static int    cvarTableSize = sizeof( cvarTable ) / sizeof( cvarTable[0] );
@@ -140,8 +136,6 @@ void UI_Init( qboolean );
 void UI_Shutdown( void );
 void UI_KeyEvent( int key, qboolean down );
 void UI_MouseEvent( int dx, int dy );
-int UI_MousePosition( void );
-void UI_SetMousePosition( int x, int y );
 void UI_Refresh( int realtime );
 qboolean UI_IsFullscreen( void );
 void UI_SetActiveMenu( uiMenuCommand_t menu );
@@ -170,19 +164,12 @@ intptr_t vmMain( int command, int arg0, int arg1, int arg2, int arg3,
       UI_MouseEvent( arg0, arg1 );
       return 0;
 
-    case UI_MOUSE_POSITION:
-      return UI_MousePosition( );
-
-    case UI_SET_MOUSE_POSITION:
-      UI_SetMousePosition( arg0, arg1 );
-      return 0;
-
     case UI_REFRESH:
       UI_Refresh( arg0 );
       return 0;
 
     case UI_IS_FULLSCREEN:
-      return UI_IsFullscreen( );
+      return UI_IsFullscreen();
 
     case UI_SET_ACTIVE_MENU:
       UI_SetActiveMenu( arg0 );
@@ -203,8 +190,6 @@ intptr_t vmMain( int command, int arg0, int arg1, int arg2, int arg3,
 
 void AssetCache( void )
 {
-  int i;
-
   uiInfo.uiDC.Assets.gradientBar = trap_R_RegisterShaderNoMip( ASSET_GRADIENTBAR );
   uiInfo.uiDC.Assets.scrollBar = trap_R_RegisterShaderNoMip( ASSET_SCROLLBAR );
   uiInfo.uiDC.Assets.scrollBarArrowDown = trap_R_RegisterShaderNoMip( ASSET_SCROLLBAR_ARROWDOWN );
@@ -214,22 +199,6 @@ void AssetCache( void )
   uiInfo.uiDC.Assets.scrollBarThumb = trap_R_RegisterShaderNoMip( ASSET_SCROLL_THUMB );
   uiInfo.uiDC.Assets.sliderBar = trap_R_RegisterShaderNoMip( ASSET_SLIDER_BAR );
   uiInfo.uiDC.Assets.sliderThumb = trap_R_RegisterShaderNoMip( ASSET_SLIDER_THUMB );
-
-  if( ui_emoticons.integer ) 
-  {
-    uiInfo.uiDC.Assets.emoticonCount = BG_LoadEmoticons(
-      uiInfo.uiDC.Assets.emoticons,
-      uiInfo.uiDC.Assets.emoticonWidths );
-  }
-  else
-    uiInfo.uiDC.Assets.emoticonCount = 0;
-
-  for( i = 0; i < uiInfo.uiDC.Assets.emoticonCount; i++ )
-  {
-    uiInfo.uiDC.Assets.emoticonShaders[ i ] = trap_R_RegisterShaderNoMip( 
-      va( "emoticons/%s_%dx1.tga", uiInfo.uiDC.Assets.emoticons[ i ],
-          uiInfo.uiDC.Assets.emoticonWidths[ i ] ) );
-  }
 }
 
 void UI_DrawSides( float x, float y, float w, float h, float size )
@@ -420,7 +389,7 @@ UI_GetServerStatusInfo
 */
 static int UI_GetServerStatusInfo( const char *serverAddress, serverStatusInfo_t *info )
 {
-  char *p, *score, *ping, *name;
+  char * p, *score, *ping, *name;
   int i, len;
 
   if( !info )
@@ -493,7 +462,7 @@ static int UI_GetServerStatusInfo( const char *serverAddress, serverStatusInfo_t
       while( p && *p )
       {
         if( *p == '\\' )
-          *p++ = '\0';
+          * p++ = '\0';
 
         if( !p )
           break;
@@ -907,8 +876,6 @@ static void UI_BuildServerDisplayList( qboolean force )
       if( ping > 0 )
       {
         trap_LAN_MarkServerVisible( ui_netSource.integer, i, qfalse );
-        if( Info_ValueForKey( info, "label" )[0] )
-          uiInfo.serverStatus.numFeaturedServers++;
         numinvisible++;
       }
     }
@@ -1045,7 +1012,6 @@ static void UI_StartServerRefresh( qboolean full )
   uiInfo.serverStatus.nextDisplayRefresh = uiInfo.uiDC.realTime + 1000;
   // clear number of displayed servers
   uiInfo.serverStatus.numDisplayServers = 0;
-  uiInfo.serverStatus.numFeaturedServers = 0;
   uiInfo.serverStatus.numPlayersOnServers = 0;
   // mark all servers as visible so we store ping updates for them
   trap_LAN_MarkServerVisible( ui_netSource.integer, -1, qtrue );
@@ -1055,7 +1021,7 @@ static void UI_StartServerRefresh( qboolean full )
 
   if( ui_netSource.integer == AS_LOCAL )
   {
-    trap_Cmd_ExecuteText( EXEC_APPEND, "localservers\n" );
+    trap_Cmd_ExecuteText( EXEC_NOW, "localservers\n" );
     uiInfo.serverStatus.refreshtime = uiInfo.uiDC.realTime + 1000;
     return;
   }
@@ -1072,10 +1038,10 @@ static void UI_StartServerRefresh( qboolean full )
     ptr = UI_Cvar_VariableString( "debug_protocol" );
 
     if( strlen( ptr ) )
-      trap_Cmd_ExecuteText( EXEC_APPEND, va( "globalservers %d %s full empty\n", i, ptr ) );
+      trap_Cmd_ExecuteText( EXEC_NOW, va( "globalservers %d %s full empty\n", i, ptr ) );
     else
     {
-      trap_Cmd_ExecuteText( EXEC_APPEND, va( "globalservers %d %d full empty\n", i,
+      trap_Cmd_ExecuteText( EXEC_NOW, va( "globalservers %d %d full empty\n", i,
                             (int)trap_Cvar_VariableValue( "protocol" ) ) );
     }
   }
@@ -1489,67 +1455,67 @@ static void UI_DrawInfoPane( menuItem_t *item, rectDef_t *rect, float text_x, fl
       if( value < 1 )
       {
         s = va( "%s\n\n%s",
-                BG_ClassConfig( item->v.pclass )->humanName,
-                BG_Class( item->v.pclass )->info );
+                BG_FindHumanNameForClassNum( item->v.pclass ),
+                BG_FindInfoForClassNum( item->v.pclass ) );
       }
       else
       {
         s = va( "%s\n\n%s\n\nKills: %d",
-                BG_ClassConfig( item->v.pclass )->humanName,
-                BG_Class( item->v.pclass )->info,
+                BG_FindHumanNameForClassNum( item->v.pclass ),
+                BG_FindInfoForClassNum( item->v.pclass ),
                 value );
       }
 
       break;
 
     case INFOTYPE_WEAPON:
-      value = BG_Weapon( item->v.weapon )->price;
+      value = BG_FindPriceForWeapon( item->v.weapon );
 
       if( value == 0 )
       {
         s = va( "%s\n\n%s\n\nCredits: Free",
-                BG_Weapon( item->v.weapon )->humanName,
-                BG_Weapon( item->v.weapon )->info );
+                BG_FindHumanNameForWeapon( item->v.weapon ),
+                BG_FindInfoForWeapon( item->v.weapon ) );
       }
       else
       {
         s = va( "%s\n\n%s\n\nCredits: %d",
-                BG_Weapon( item->v.weapon )->humanName,
-                BG_Weapon( item->v.weapon )->info,
+                BG_FindHumanNameForWeapon( item->v.weapon ),
+                BG_FindInfoForWeapon( item->v.weapon ),
                 value );
       }
 
       break;
 
     case INFOTYPE_UPGRADE:
-      value = BG_Upgrade( item->v.upgrade )->price;
+      value = BG_FindPriceForUpgrade( item->v.upgrade );
 
       if( value == 0 )
       {
         s = va( "%s\n\n%s\n\nCredits: Free",
-                BG_Upgrade( item->v.upgrade )->humanName,
-                BG_Upgrade( item->v.upgrade )->info );
+                BG_FindHumanNameForUpgrade( item->v.upgrade ),
+                BG_FindInfoForUpgrade( item->v.upgrade ) );
       }
       else
       {
         s = va( "%s\n\n%s\n\nCredits: %d",
-                BG_Upgrade( item->v.upgrade )->humanName,
-                BG_Upgrade( item->v.upgrade )->info,
+                BG_FindHumanNameForUpgrade( item->v.upgrade ),
+                BG_FindInfoForUpgrade( item->v.upgrade ),
                 value );
       }
 
       break;
 
     case INFOTYPE_BUILDABLE:
-      value = BG_Buildable( item->v.buildable )->buildPoints;
+      value = BG_FindBuildPointsForBuildable( item->v.buildable );
 
-      switch( BG_Buildable( item->v.buildable )->team )
+      switch( BG_FindTeamForBuildable( item->v.buildable ) )
       {
-        case TEAM_ALIENS:
+        case BIT_ALIENS:
           string = "Sentience";
           break;
 
-        case TEAM_HUMANS:
+        case BIT_HUMANS:
           string = "Power";
           break;
 
@@ -1560,14 +1526,14 @@ static void UI_DrawInfoPane( menuItem_t *item, rectDef_t *rect, float text_x, fl
       if( value == 0 )
       {
         s = va( "%s\n\n%s",
-                BG_Buildable( item->v.buildable )->humanName,
-                BG_Buildable( item->v.buildable )->info );
+                BG_FindHumanNameForBuildable( item->v.buildable ),
+                BG_FindInfoForBuildable( item->v.buildable ) );
       }
       else
       {
         s = va( "%s\n\n%s\n\n%s: %d",
-                BG_Buildable( item->v.buildable )->humanName,
-                BG_Buildable( item->v.buildable )->info,
+                BG_FindHumanNameForBuildable( item->v.buildable ),
+                BG_FindInfoForBuildable( item->v.buildable ),
                 string, value );
       }
 
@@ -1641,7 +1607,7 @@ static void UI_DrawSelectedMapName( rectDef_t *rect, float scale, vec4_t color, 
 
 static const char *UI_OwnerDrawText( int ownerDraw )
 {
-  const char *s = NULL;
+  const char * s = NULL;
 
   switch( ownerDraw )
   {
@@ -1695,7 +1661,7 @@ static const char *UI_OwnerDrawText( int ownerDraw )
 
 static int UI_OwnerDrawWidth( int ownerDraw, float scale )
 {
-  const char *s = NULL;
+  const char * s = NULL;
 
   switch( ownerDraw )
   {
@@ -1798,9 +1764,8 @@ static void UI_DrawGLInfo( rectDef_t *rect, float scale, int textalign, int text
 static void UI_OwnerDraw( float x, float y, float w, float h,
                           float text_x, float text_y, int ownerDraw,
                           int ownerDrawFlags, int align,
-                          int textalign, int textvalign, float borderSize,
-                          float scale, vec4_t color, qhandle_t shader,
-                          int textStyle )
+                          int textalign, int textvalign, float special,
+                          float scale, vec4_t color, qhandle_t shader, int textStyle )
 {
   rectDef_t       rect;
 
@@ -1877,7 +1842,7 @@ static qboolean UI_OwnerDrawVisible( int flags )
 {
   qboolean vis = qtrue;
   uiClientState_t cs;
-  team_t          team;
+  pTeam_t         team;
   char            info[ MAX_INFO_STRING ];
 
   trap_GetClientState( &cs );
@@ -1889,7 +1854,7 @@ static qboolean UI_OwnerDrawVisible( int flags )
   {
     if( flags & UI_SHOW_NOTSPECTATING )
     {
-      if( team == TEAM_NONE )
+      if( team == PTE_NONE )
         vis = qfalse;
 
       flags &= ~UI_SHOW_NOTSPECTATING;
@@ -1913,12 +1878,12 @@ static qboolean UI_OwnerDrawVisible( int flags )
 
     if( flags & UI_SHOW_TEAMVOTEACTIVE )
     {
-      if( team == TEAM_ALIENS )
+      if( team == PTE_ALIENS )
       {
         if( !trap_Cvar_VariableValue( "ui_alienTeamVoteActive" ) )
           vis = qfalse;
       }
-      else if( team == TEAM_HUMANS )
+      else if( team == PTE_HUMANS )
       {
         if( !trap_Cvar_VariableValue( "ui_humanTeamVoteActive" ) )
           vis = qfalse;
@@ -1929,12 +1894,12 @@ static qboolean UI_OwnerDrawVisible( int flags )
 
     if( flags & UI_SHOW_CANTEAMVOTE )
     {
-      if( team == TEAM_ALIENS )
+      if( team == PTE_ALIENS )
       {
         if( trap_Cvar_VariableValue( "ui_alienTeamVoteActive" ) )
           vis = qfalse;
       }
-      else if( team == TEAM_HUMANS )
+      else if( team == PTE_HUMANS )
       {
         if( trap_Cvar_VariableValue( "ui_humanTeamVoteActive" ) )
           vis = qfalse;
@@ -1969,7 +1934,7 @@ static qboolean UI_OwnerDrawVisible( int flags )
   return vis;
 }
 
-static qboolean UI_NetSource_HandleKey( int key )
+static qboolean UI_NetSource_HandleKey( int flags, float *special, int key )
 {
   if( key == K_MOUSE1 || key == K_MOUSE2 || key == K_ENTER || key == K_KP_ENTER )
   {
@@ -2005,12 +1970,12 @@ static qboolean UI_NetSource_HandleKey( int key )
   return qfalse;
 }
 
-static qboolean UI_OwnerDrawHandleKey( int ownerDraw, int key )
+static qboolean UI_OwnerDrawHandleKey( int ownerDraw, int flags, float *special, int key )
 {
   switch( ownerDraw )
   {
     case UI_NETSOURCE:
-      UI_NetSource_HandleKey( key );
+      UI_NetSource_HandleKey( flags, special, key );
       break;
 
     default:
@@ -2131,14 +2096,14 @@ UI_AddClass
 ===============
 */
 
-static void UI_AddClass( class_t class )
+static void UI_AddClass( pClass_t class )
 {
   uiInfo.alienClassList[ uiInfo.alienClassCount ].text =
 
-    String_Alloc( BG_ClassConfig( class )->humanName );
+    String_Alloc( BG_FindHumanNameForClassNum( class ) );
   uiInfo.alienClassList[ uiInfo.alienClassCount ].cmd =
 
-    String_Alloc( va( "cmd class %s\n", BG_Class( class )->name ) );
+    String_Alloc( va( "cmd class %s\n", BG_FindNameForClassNum( class ) ) );
   uiInfo.alienClassList[ uiInfo.alienClassCount ].type = INFOTYPE_CLASS;
 
   uiInfo.alienClassList[ uiInfo.alienClassCount ].v.pclass = class;
@@ -2159,7 +2124,7 @@ static void UI_LoadAlienClasses( void )
     UI_AddClass( PCL_ALIEN_LEVEL0 );
 
   if( BG_ClassIsAllowed( PCL_ALIEN_BUILDER0_UPG ) &&
-      BG_ClassAllowedInStage( PCL_ALIEN_BUILDER0_UPG, UI_GetCurrentAlienStage( ) ) )
+      BG_FindStagesForClass( PCL_ALIEN_BUILDER0_UPG, UI_GetCurrentAlienStage( ) ) )
     UI_AddClass( PCL_ALIEN_BUILDER0_UPG );
   else if( BG_ClassIsAllowed( PCL_ALIEN_BUILDER0 ) )
     UI_AddClass( PCL_ALIEN_BUILDER0 );
@@ -2173,9 +2138,9 @@ UI_AddItem
 static void UI_AddItem( weapon_t weapon )
 {
   uiInfo.humanItemList[ uiInfo.humanItemCount ].text =
-    String_Alloc( BG_Weapon( weapon )->humanName );
+    String_Alloc( BG_FindHumanNameForWeapon( weapon ) );
   uiInfo.humanItemList[ uiInfo.humanItemCount ].cmd =
-    String_Alloc( va( "cmd class %s\n", BG_Weapon( weapon )->name ) );
+    String_Alloc( va( "cmd class %s\n", BG_FindNameForWeapon( weapon ) ) );
   uiInfo.humanItemList[ uiInfo.humanItemCount ].type = INFOTYPE_WEAPON;
   uiInfo.humanItemList[ uiInfo.humanItemCount ].v.weapon = weapon;
 
@@ -2195,7 +2160,7 @@ static void UI_LoadHumanItems( void )
     UI_AddItem( WP_MACHINEGUN );
 
   if( BG_WeaponIsAllowed( WP_HBUILD2 ) &&
-      BG_WeaponAllowedInStage( WP_HBUILD2, UI_GetCurrentHumanStage( ) ) )
+      BG_FindStagesForWeapon( WP_HBUILD2, UI_GetCurrentHumanStage( ) ) )
     UI_AddItem( WP_HBUILD2 );
   else if( BG_WeaponIsAllowed( WP_HBUILD ) )
     UI_AddItem( WP_HBUILD );
@@ -2231,7 +2196,7 @@ static void UI_ParseCarriageList( void )
       iterator++;
 
       while( iterator[ 0 ] != ' ' )
-        *bufPointer++ = *iterator++;
+        * bufPointer++ = *iterator++;
 
       *bufPointer++ = '\n';
 
@@ -2244,7 +2209,7 @@ static void UI_ParseCarriageList( void )
       iterator++;
 
       while( iterator[ 0 ] != ' ' )
-        *bufPointer++ = *iterator++;
+        * bufPointer++ = *iterator++;
 
       *bufPointer++ = '\n';
 
@@ -2273,30 +2238,30 @@ static void UI_LoadHumanArmouryBuys( void )
   for( i = WP_NONE + 1; i < WP_NUM_WEAPONS; i++ )
   {
     if( uiInfo.weapons & ( 1 << i ) )
-      slots |= BG_Weapon( i )->slots;
+      slots |= BG_FindSlotsForWeapon( i );
   }
 
   for( i = UP_NONE + 1; i < UP_NUM_UPGRADES; i++ )
   {
     if( uiInfo.upgrades & ( 1 << i ) )
-      slots |= BG_Upgrade( i )->slots;
+      slots |= BG_FindSlotsForUpgrade( i );
   }
 
   uiInfo.humanArmouryBuyCount = 0;
 
   for( i = WP_NONE + 1; i < WP_NUM_WEAPONS; i++ )
   {
-    if( BG_Weapon( i )->team == TEAM_HUMANS &&
-        BG_Weapon( i )->purchasable &&
-        BG_WeaponAllowedInStage( i, stage ) &&
+    if( BG_FindTeamForWeapon( i ) == WUT_HUMANS &&
+        BG_FindPurchasableForWeapon( i ) &&
+        BG_FindStagesForWeapon( i, stage ) &&
         BG_WeaponIsAllowed( i ) &&
-        !( BG_Weapon( i )->slots & slots ) &&
+        !( BG_FindSlotsForWeapon( i ) & slots ) &&
         !( uiInfo.weapons & ( 1 << i ) ) )
     {
       uiInfo.humanArmouryBuyList[ j ].text =
-        String_Alloc( BG_Weapon( i )->humanName );
+        String_Alloc( BG_FindHumanNameForWeapon( i ) );
       uiInfo.humanArmouryBuyList[ j ].cmd =
-        String_Alloc( va( "cmd buy %s\n", BG_Weapon( i )->name ) );
+        String_Alloc( va( "cmd buy %s\n", BG_FindNameForWeapon( i ) ) );
       uiInfo.humanArmouryBuyList[ j ].type = INFOTYPE_WEAPON;
       uiInfo.humanArmouryBuyList[ j ].v.weapon = i;
 
@@ -2308,17 +2273,17 @@ static void UI_LoadHumanArmouryBuys( void )
 
   for( i = UP_NONE + 1; i < UP_NUM_UPGRADES; i++ )
   {
-    if( BG_Upgrade( i )->team == TEAM_HUMANS &&
-        BG_Upgrade( i )->purchasable &&
-        BG_UpgradeAllowedInStage( i, stage ) &&
+    if( BG_FindTeamForUpgrade( i ) == WUT_HUMANS &&
+        BG_FindPurchasableForUpgrade( i ) &&
+        BG_FindStagesForUpgrade( i, stage ) &&
         BG_UpgradeIsAllowed( i ) &&
-        !( BG_Upgrade( i )->slots & slots ) &&
+        !( BG_FindSlotsForUpgrade( i ) & slots ) &&
         !( uiInfo.upgrades & ( 1 << i ) ) )
     {
       uiInfo.humanArmouryBuyList[ j ].text =
-        String_Alloc( BG_Upgrade( i )->humanName );
+        String_Alloc( BG_FindHumanNameForUpgrade( i ) );
       uiInfo.humanArmouryBuyList[ j ].cmd =
-        String_Alloc( va( "cmd buy %s\n", BG_Upgrade( i )->name ) );
+        String_Alloc( va( "cmd buy %s\n", BG_FindNameForUpgrade( i ) ) );
       uiInfo.humanArmouryBuyList[ j ].type = INFOTYPE_UPGRADE;
       uiInfo.humanArmouryBuyList[ j ].v.upgrade = i;
 
@@ -2345,9 +2310,9 @@ static void UI_LoadHumanArmourySells( void )
   {
     if( uiInfo.weapons & ( 1 << i ) )
     {
-      uiInfo.humanArmourySellList[ j ].text = String_Alloc( BG_Weapon( i )->humanName );
+      uiInfo.humanArmourySellList[ j ].text = String_Alloc( BG_FindHumanNameForWeapon( i ) );
       uiInfo.humanArmourySellList[ j ].cmd =
-        String_Alloc( va( "cmd sell %s\n", BG_Weapon( i )->name ) );
+        String_Alloc( va( "cmd sell %s\n", BG_FindNameForWeapon( i ) ) );
       uiInfo.humanArmourySellList[ j ].type = INFOTYPE_WEAPON;
       uiInfo.humanArmourySellList[ j ].v.weapon = i;
 
@@ -2361,9 +2326,9 @@ static void UI_LoadHumanArmourySells( void )
   {
     if( uiInfo.upgrades & ( 1 << i ) )
     {
-      uiInfo.humanArmourySellList[ j ].text = String_Alloc( BG_Upgrade( i )->humanName );
+      uiInfo.humanArmourySellList[ j ].text = String_Alloc( BG_FindHumanNameForUpgrade( i ) );
       uiInfo.humanArmourySellList[ j ].cmd =
-        String_Alloc( va( "cmd sell %s\n", BG_Upgrade( i )->name ) );
+        String_Alloc( va( "cmd sell %s\n", BG_FindNameForUpgrade( i ) ) );
       uiInfo.humanArmourySellList[ j ].type = INFOTYPE_UPGRADE;
       uiInfo.humanArmourySellList[ j ].v.upgrade = i;
 
@@ -2416,12 +2381,12 @@ static void UI_LoadAlienUpgrades( void )
   for( i = PCL_NONE + 1; i < PCL_NUM_CLASSES; i++ )
   {
     if( BG_ClassCanEvolveFromTo( class, i, credits, 0 ) >= 0 &&
-        BG_ClassAllowedInStage( i, stage ) &&
+        BG_FindStagesForClass( i, stage ) &&
         BG_ClassIsAllowed( i ) )
     {
-      uiInfo.alienUpgradeList[ j ].text = String_Alloc( BG_ClassConfig( i )->humanName );
+      uiInfo.alienUpgradeList[ j ].text = String_Alloc( BG_FindHumanNameForClassNum( i ) );
       uiInfo.alienUpgradeList[ j ].cmd =
-        String_Alloc( va( "cmd class %s\n", BG_Class( i )->name ) );
+        String_Alloc( va( "cmd class %s\n", BG_FindNameForClassNum( i ) ) );
       uiInfo.alienUpgradeList[ j ].type = INFOTYPE_CLASS;
       uiInfo.alienUpgradeList[ j ].v.pclass = i;
 
@@ -2449,15 +2414,15 @@ static void UI_LoadAlienBuilds( void )
 
   for( i = BA_NONE + 1; i < BA_NUM_BUILDABLES; i++ )
   {
-    if( BG_Buildable( i )->team == TEAM_ALIENS &&
-        BG_Buildable( i )->buildWeapon & uiInfo.weapons &&
-        BG_BuildableAllowedInStage( i, stage ) &&
+    if( BG_FindTeamForBuildable( i ) == BIT_ALIENS &&
+        BG_FindBuildWeaponForBuildable( i ) & uiInfo.weapons &&
+        BG_FindStagesForBuildable( i, stage ) &&
         BG_BuildableIsAllowed( i ) )
     {
       uiInfo.alienBuildList[ j ].text =
-        String_Alloc( BG_Buildable( i )->humanName );
+        String_Alloc( BG_FindHumanNameForBuildable( i ) );
       uiInfo.alienBuildList[ j ].cmd =
-        String_Alloc( va( "cmd build %s\n", BG_Buildable( i )->name ) );
+        String_Alloc( va( "cmd build %s\n", BG_FindNameForBuildable( i ) ) );
       uiInfo.alienBuildList[ j ].type = INFOTYPE_BUILDABLE;
       uiInfo.alienBuildList[ j ].v.buildable = i;
 
@@ -2485,15 +2450,15 @@ static void UI_LoadHumanBuilds( void )
 
   for( i = BA_NONE + 1; i < BA_NUM_BUILDABLES; i++ )
   {
-    if( BG_Buildable( i )->team == TEAM_HUMANS &&
-        BG_Buildable( i )->buildWeapon & uiInfo.weapons &&
-        BG_BuildableAllowedInStage( i, stage ) &&
+    if( BG_FindTeamForBuildable( i ) == BIT_HUMANS &&
+        BG_FindBuildWeaponForBuildable( i ) & uiInfo.weapons &&
+        BG_FindStagesForBuildable( i, stage ) &&
         BG_BuildableIsAllowed( i ) )
     {
       uiInfo.humanBuildList[ j ].text =
-        String_Alloc( BG_Buildable( i )->humanName );
+        String_Alloc( BG_FindHumanNameForBuildable( i ) );
       uiInfo.humanBuildList[ j ].cmd =
-        String_Alloc( va( "cmd build %s\n", BG_Buildable( i )->name ) );
+        String_Alloc( va( "cmd build %s\n", BG_FindNameForBuildable( i ) ) );
       uiInfo.humanBuildList[ j ].type = INFOTYPE_BUILDABLE;
       uiInfo.humanBuildList[ j ].v.buildable = i;
 
@@ -2760,7 +2725,7 @@ static void UI_Update( const char *name )
 //FIXME: lookup table
 static void UI_RunMenuScript( char **args )
 {
-  const char *name, *name2;
+  const char * name, *name2;
   char buff[1024];
   const char *cmd;
 
@@ -2791,18 +2756,15 @@ static void UI_RunMenuScript( char **args )
       Controls_SetConfig( qtrue );
     else if( Q_stricmp( name, "loadControls" ) == 0 )
       Controls_GetConfig();
-    else if (Q_stricmp(name, "clearError") == 0) {
-      trap_Cvar_Set("com_errorMessage", "");
-    } else if (Q_stricmp(name, "downloadIgnore") == 0) {
-      trap_Cvar_Set("com_downloadPrompt", va("%d", DLP_IGNORE));
-    } else if (Q_stricmp(name, "downloadCURL") == 0) {
-      trap_Cvar_Set("com_downloadPrompt", va("%d", DLP_CURL));
-    } else if (Q_stricmp(name, "downloadUDP") == 0) {
-      trap_Cvar_Set("com_downloadPrompt", va("%d", DLP_UDP));
-    } else if (Q_stricmp(name, "RefreshServers") == 0) {
-      UI_StartServerRefresh(qtrue);
-      UI_BuildServerDisplayList(qtrue);
-    } else if (Q_stricmp(name, "InitServerList") == 0) {
+    else if( Q_stricmp( name, "clearError" ) == 0 )
+      trap_Cvar_Set( "com_errorMessage", "" );
+    else if( Q_stricmp( name, "RefreshServers" ) == 0 )
+    {
+      UI_StartServerRefresh( qtrue );
+      UI_BuildServerDisplayList( qtrue );
+    }
+    else if( Q_stricmp( name, "InitServerList" ) == 0 )
+    {
       int time = trap_RealTime( NULL );
       int last;
       int sortColumn;
@@ -2918,13 +2880,12 @@ static void UI_RunMenuScript( char **args )
       {
         trap_FS_Read( text, len, f );
         text[ len ] = 0;
+        trap_FS_FCloseFile( f );
 
         Com_sprintf( command, 32, "ptrcrestore %s", text );
 
         trap_Cmd_ExecuteText( EXEC_APPEND, command );
       }
-      if( len > -1 )
-        trap_FS_FCloseFile( f );
     }
     else if( Q_stricmp( name, "Say" ) == 0 )
     {
@@ -3031,7 +2992,7 @@ static void UI_RunMenuScript( char **args )
       }
     }
     else if( Q_stricmp( name, "Quit" ) == 0 )
-      trap_Cmd_ExecuteText( EXEC_APPEND, "quit" );
+      trap_Cmd_ExecuteText( EXEC_NOW, "quit" );
     else if( Q_stricmp( name, "Leave" ) == 0 )
     {
       trap_Cmd_ExecuteText( EXEC_APPEND, "disconnect\n" );
@@ -3223,14 +3184,14 @@ static void UI_RunMenuScript( char **args )
         {
           BG_ClientListRemove( &uiInfo.ignoreList[ uiInfo.myPlayerIndex ],
                                uiInfo.clientNums[ uiInfo.ignoreIndex ] );
-          trap_Cmd_ExecuteText( EXEC_APPEND, va( "unignore %i\n",
+          trap_Cmd_ExecuteText( EXEC_NOW, va( "unignore %i\n",
                                               uiInfo.clientNums[ uiInfo.ignoreIndex ] ) );
         }
         else
         {
           BG_ClientListAdd( &uiInfo.ignoreList[ uiInfo.myPlayerIndex ],
                             uiInfo.clientNums[ uiInfo.ignoreIndex ] );
-          trap_Cmd_ExecuteText( EXEC_APPEND, va( "ignore %i\n",
+          trap_Cmd_ExecuteText( EXEC_NOW, va( "ignore %i\n",
                                               uiInfo.clientNums[ uiInfo.ignoreIndex ] ) );
         }
       }
@@ -3244,7 +3205,7 @@ static void UI_RunMenuScript( char **args )
         {
           BG_ClientListAdd( &uiInfo.ignoreList[ uiInfo.myPlayerIndex ],
                             uiInfo.clientNums[ uiInfo.ignoreIndex ] );
-          trap_Cmd_ExecuteText( EXEC_APPEND, va( "ignore %i\n",
+          trap_Cmd_ExecuteText( EXEC_NOW, va( "ignore %i\n",
                                               uiInfo.clientNums[ uiInfo.ignoreIndex ] ) );
         }
       }
@@ -3258,7 +3219,7 @@ static void UI_RunMenuScript( char **args )
         {
           BG_ClientListRemove( &uiInfo.ignoreList[ uiInfo.myPlayerIndex ],
                                uiInfo.clientNums[ uiInfo.ignoreIndex ] );
-          trap_Cmd_ExecuteText( EXEC_APPEND, va( "unignore %i\n",
+          trap_Cmd_ExecuteText( EXEC_NOW, va( "unignore %i\n",
                                               uiInfo.clientNums[ uiInfo.ignoreIndex ] ) );
         }
       }
@@ -3280,10 +3241,7 @@ static int UI_FeederCount( float feederID )
   else if( feederID == FEEDER_MAPS )
     return uiInfo.mapCount;
   else if( feederID == FEEDER_SERVERS )
-    return uiInfo.serverStatus.numDisplayServers -
-           uiInfo.serverStatus.numFeaturedServers;
-  else if( feederID == FEEDER_FEATURED )
-    return uiInfo.serverStatus.numFeaturedServers;
+    return uiInfo.serverStatus.numDisplayServers;
   else if( feederID == FEEDER_SERVERSTATUS )
     return uiInfo.serverStatusInfo.numLines;
   else if( feederID == FEEDER_FINDPLAYER )
@@ -3330,8 +3288,6 @@ static int UI_FeederCount( float feederID )
     return uiInfo.alienBuildCount;
   else if( feederID == FEEDER_TREMHUMANBUILD )
     return uiInfo.humanBuildCount;
-  else if( feederID == FEEDER_RESOLUTIONS )
-    return uiInfo.numResolutions;
 
   return 0;
 }
@@ -3361,26 +3317,20 @@ static const char *UI_FeederItemText( float feederID, int index, int column, qha
   static char info[MAX_STRING_CHARS];
   static char hostname[1024];
   static char clientBuff[32];
-  static char resolution[MAX_STRING_CHARS];
   static int lastColumn = -1;
   static int lastTime = 0;
-
-  if( handle )
-    *handle = -1;
+  *handle = -1;
 
   if( feederID == FEEDER_MAPS )
   {
     int actual;
     return UI_SelectedMap( index, &actual );
   }
-  else if( feederID == FEEDER_SERVERS || feederID == FEEDER_FEATURED )
+  else if( feederID == FEEDER_SERVERS )
   {
-    if( index >= 0 && index < UI_FeederCount( feederID ) )
+    if( index >= 0 && index < uiInfo.serverStatus.numDisplayServers )
     {
       int ping;
-
-      if( feederID == FEEDER_SERVERS )
-        index += UI_FeederCount( FEEDER_FEATURED );
 
       if( lastColumn != column || lastTime > uiInfo.uiDC.realTime + 5000 )
       {
@@ -3551,24 +3501,6 @@ static const char *UI_FeederItemText( float feederID, int index, int column, qha
     if( index >= 0 && index < uiInfo.humanBuildCount )
       return uiInfo.humanBuildList[ index ].text;
   }
-  else if( feederID == FEEDER_RESOLUTIONS )
-  {
-    int i;
-    int w = trap_Cvar_VariableValue( "r_width" );
-    int h = trap_Cvar_VariableValue( "r_height" );
-
-    for( i = 0; i < uiInfo.numResolutions; i++ )
-    {
-      if( w == uiInfo.resolutions[ i ].w && h == uiInfo.resolutions[ i ].h )
-      {
-        Com_sprintf( resolution, sizeof( resolution ), "%dx%d", w, h );
-        return resolution;
-      }
-    }
-
-    Com_sprintf( resolution, sizeof( resolution ), "Custom (%dx%d)", w, h );
-    return resolution;
-  }
 
   return "";
 }
@@ -3619,7 +3551,7 @@ static void UI_FeederSelection( float feederID, int index )
   }
   else if( feederID == FEEDER_SERVERS )
   {
-    const char *mapName = NULL;
+    const char * mapName = NULL;
     uiInfo.serverStatus.currentServer = index;
     trap_LAN_GetServerInfo( ui_netSource.integer, uiInfo.serverStatus.displayServers[index],
                             info, MAX_STRING_CHARS );
@@ -3693,29 +3625,6 @@ static void UI_FeederSelection( float feederID, int index )
     uiInfo.alienBuildIndex = index;
   else if( feederID == FEEDER_TREMHUMANBUILD )
     uiInfo.humanBuildIndex = index;
-  else if( feederID == FEEDER_RESOLUTIONS )
-  {
-    trap_Cvar_Set( "r_width", va( "%d", uiInfo.resolutions[ index ].w ) );
-    trap_Cvar_Set( "r_height", va( "%d", uiInfo.resolutions[ index ].h ) );
-  }
-}
-
-static int UI_FeederInitialise( float feederID )
-{
-  if( feederID == FEEDER_RESOLUTIONS )
-  {
-    int i;
-    int w = trap_Cvar_VariableValue( "r_width" );
-    int h = trap_Cvar_VariableValue( "r_height" );
-
-    for( i = 0; i < uiInfo.numResolutions; i++ )
-    {
-      if( w == uiInfo.resolutions[ i ].w && h == uiInfo.resolutions[ i ].h )
-        return i;
-    }
-  }
-
-  return 0;
 }
 
 static void UI_Pause( qboolean b )
@@ -3775,38 +3684,6 @@ static float UI_GetValue( int ownerDraw )
   return 0.0f;
 }
 
-/*
-=================
-UI_ParseResolutions
-=================
-*/
-void UI_ParseResolutions( void )
-{
-  char        buf[ MAX_STRING_CHARS ];
-  char        w[ 16 ], h[ 16 ];
-  char        *p;
-  const char  *out;
-  char        *s = NULL;
-
-  trap_Cvar_VariableStringBuffer( "r_availableModes", buf, sizeof( buf ) );
-  p = buf;
-  uiInfo.numResolutions = 0;
-
-  while( String_Parse( &p, &out ) )
-  {
-    Q_strncpyz( w, out, sizeof( w ) );
-    s = strchr( w, 'x' );
-    if( !s )
-      return;
-
-    *s++ = '\0';
-    Q_strncpyz( h, s, sizeof( h ) );
-
-    uiInfo.resolutions[ uiInfo.numResolutions ].w = atoi( w );
-    uiInfo.resolutions[ uiInfo.numResolutions ].h = atoi( h );
-    uiInfo.numResolutions++;
-  }
-}
 
 /*
 =================
@@ -3817,7 +3694,7 @@ void UI_Init( qboolean inGameLoad )
 {
   int start;
 
-  BG_InitClassConfigs( );
+  BG_InitClassOverrides( );
   BG_InitAllowedGameElements( );
 
   uiInfo.inGameLoad = inGameLoad;
@@ -3866,7 +3743,6 @@ void UI_Init( qboolean inGameLoad )
   uiInfo.uiDC.feederItemImage = &UI_FeederItemImage;
   uiInfo.uiDC.feederItemText = &UI_FeederItemText;
   uiInfo.uiDC.feederSelection = &UI_FeederSelection;
-  uiInfo.uiDC.feederInitialise = &UI_FeederInitialise;
   uiInfo.uiDC.setBinding = &trap_Key_SetBinding;
   uiInfo.uiDC.getBindingBuf = &trap_Key_GetBindingBuf;
   uiInfo.uiDC.keynumToStringBuf = &trap_Key_KeynumToStringBuf;
@@ -3909,8 +3785,6 @@ void UI_Init( qboolean inGameLoad )
   uiInfo.previewMovie = -1;
 
   trap_Cvar_Register( NULL, "debug_protocol", "", 0 );
-
-  UI_ParseResolutions( );
 }
 
 
@@ -3923,7 +3797,7 @@ void UI_KeyEvent( int key, qboolean down )
 {
   if( Menu_Count() > 0 )
   {
-    menuDef_t *menu = Menu_GetFocused();
+    menuDef_t * menu = Menu_GetFocused();
 
     if( menu )
     {
@@ -3963,32 +3837,7 @@ void UI_MouseEvent( int dx, int dy )
   else if( uiInfo.uiDC.cursory > SCREEN_HEIGHT )
     uiInfo.uiDC.cursory = SCREEN_HEIGHT;
 
-  if( Menu_Count( ) > 0 )
-    Display_MouseMove( NULL, uiInfo.uiDC.cursorx, uiInfo.uiDC.cursory );
-}
-
-/*
-=================
-UI_MousePosition
-=================
-*/
-int UI_MousePosition( void )
-{
-  return (int)rint( uiInfo.uiDC.cursorx ) |
-         (int)rint( uiInfo.uiDC.cursory ) << 16;
-}
-
-/*
-=================
-UI_SetMousePosition
-=================
-*/
-void UI_SetMousePosition( int x, int y )
-{
-  uiInfo.uiDC.cursorx = x;
-  uiInfo.uiDC.cursory = y;
-
-  if( Menu_Count( ) > 0 )
+  if( Menu_Count() > 0 )
     Display_MouseMove( NULL, uiInfo.uiDC.cursorx, uiInfo.uiDC.cursory );
 }
 
@@ -4044,7 +3893,7 @@ void UI_SetActiveMenu( uiMenuCommand_t menu )
 
 qboolean UI_IsFullscreen( void )
 {
-  return Menus_AnyFullScreenVisible( );
+  return Menus_AnyFullScreenVisible();
 }
 
 
@@ -4256,7 +4105,7 @@ UI_DrawConnectScreen
 */
 void UI_DrawConnectScreen( qboolean overlay )
 {
-  char      *s;
+  char      * s;
   uiClientState_t cstate;
   char      info[MAX_INFO_VALUE];
   char text[256];
@@ -4291,11 +4140,10 @@ void UI_DrawConnectScreen( qboolean overlay )
     Text_PaintCenter( centerPoint, yStart, scale, colorWhite, va( "Loading %s", Info_ValueForKey( info, "mapname" ) ), 0 );
 
   if( !Q_stricmp( cstate.servername, "localhost" ) )
-    Text_PaintCenter( centerPoint, yStart + 48, scale, colorWhite,
-                      "Starting up...", ITEM_TEXTSTYLE_SHADOWEDMORE );
+    Text_PaintCenter( centerPoint, yStart + 48, scale, colorWhite, va( "Starting up..." ), ITEM_TEXTSTYLE_SHADOWEDMORE );
   else
   {
-    Com_sprintf( text, sizeof( text ), "Connecting to %s", cstate.servername );
+    strcpy( text, va( "Connecting to %s", cstate.servername ) );
     Text_PaintCenter( centerPoint, yStart + 48, scale, colorWhite, text , ITEM_TEXTSTYLE_SHADOWEDMORE );
   }
 
@@ -4305,7 +4153,7 @@ void UI_DrawConnectScreen( qboolean overlay )
 
   // print any server info (server full, bad version, etc)
   if( cstate.connState < CA_CONNECTED )
-    Text_PaintCenter( centerPoint, yStart + 176, scale, colorWhite, cstate.messageString, 0 );
+    Text_PaintCenter_AutoWrapped( centerPoint, yStart + 176, 630, 20, scale, colorWhite, cstate.messageString, 0 );
 
   if( lastConnState > cstate.connState )
     lastLoadingText[0] = '\0';
@@ -4325,15 +4173,7 @@ void UI_DrawConnectScreen( qboolean overlay )
     case CA_CONNECTED:
       {
         char downloadName[MAX_INFO_VALUE];
-        int prompt = trap_Cvar_VariableValue( "com_downloadPrompt" );
-        
-        if( prompt & DLP_SHOW ) {
-          Com_Printf("Opening download prompt...\n");
-          trap_Key_SetCatcher( KEYCATCH_UI );
-          Menus_ActivateByName("download_popmenu");
-          trap_Cvar_Set( "com_downloadPrompt", "0" );
-        }
-        
+
         trap_Cvar_VariableStringBuffer( "cl_downloadName", downloadName, sizeof( downloadName ) );
 
         if( *downloadName )

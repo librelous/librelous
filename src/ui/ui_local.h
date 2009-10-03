@@ -57,7 +57,6 @@ void UI_DrawConnectScreen( qboolean overlay );
 #define MAX_MODS 64
 #define MAX_DEMOS 256
 #define MAX_MOVIES 256
-#define MAX_RESOLUTIONS 32
 
 typedef struct
 {
@@ -101,7 +100,6 @@ typedef struct serverStatus_s
   int    currentServer;
   int    displayServers[MAX_DISPLAY_SERVERS];
   int    numDisplayServers;
-  int    numFeaturedServers;
   int    numPlayersOnServers;
   int    nextDisplayRefresh;
   int    nextSortTime;
@@ -170,19 +168,12 @@ typedef struct
   {
     const char  *text;
     buildable_t buildable;
-    class_t     pclass;
+    pClass_t    pclass;
     weapon_t    weapon;
     upgrade_t   upgrade;
   } v;
 }
 menuItem_t;
-
-typedef struct
-{
-  int w;
-  int h;
-}
-resolution_t;
 
 typedef struct
 {
@@ -270,9 +261,6 @@ typedef struct
   int currentFoundPlayerServer;
   int numFoundPlayerServers;
   int nextFindPlayerRefresh;
-
-  resolution_t  resolutions[ MAX_RESOLUTIONS ];
-  int numResolutions;
 
   qboolean inGameLoad;
 

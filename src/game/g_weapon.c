@@ -36,6 +36,8 @@ G_ForceWeaponChange
 */
 void G_ForceWeaponChange( gentity_t *ent, weapon_t weapon )
 {
+  int i;
+
   if( ent )
   {
     ent->client->ps.pm_flags |= PMF_WEAPON_SWITCH;
@@ -44,8 +46,21 @@ void G_ForceWeaponChange( gentity_t *ent, weapon_t weapon )
         !BG_InventoryContainsWeapon( weapon, ent->client->ps.stats ))
     {
       //switch to the first non blaster weapon
-      ent->client->ps.persistant[ PERS_NEWWEAPON ] =
-        BG_PrimaryWeapon( ent->client->ps.stats );
+      for( i = WP_NONE + 1; i < WP_NUM_WEAPONS; i++ )
+      {
+        if( i == WP_BLASTER )
+          continue;
+
+        if( BG_InventoryContainsWeapon( i, ent->client->ps.stats ) )
+        {
+          ent->client->ps.persistant[ PERS_NEWWEAPON ] = i;
+          break;
+        }
+      }
+
+      //only got the blaster to switch to
+      if( i == WP_NUM_WEAPONS )
+        ent->client->ps.persistant[ PERS_NEWWEAPON ] = WP_BLASTER;
     }
     else
       ent->client->ps.persistant[ PERS_NEWWEAPON ] = weapon;
@@ -71,17 +86,16 @@ void G_GiveClientMaxAmmo( gentity_t *ent, qboolean buyingEnergyAmmo )
   for( i = WP_NONE + 1; i < WP_NUM_WEAPONS; i++ )
   {
     if( buyingEnergyAmmo )
-      weaponType = BG_Weapon( i )->usesEnergy;
+      weaponType = BG_FindUsesEnergyForWeapon( i );
     else
-      weaponType = !BG_Weapon( i )->usesEnergy;
+      weaponType = !BG_FindUsesEnergyForWeapon( i );
 
     if( BG_InventoryContainsWeapon( i, ent->client->ps.stats ) &&
-        weaponType && !BG_Weapon( i )->infiniteAmmo &&
+        weaponType && !BG_FindInfinteAmmoForWeapon( i ) &&
         !BG_WeaponIsFull( i, ent->client->ps.stats,
           ent->client->ps.ammo, ent->client->ps.clips ) )
     {
-      maxAmmo = BG_Weapon( i )->maxAmmo;
-      maxClips = BG_Weapon( i )->maxClips;
+      BG_FindAmmoForWeapon( i, &maxAmmo, &maxClips );
 
       if( buyingEnergyAmmo )
       {
@@ -666,7 +680,7 @@ void teslaFire( gentity_t *ent )
   if( !traceEnt->client )
     return;
 
-  if( traceEnt->client && traceEnt->client->ps.stats[ STAT_TEAM ] != TEAM_ALIENS )
+  if( traceEnt->client && traceEnt->client->ps.stats[ STAT_PTEAM ] != PTE_ALIENS )
     return;
 
   //so the client side knows
@@ -721,7 +735,7 @@ void cancelBuildFire( gentity_t *ent )
   }
 
   //repair buildable
-  if( ent->client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS )
+  if( ent->client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS )
   {
     AngleVectors( ent->client->ps.viewangles, forward, NULL, NULL );
     VectorMA( ent->client->ps.origin, 100, forward, end );
@@ -731,7 +745,7 @@ void cancelBuildFire( gentity_t *ent )
 
     if( tr.fraction < 1.0 &&
         ( traceEnt->s.eType == ET_BUILDABLE ) &&
-        ( traceEnt->buildableTeam == ent->client->ps.stats[ STAT_TEAM ] ) &&
+        ( traceEnt->biteam == ent->client->ps.stats[ STAT_PTEAM ] ) &&
         ( ( ent->client->ps.weapon >= WP_HBUILD2 ) &&
           ( ent->client->ps.weapon <= WP_HBUILD ) ) &&
         traceEnt->spawned && traceEnt->health > 0 )
@@ -742,7 +756,7 @@ void cancelBuildFire( gentity_t *ent )
         return;
       }
 
-      bHealth = BG_Buildable( traceEnt->s.modelindex )->health;
+      bHealth = BG_FindHealthForBuildable( traceEnt->s.modelindex );
 
       traceEnt->health += HBUILD_HEALRATE;
 
@@ -781,21 +795,21 @@ void buildFire( gentity_t *ent, dynMenu_t menu )
       {
         ent->client->ps.stats[ STAT_MISC ] = 0;
       }
-      else if( ent->client->ps.stats[ STAT_TEAM ] == TEAM_ALIENS && !G_IsOvermindBuilt( ) )
+      else if( ent->client->ps.stats[ STAT_PTEAM ] == PTE_ALIENS && !G_IsOvermindBuilt( ) )
       {
         ent->client->ps.stats[ STAT_MISC ] +=
-          BG_Weapon( ent->s.weapon )->buildDelay * 2;
+          BG_FindBuildDelayForWeapon( ent->s.weapon ) * 2;
       }
-      else if( ent->client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS &&
+      else if( ent->client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS &&
                G_IsPowered( muzzle ) == BA_NONE &&
                ( ent->client->ps.stats[ STAT_BUILDABLE ] & ~SB_VALID_TOGGLEBIT ) != BA_H_REPEATER ) //hack
       {
         ent->client->ps.stats[ STAT_MISC ] +=
-          BG_Weapon( ent->s.weapon )->buildDelay * 2;
+          BG_FindBuildDelayForWeapon( ent->s.weapon ) * 2;
       }
       else
         ent->client->ps.stats[ STAT_MISC ] +=
-          BG_Weapon( ent->s.weapon )->buildDelay;
+          BG_FindBuildDelayForWeapon( ent->s.weapon );
 
       ent->client->ps.stats[ STAT_BUILDABLE ] = BA_NONE;
 
@@ -847,10 +861,7 @@ qboolean CheckVenomAttack( gentity_t *ent )
   if( !traceEnt->takedamage )
     return qfalse;
 
-  if( traceEnt->health <= 0 )
-      return qfalse;
-
-  if( !traceEnt->client && !( traceEnt->s.eType == ET_BUILDABLE ) )
+  if( !traceEnt->client && !traceEnt->s.eType == ET_BUILDABLE )
     return qfalse;
 
   //allow bites to work against defensive buildables only
@@ -866,7 +877,7 @@ qboolean CheckVenomAttack( gentity_t *ent )
 
   if( traceEnt->client )
   {
-    if( traceEnt->client->ps.stats[ STAT_TEAM ] == TEAM_ALIENS )
+    if( traceEnt->client->ps.stats[ STAT_PTEAM ] == PTE_ALIENS )
       return qfalse;
     if( traceEnt->client->ps.stats[ STAT_HEALTH ] <= 0 )
       return qfalse;
@@ -924,7 +935,7 @@ void CheckGrabAttack( gentity_t *ent )
 
   if( traceEnt->client )
   {
-    if( traceEnt->client->ps.stats[ STAT_TEAM ] == TEAM_ALIENS )
+    if( traceEnt->client->ps.stats[ STAT_PTEAM ] == PTE_ALIENS )
       return;
 
     if( traceEnt->client->ps.stats[ STAT_HEALTH ] <= 0 )
@@ -980,7 +991,7 @@ void poisonCloud( gentity_t *ent )
   {
     humanPlayer = &g_entities[ entityList[ i ] ];
 
-    if( humanPlayer->client && humanPlayer->client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS )
+    if( humanPlayer->client && humanPlayer->client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS )
     {
       if( BG_InventoryContainsUpgrade( UP_LIGHTARMOUR, humanPlayer->client->ps.stats ) )
         continue;
@@ -1043,9 +1054,9 @@ static gentity_t *G_FindNewZapTarget( gentity_t *ent )
   {
     enemy = &g_entities[ entityList[ i ] ];
 
-    if( ( ( enemy->client && enemy->client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS ) ||
+    if( ( ( enemy->client && enemy->client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS ) ||
         ( enemy->s.eType == ET_BUILDABLE &&
-          BG_Buildable( enemy->s.modelindex )->team == TEAM_HUMANS ) ) && enemy->health > 0 )
+          BG_FindTeamForBuildable( enemy->s.modelindex ) == BIT_HUMANS ) ) && enemy->health > 0 )
     {
       qboolean foundOldTarget = qfalse;
 
@@ -1261,9 +1272,9 @@ void areaZapFire( gentity_t *ent )
   if( traceEnt == NULL )
     return;
 
-  if( ( ( traceEnt->client && traceEnt->client->ps.stats[ STAT_TEAM ] == TEAM_HUMANS ) ||
+  if( ( ( traceEnt->client && traceEnt->client->ps.stats[ STAT_PTEAM ] == PTE_HUMANS ) ||
       ( traceEnt->s.eType == ET_BUILDABLE &&
-        BG_Buildable( traceEnt->s.modelindex )->team == TEAM_HUMANS ) ) && traceEnt->health > 0 )
+        BG_FindTeamForBuildable( traceEnt->s.modelindex ) == BIT_HUMANS ) ) && traceEnt->health > 0 )
   {
     G_CreateNewZap( ent, traceEnt );
   }

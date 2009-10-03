@@ -104,7 +104,7 @@ typedef struct image_s {
 
 	qboolean	mipmap;
 	qboolean	allowPicmip;
-	int			wrapClampMode;		// GL_CLAMP_TO_EDGE or GL_REPEAT
+	int			wrapClampMode;		// GL_CLAMP or GL_REPEAT
 
 	struct image_s*	next;
 } image_t;
@@ -323,12 +323,10 @@ typedef struct {
 
 struct shaderCommands_s;
 
-// any change in the LIGHTMAP_* defines here MUST be reflected in
-// R_FindShader() in tr_bsp.c
-#define LIGHTMAP_2D         -4	// shader is for 2D rendering
-#define LIGHTMAP_BY_VERTEX  -3	// pre-lit triangle models
-#define LIGHTMAP_WHITEIMAGE -2
-#define LIGHTMAP_NONE       -1
+#define LIGHTMAP_2D			-4		// shader is for 2D rendering
+#define LIGHTMAP_BY_VERTEX	-3		// pre-lit triangle models
+#define LIGHTMAP_WHITEIMAGE	-2
+#define	LIGHTMAP_NONE		-1
 
 typedef enum {
 	CT_FRONT_SIDED,
@@ -436,8 +434,6 @@ typedef struct {
 	vec3_t		vieworg;
 	vec3_t		viewaxis[3];		// transformation matrix
 
-	stereoFrame_t	stereoFrame;
-
 	int			time;				// time in milliseconds for shader effects and other time dependent rendering issues
 	int			rdflags;			// RDF_NOWORLDMODEL, etc
 
@@ -509,7 +505,6 @@ typedef struct {
 	cplane_t	frustum[4];
 	vec3_t		visBounds[2];
 	float		zFar;
-	stereoFrame_t	stereoFrame;
 } viewParms_t;
 
 
@@ -976,7 +971,6 @@ extern trGlobals_t	tr;
 extern glconfig_t	glConfig;		// outside of TR since it shouldn't be cleared during ref re-init
 extern glstate_t	glState;		// outside of TR since it shouldn't be cleared during ref re-init
 
-
 //
 // cvars
 //
@@ -995,12 +989,11 @@ extern cvar_t	*r_verbose;				// used for verbose debug spew
 extern cvar_t	*r_ignoreFastPath;		// allows us to ignore our Tess fast paths
 
 extern cvar_t	*r_znear;				// near Z clip plane
-extern cvar_t	*r_zproj;				// z distance of projection plane
-extern cvar_t	*r_stereoSeparation;			// separation of cameras for stereo rendering
 
 extern cvar_t	*r_stencilbits;			// number of desired stencil bits
 extern cvar_t	*r_depthbits;			// number of desired depth bits
 extern cvar_t	*r_colorbits;			// number of desired color bits, only relevant for fullscreen
+extern cvar_t	*r_stereo;				// desired pixelformat stereo flag
 extern cvar_t	*r_texturebits;			// number of desired texture bits
 										// 0 = use framebuffer depth
 										// 16 = use 16-bit textures
@@ -1034,10 +1027,7 @@ extern	cvar_t	*r_facePlaneCull;		// enables culling of planar surfaces with back
 extern	cvar_t	*r_nocurves;
 extern	cvar_t	*r_showcluster;
 
-extern cvar_t	*r_width;
-extern cvar_t	*r_height;
-extern cvar_t	*r_pixelAspect;
-
+extern cvar_t	*r_mode;				// video mode
 extern cvar_t	*r_fullscreen;
 extern cvar_t	*r_gamma;
 extern cvar_t	*r_displayRefresh;		// optional display refresh option
@@ -1091,11 +1081,6 @@ extern	cvar_t	*r_smp;
 extern	cvar_t	*r_showSmp;
 extern	cvar_t	*r_skipBackEnd;
 
-extern	cvar_t	*r_stereoEnabled;
-extern	cvar_t	*r_anaglyphMode;
-
-extern	cvar_t	*r_greyscale;
-
 extern	cvar_t	*r_ignoreGLErrors;
 
 extern	cvar_t	*r_overBrightBits;
@@ -1144,7 +1129,6 @@ int R_CullLocalBox (vec3_t bounds[2]);
 int R_CullPointAndRadius( vec3_t origin, float radius );
 int R_CullLocalPointAndRadius( vec3_t origin, float radius );
 
-void R_SetupProjection(viewParms_t *dest, float zProj, qboolean computeFrustum);
 void R_RotateForEntity( const trRefEntity_t *ent, const viewParms_t *viewParms, orientationr_t *or );
 
 /*
@@ -1212,8 +1196,9 @@ model_t		*R_AllocModel( void );
 void    	R_Init( void );
 image_t		*R_FindImageFile( const char *name, qboolean mipmap, qboolean allowPicmip, int glWrapClampMode );
 
-image_t		*R_CreateImage( const char *name, const byte *pic, int width, int height, qboolean mipmap,
-            qboolean allowPicmip, int wrapClampMode );
+image_t		*R_CreateImage( const char *name, const byte *pic, int width, int height, qboolean mipmap
+					, qboolean allowPicmip, int wrapClampMode );
+qboolean	R_GetModeInfo( int *width, int *height, float *windowAspect, int mode );
 
 void		R_SetColorMappings( void );
 void		R_GammaCorrect( byte *buffer, int bufSize );
@@ -1492,20 +1477,6 @@ void RB_MDRSurfaceAnim( md4Surface_t *surface );
 
 /*
 =============================================================
-
-IMAGE LOADERS
-
-=============================================================
-*/
-
-void R_LoadBMP( const char *name, byte **pic, int *width, int *height );
-void R_LoadJPG( const char *name, byte **pic, int *width, int *height );
-void R_LoadPCX( const char *name, byte **pic, int *width, int *height );
-void R_LoadPNG( const char *name, byte **pic, int *width, int *height );
-void R_LoadTGA( const char *name, byte **pic, int *width, int *height );
-
-/*
-=============================================================
 =============================================================
 */
 void	R_TransformModelToClip( const vec3_t src, const float *modelMatrix, const float *projectionMatrix,
@@ -1623,18 +1594,6 @@ typedef struct {
 	qboolean			motionJpeg;
 } videoFrameCommand_t;
 
-typedef struct
-{
-	int commandId;
-
-	GLboolean rgba[4];
-} colorMaskCommand_t;
-
-typedef struct
-{
-	int commandId;
-} clearDepthCommand_t;
-
 typedef enum {
 	RC_END_OF_LIST,
 	RC_SET_COLOR,
@@ -1643,9 +1602,7 @@ typedef enum {
 	RC_DRAW_BUFFER,
 	RC_SWAP_BUFFERS,
 	RC_SCREENSHOT,
-	RC_VIDEOFRAME,
-	RC_COLORMASK,
-	RC_CLEARDEPTH
+	RC_VIDEOFRAME
 } renderCommand_t;
 
 

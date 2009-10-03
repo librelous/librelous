@@ -181,8 +181,6 @@ typedef enum
   CG_KEY_SETOVERSTRIKEMODE,
   CG_KEY_GETOVERSTRIKEMODE,
 
-  CG_S_SOUNDDURATION,
-
   CG_MEMSET = 200,
   CG_MEMCPY,
   CG_STRNCPY,
@@ -233,12 +231,6 @@ typedef enum
   // void (*CG_DrawActiveFrame)( int serverTime, stereoFrame_t stereoView, qboolean demoPlayback );
   // Generates and draws a game scene and status information at the given time.
   // If demoPlayback is set, local movement prediction will not be enabled
-
-  CG_CROSSHAIR_PLAYER,
-  // int (*CG_CrosshairPlayer)( void );
-
-  CG_LAST_ATTACKER,
-  // int (*CG_LastAttacker)( void );
 
   CG_KEY_EVENT,
   // void  (*CG_KeyEvent)( int key, qboolean down );

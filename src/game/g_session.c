@@ -46,10 +46,14 @@ void G_WriteClientSessionData( gclient_t *client )
   const char  *s;
   const char  *var;
 
-  s = va( "%i %i %i %s",
+  s = va( "%i %i %i %i %i %i %i %s",
+    client->sess.sessionTeam,
     client->sess.spectatorTime,
     client->sess.spectatorState,
     client->sess.spectatorClient,
+    client->sess.wins,
+    client->sess.losses,
+    client->sess.teamLeader,
     BG_ClientListString( &client->sess.ignoreList )
     );
 
@@ -69,21 +73,30 @@ void G_ReadSessionData( gclient_t *client )
 {
   char  s[ MAX_STRING_CHARS ];
   const char  *var;
+  int teamLeader;
   int spectatorState;
-  char ignorelist[ 17 ];
+  int sessionTeam;
 
   var = va( "session%i", client - level.clients );
   trap_Cvar_VariableStringBuffer( var, s, sizeof(s) );
 
-  sscanf( s, "%i %i %i %16s",
+  // FIXME: should be using BG_ClientListParse() for ignoreList, but
+  //        bg_lib.c's sscanf() currently lacks %s
+  sscanf( s, "%i %i %i %i %i %i %i %x%x",
+    &sessionTeam,
     &client->sess.spectatorTime,
     &spectatorState,
     &client->sess.spectatorClient,
-    ignorelist
+    &client->sess.wins,
+    &client->sess.losses,
+    &teamLeader,
+    &client->sess.ignoreList.hi,
+    &client->sess.ignoreList.lo
     );
 
+  client->sess.sessionTeam = (team_t)sessionTeam;
   client->sess.spectatorState = (spectatorState_t)spectatorState;
-  BG_ClientListParse( &client->sess.ignoreList, ignorelist );
+  client->sess.teamLeader = (qboolean)teamLeader;
 }
 
 
@@ -106,15 +119,15 @@ void G_InitSessionData( gclient_t *client, char *userinfo )
   if( value[ 0 ] == 's' )
   {
     // a willing spectator, not a waiting-in-line
-    sess->spectatorState = SPECTATOR_FREE;
+    sess->sessionTeam = TEAM_SPECTATOR;
   }
   else
   {
     if( g_maxGameClients.integer > 0 &&
       level.numNonSpectatorClients >= g_maxGameClients.integer )
-      sess->spectatorState = SPECTATOR_FREE;
+      sess->sessionTeam = TEAM_SPECTATOR;
     else
-      sess->spectatorState = SPECTATOR_NOT;
+      sess->sessionTeam = TEAM_FREE;
   }
 
   sess->spectatorState = SPECTATOR_FREE;

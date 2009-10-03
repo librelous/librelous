@@ -91,7 +91,7 @@ char	*MSG_ReadBigString (msg_t *sb);
 char	*MSG_ReadStringLine (msg_t *sb);
 float	MSG_ReadAngle16 (msg_t *sb);
 void	MSG_ReadData (msg_t *sb, void *buffer, int size);
-int		MSG_LookaheadByte (msg_t *msg);
+
 
 void MSG_WriteDeltaUsercmd( msg_t *msg, struct usercmd_s *from, struct usercmd_s *to );
 void MSG_ReadDeltaUsercmd( msg_t *msg, struct usercmd_s *from, struct usercmd_s *to );
@@ -134,10 +134,7 @@ typedef enum {
 	NA_BAD,					// an address lookup failed
 	NA_LOOPBACK,
 	NA_BROADCAST,
-	NA_IP,
-	NA_IP6,
-	NA_MULTICAST6,
-	NA_UNSPEC
+	NA_IP
 } netadrtype_t;
 
 typedef enum {
@@ -145,15 +142,12 @@ typedef enum {
 	NS_SERVER
 } netsrc_t;
 
-#define NET_ADDRSTRMAXLEN 48	// maximum length of an IPv6 address string including trailing '\0'
 typedef struct {
 	netadrtype_t	type;
 
 	byte	ip[4];
-	byte	ip6[16];
 
 	unsigned short	port;
-	unsigned long	scope_id;	// Needed for IPv6 link-local addresses
 } netadr_t;
 
 void		NET_Init( void );
@@ -169,11 +163,8 @@ qboolean	NET_CompareAdr (netadr_t a, netadr_t b);
 qboolean	NET_CompareBaseAdr (netadr_t a, netadr_t b);
 qboolean	NET_IsLocalAddress (netadr_t adr);
 const char	*NET_AdrToString (netadr_t a);
-const char      *NET_AdrToStringwPort (netadr_t a);
-int		NET_StringToAdr ( const char *s, netadr_t *a, netadrtype_t family);
+qboolean	NET_StringToAdr ( const char *s, netadr_t *a);
 qboolean	NET_GetLoopPacket (netsrc_t sock, netadr_t *net_from, msg_t *net_message);
-void		NET_JoinMulticast6(void);
-void		NET_LeaveMulticast6(void);
 void		NET_Sleep(int msec);
 
 
@@ -261,12 +252,7 @@ enum svc_ops_e {
 	svc_serverCommand,			// [string] to be executed by client game module
 	svc_download,				// [short] size [size bytes]
 	svc_snapshot,
-	svc_EOF,
-
-	// svc_extension follows a svc_EOF, followed by another svc_* ...
-	//  this keeps legacy clients compatible.
-	svc_extension,
-	svc_voip,     // not wrapped in USE_VOIP, so this value is reserved.
+	svc_EOF
 };
 
 
@@ -279,12 +265,7 @@ enum clc_ops_e {
 	clc_move,				// [[usercmd_t]
 	clc_moveNoDelta,		// [[usercmd_t]
 	clc_clientCommand,		// [string] message
-	clc_EOF,
-
-	// clc_extension follows a clc_EOF, followed by another clc_* ...
-	//  this keeps legacy servers compatible.
-	clc_extension,
-	clc_voip,   // not wrapped in USE_VOIP, so this value is reserved.
+	clc_EOF
 };
 
 /*
@@ -328,8 +309,6 @@ vm_t	*VM_Create( const char *module, intptr_t (*systemCalls)(intptr_t *),
 
 void	VM_Free( vm_t *vm );
 void	VM_Clear(void);
-void	VM_Forced_Unload_Start(void);
-void	VM_Forced_Unload_Done(void);
 vm_t	*VM_Restart( vm_t *vm );
 
 intptr_t		QDECL VM_Call( vm_t *vm, int callNum, ... );
@@ -342,9 +321,12 @@ void	*VM_ExplicitArgPtr( vm_t *vm, intptr_t intValue );
 #define	VMA(x) VM_ArgPtr(args[x])
 static ID_INLINE float _vmf(intptr_t x)
 {
-	floatint_t fi;
-	fi.i = (int) x;
-	return fi.f;
+	union {
+		intptr_t l;
+		float f;
+	} t;
+	t.l = x;
+	return t.f;
 }
 #define	VMF(x)	_vmf(args[x])
 
@@ -404,14 +386,8 @@ void	Cmd_AddCommand( const char *cmd_name, xcommand_t function );
 
 void	Cmd_RemoveCommand( const char *cmd_name );
 
-typedef void (*completionFunc_t)( char *args, int argNum );
-
 void	Cmd_CommandCompletion( void(*callback)(const char *s) );
 // callback with each valid string
-void Cmd_SetCommandCompletionFunc( const char *command,
-	completionFunc_t complete );
-void Cmd_CompleteArgument( const char *command, char *args, int argNum );
-void Cmd_CompleteCfgName( char *args, int argNum );
 
 int		Cmd_Argc (void);
 char	*Cmd_Argv (int arg);
@@ -421,7 +397,6 @@ char	*Cmd_ArgsFrom( int arg );
 void	Cmd_ArgsBuffer( char *buffer, int bufferLength );
 void	Cmd_LiteralArgsBuffer( char *buffer, int bufferLength );
 char	*Cmd_Cmd (void);
-void	Cmd_Args_Sanitize( void );
 // The functions that execute commands get their parameters with these
 // functions. Cmd_Argv () will return an empty string, not a NULL
 // if arg > argc, so string operations are allways safe.
@@ -522,11 +497,8 @@ char	*Cvar_InfoString_Big( int bit );
 // returns an info string containing all the cvars that have the given bit set
 // in their flags ( CVAR_USERINFO, CVAR_SERVERINFO, CVAR_SYSTEMINFO, etc )
 void	Cvar_InfoStringBuffer( int bit, char *buff, int buffsize );
-void Cvar_CheckRange( cvar_t *cv, float minVal, float maxVal, qboolean shouldBeIntegral );
 
 void	Cvar_Restart_f( void );
-
-void Cvar_CompleteCvarName( char *args, int argNum );
 
 extern	int			cvar_modifiedFlags;
 // whenever a cvar is modifed, its flags will be OR'd into this, so
@@ -558,12 +530,6 @@ issues.
 
 #define BASEGAME "base"
 
-#ifdef DEDICATED
-#	define Q3CONFIG_CFG "autogen_server.cfg"
-#else
-#	define Q3CONFIG_CFG "autogen.cfg"
-#endif
-
 qboolean FS_Initialized( void );
 
 void	FS_InitFilesystem ( void );
@@ -572,8 +538,6 @@ void	FS_Shutdown( qboolean closemfp );
 qboolean	FS_ConditionalRestart( int checksumFeed );
 void	FS_Restart( int checksumFeed );
 // shutdown and restart the filesystem so changes to fs_gamedir can take effect
-
-void FS_AddGameDirectory( const char *path, const char *dir );
 
 char	**FS_ListFiles( const char *directory, const char *extension, int *numfiles );
 // directory should not have either a leading or trailing /
@@ -592,9 +556,9 @@ int		FS_GetFileList(  const char *path, const char *extension, char *listbuf, in
 int		FS_GetModList(  char *listbuf, int bufsize );
 
 fileHandle_t	FS_FOpenFileWrite( const char *qpath );
-fileHandle_t	FS_FOpenFileAppend( const char *filename );
 // will properly create any needed paths and deal with seperater character issues
 
+int		FS_filelength( fileHandle_t f );
 fileHandle_t FS_SV_FOpenFileWrite( const char *filename );
 int		FS_SV_FOpenFileRead( const char *filename, fileHandle_t *fp );
 void	FS_SV_Rename( const char *from, const char *to );
@@ -690,7 +654,6 @@ void FS_HomeRemove( const char *homePath );
 
 void	FS_FilenameCompletion( const char *dir, const char *ext,
 		qboolean stripExt, void(*callback)(const char *s) );
-
 /*
 ==============================================================
 
@@ -709,11 +672,6 @@ typedef struct {
 
 void Field_Clear( field_t *edit );
 void Field_AutoComplete( field_t *edit );
-void Field_CompleteKeyname( void );
-void Field_CompleteFilename( const char *dir,
-		const char *ext, qboolean stripExt );
-void Field_CompleteCommand( char *cmd,
-		qboolean doCommands, qboolean doCvars );
 
 /*
 ==============================================================
@@ -722,6 +680,16 @@ MISC
 
 ==============================================================
 */
+
+// vsnprintf is ISO/IEC 9899:1999
+// abstracting this to make it portable
+#ifdef _WIN32
+#define Q_vsnprintf _vsnprintf
+#define Q_snprintf _snprintf
+#else
+#define Q_vsnprintf vsnprintf
+#define Q_snprintf snprintf
+#endif
 
 // returned by Sys_GetProcessorFeatures
 typedef enum
@@ -801,9 +769,7 @@ extern	cvar_t	*com_journal;
 extern	cvar_t	*com_cameraMode;
 extern	cvar_t	*com_ansiColor;
 extern	cvar_t	*com_unfocused;
-extern	cvar_t	*com_maxfpsUnfocused;
 extern	cvar_t	*com_minimized;
-extern	cvar_t	*com_maxfpsMinimized;
 extern	cvar_t	*com_altivec;
 
 // both client and server must agree to pause
@@ -1040,7 +1006,7 @@ void	Sys_SetErrorText( const char *text );
 void	Sys_SendPacket( int length, const void *data, netadr_t to );
 qboolean Sys_GetPacket( netadr_t *net_from, msg_t *net_message );
 
-qboolean	Sys_StringToAdr( const char *s, netadr_t *a, netadrtype_t family );
+qboolean	Sys_StringToAdr( const char *s, netadr_t *a );
 //Does NOT parse port numbers, only base addresses.
 
 qboolean	Sys_IsLANAddress (netadr_t adr);
@@ -1050,11 +1016,6 @@ void	Sys_Mkdir( const char *path );
 char	*Sys_Cwd( void );
 void	Sys_SetDefaultInstallPath(const char *path);
 char	*Sys_DefaultInstallPath(void);
-
-#ifdef MACOS_X
-char    *Sys_DefaultAppPath(void);
-#endif
-
 void  Sys_SetDefaultHomePath(const char *path);
 char	*Sys_DefaultHomePath(void);
 const char *Sys_Dirname( char *path );
@@ -1114,17 +1075,13 @@ void	Huff_offsetTransmit (huff_t *huff, int ch, byte *fout, int *offset);
 void	Huff_putBit( int bit, byte *fout, int *offset);
 int		Huff_getBit( byte *fout, int *offset);
 
-// don't use if you don't know what you're doing.
-int		Huff_getBloc(void);
-void	Huff_setBloc(int _bloc);
-
-extern huffman_t clientHuffTables;
-
 int		Parse_AddGlobalDefine(char *string);
 int		Parse_LoadSourceHandle(const char *filename);
 int		Parse_FreeSourceHandle(int handle);
 int		Parse_ReadTokenHandle(int handle, pc_token_t *pc_token);
 int		Parse_SourceFileAndLine(int handle, char *filename, int *line);
+
+extern huffman_t clientHuffTables;
 
 #define	SV_ENCODE_START		4
 #define SV_DECODE_START		12

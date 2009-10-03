@@ -132,10 +132,19 @@ static void CON_HistNext( void )
 
 /*
 ==================
+CON_Hide
+==================
+*/
+void CON_Hide( void )
+{
+}
+
+/*
+==================
 CON_Show
 ==================
 */
-static void CON_Show( void )
+void CON_Show( void )
 {
 	CONSOLE_SCREEN_BUFFER_INFO binfo;
 	COORD writeSize = { MAX_EDIT_LINE, 1 };
@@ -146,7 +155,7 @@ static void CON_Show( void )
 
 	GetConsoleScreenBufferInfo( qconsole_hout, &binfo );
 
-	// if we're in the middle of printf, don't bother writing the buffer
+	// if we' re in the middle of printf, don't bother writing the buffer
 	if( binfo.dwCursorPosition.X != 0 )
 		return;
 
@@ -240,10 +249,10 @@ void CON_Init( void )
 
 /*
 ==================
-CON_Input
+CON_ConsoleInput
 ==================
 */
-char *CON_Input( void )
+char *CON_ConsoleInput( void )
 {
 	INPUT_RECORD buff[ MAX_EDIT_LINE ];
 	DWORD count = 0, events = 0;
@@ -343,16 +352,4 @@ char *CON_Input( void )
 	qconsole_linelen = 0;
 
 	return qconsole_line;
-}
-
-/*
-==================
-CON_Print
-==================
-*/
-void CON_Print( const char *msg )
-{
-	fputs( msg, stderr );
-
-	CON_Show( );
 }

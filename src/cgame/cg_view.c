@@ -353,7 +353,7 @@ static void CG_StepOffset( void )
 
   BG_GetClientNormal( ps, normal );
 
-  steptime = BG_Class( ps->stats[ STAT_CLASS ] )->steptime;
+  steptime = BG_FindSteptimeForClass( ps->stats[ STAT_PCLASS ] );
 
   // smooth out stair climbing
   timeDelta = cg.time - cg.stepTime;
@@ -457,10 +457,10 @@ static void CG_OffsetFirstPersonView( void )
   // add angles based on bob
   // bob amount is class dependant
 
-  if( cg.snap->ps.persistant[ PERS_SPECSTATE ] != SPECTATOR_NOT )
+  if( cg.snap->ps.persistant[ PERS_TEAM ] == TEAM_SPECTATOR )
     bob2 = 0.0f;
   else
-    bob2 = BG_Class( cg.predictedPlayerState.stats[ STAT_CLASS ] )->bob;
+    bob2 = BG_FindBobForClass( cg.predictedPlayerState.stats[ STAT_PCLASS ] );
 
 
 #define LEVEL4_FEEDBACK  10.0f
@@ -593,7 +593,7 @@ static void CG_OffsetFirstPersonView( void )
   }
 
   // this *feels* more realisitic for humans
-  if( cg.predictedPlayerState.stats[ STAT_TEAM ] == TEAM_HUMANS )
+  if( cg.predictedPlayerState.stats[ STAT_PTEAM ] == PTE_HUMANS )
   {
     angles[PITCH] += cg.bobfracsin * bob2 * 0.5;
 
@@ -665,17 +665,14 @@ CG_CalcFov
 Fixed fov at intermissions, otherwise account for fov variable and zooms.
 ====================
 */
-#define WAVE_AMPLITUDE  1.0f
-#define WAVE_FREQUENCY  0.4f
+#define WAVE_AMPLITUDE  1
+#define WAVE_FREQUENCY  0.4
 
-#define FOVWARPTIME     400.0f
-#define BASE_FOV_Y      67.5f
-#define MAX_FOV_Y       120.0f
-#define MAX_FOV_WARP_Y  127.5f
+#define FOVWARPTIME     400.0
 
 static int CG_CalcFov( void )
 {
-  float     y;
+  float     x;
   float     phase;
   float     v;
   int       contents;
@@ -691,49 +688,54 @@ static int CG_CalcFov( void )
   trap_GetUserCmd( cmdNum, &cmd );
 
   if( cg.predictedPlayerState.pm_type == PM_INTERMISSION ||
-      ( cg.snap->ps.persistant[ PERS_SPECSTATE ] != SPECTATOR_NOT ) )
+      ( cg.snap->ps.persistant[ PERS_TEAM ] == TEAM_SPECTATOR ) )
   {
     // if in intermission, use a fixed value
-    fov_y = BASE_FOV_Y;
+    fov_x = 90;
   }
   else
   {
     // don't lock the fov globally - we need to be able to change it
-    attribFov = BG_Class( cg.predictedPlayerState.stats[ STAT_CLASS ] )->fov * 0.75f;
-    fov_y = attribFov;
+    attribFov = BG_FindFovForClass( cg.predictedPlayerState.stats[ STAT_PCLASS ] );
+    fov_x = attribFov;
 
-    if ( fov_y < 1.0f )
-      fov_y = 1.0f;
-    else if ( fov_y > MAX_FOV_Y )
-      fov_y = MAX_FOV_Y;
+    if ( fov_x < 1 )
+      fov_x = 1;
+    else if ( fov_x > 160 )
+      fov_x = 160;
 
     if( cg.spawnTime > ( cg.time - FOVWARPTIME ) &&
-        BG_ClassHasAbility( cg.predictedPlayerState.stats[ STAT_CLASS ], SCA_FOVWARPS ) )
+        BG_ClassHasAbility( cg.predictedPlayerState.stats[ STAT_PCLASS ], SCA_FOVWARPS ) )
     {
-      float fraction = (float)( cg.time - cg.spawnTime ) / FOVWARPTIME;
+      float temp, temp2;
 
-      fov_y = MAX_FOV_WARP_Y - ( ( MAX_FOV_WARP_Y - fov_y ) * fraction );
+      temp = (float)( cg.time - cg.spawnTime ) / FOVWARPTIME;
+      temp2 = ( 170 - fov_x ) * temp;
+
+      //Com_Printf( "%f %f\n", temp*100, temp2*100 );
+
+      fov_x = 170 - temp2;
     }
 
     // account for zooms
-    zoomFov = BG_Weapon( cg.predictedPlayerState.weapon )->zoomFov * 0.75f;
-    if ( zoomFov < 1.0f )
-      zoomFov = 1.0f;
+    zoomFov = BG_FindZoomFovForWeapon( cg.predictedPlayerState.weapon );
+    if ( zoomFov < 1 )
+      zoomFov = 1;
     else if ( zoomFov > attribFov )
       zoomFov = attribFov;
 
     // only do all the zoom stuff if the client CAN zoom
     // FIXME: zoom control is currently hard coded to BUTTON_ATTACK2
-    if( BG_Weapon( cg.predictedPlayerState.weapon )->canZoom )
+    if( BG_WeaponCanZoom( cg.predictedPlayerState.weapon ) )
     {
       if ( cg.zoomed )
       {
         f = ( cg.time - cg.zoomTime ) / (float)ZOOM_TIME;
 
-        if ( f > 1.0f )
-          fov_y = zoomFov;
+        if ( f > 1.0 )
+          fov_x = zoomFov;
         else
-          fov_y = fov_y + f * ( zoomFov - fov_y );
+          fov_x = fov_x + f * ( zoomFov - fov_x );
 
         // BUTTON_ATTACK2 isn't held so unzoom next time
         if( !( cmd.buttons & BUTTON_ATTACK2 ) )
@@ -746,10 +748,10 @@ static int CG_CalcFov( void )
       {
         f = ( cg.time - cg.zoomTime ) / (float)ZOOM_TIME;
 
-        if ( f > 1.0f )
-          fov_y = fov_y;
+        if ( f > 1.0 )
+          fov_x = fov_x;
         else
-          fov_y = zoomFov + f * ( fov_y - zoomFov );
+          fov_x = zoomFov + f * ( fov_x - zoomFov );
 
         // BUTTON_ATTACK2 is held so zoom next time
         if( cmd.buttons & BUTTON_ATTACK2 )
@@ -761,16 +763,16 @@ static int CG_CalcFov( void )
     }
   }
 
-  y = cg.refdef.height / tan( fov_y / 360.0f * M_PI );
-  fov_x = atan2( cg.refdef.width, y );
-  fov_x = fov_x * 360.0f / M_PI;
+  x = cg.refdef.width / tan( fov_x / 360 * M_PI );
+  fov_y = atan2( cg.refdef.height, x );
+  fov_y = fov_y * 360 / M_PI;
 
   // warp if underwater
   contents = CG_PointContents( cg.refdef.vieworg, -1 );
 
   if( contents & ( CONTENTS_WATER | CONTENTS_SLIME | CONTENTS_LAVA ) )
   {
-    phase = cg.time / 1000.0f * WAVE_FREQUENCY * M_PI * 2.0f;
+    phase = cg.time / 1000.0 * WAVE_FREQUENCY * M_PI * 2;
     v = WAVE_AMPLITUDE * sin( phase );
     fov_x += v;
     fov_y -= v;
@@ -783,7 +785,7 @@ static int CG_CalcFov( void )
       cg.predictedPlayerState.stats[ STAT_HEALTH ] > 0 &&
       !( cg.snap->ps.pm_flags & PMF_FOLLOW ) )
   {
-    phase = cg.time / 1000.0f * PCLOUD_ZOOM_FREQUENCY * M_PI * 2.0f;
+    phase = cg.time / 1000.0 * PCLOUD_ZOOM_FREQUENCY * M_PI * 2;
     v = PCLOUD_ZOOM_AMPLITUDE * sin( phase );
     v *= 1.0f - ( ( cg.time - cg.poisonedTime ) / (float)LEVEL1_PCLOUD_TIME );
     fov_x += v;
@@ -796,9 +798,9 @@ static int CG_CalcFov( void )
   cg.refdef.fov_y = fov_y;
 
   if( !cg.zoomed )
-    cg.zoomSensitivity = 1.0f;
+    cg.zoomSensitivity = 1;
   else
-    cg.zoomSensitivity = cg.refdef.fov_y / 75.0f;
+    cg.zoomSensitivity = cg.refdef.fov_y / 75.0;
 
   return inwater;
 }
@@ -1067,16 +1069,16 @@ static int CG_CalcViewValues( void )
 
   VectorCopy( ps->origin, cg.refdef.vieworg );
 
-  if( BG_ClassHasAbility( ps->stats[ STAT_CLASS ], SCA_WALLCLIMBER ) )
+  if( BG_ClassHasAbility( ps->stats[ STAT_PCLASS ], SCA_WALLCLIMBER ) )
     CG_smoothWWTransitions( ps, ps->viewangles, cg.refdefViewAngles );
-  else if( BG_ClassHasAbility( ps->stats[ STAT_CLASS ], SCA_WALLJUMPER ) )
+  else if( BG_ClassHasAbility( ps->stats[ STAT_PCLASS ], SCA_WALLJUMPER ) )
     CG_smoothWJTransitions( ps, ps->viewangles, cg.refdefViewAngles );
   else
     VectorCopy( ps->viewangles, cg.refdefViewAngles );
 
   //clumsy logic, but it needs to be this way round because the CS propogation
   //delay screws things up otherwise
-  if( !BG_ClassHasAbility( ps->stats[ STAT_CLASS ], SCA_WALLJUMPER ) )
+  if( !BG_ClassHasAbility( ps->stats[ STAT_PCLASS ], SCA_WALLJUMPER ) )
   {
     if( !( ps->stats[ STAT_STATE ] & SS_WALLCLIMBING ) )
       VectorSet( cg.lastNormal, 0.0f, 0.0f, 1.0f );

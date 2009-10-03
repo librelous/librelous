@@ -19,12 +19,6 @@ along with Tremulous; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
-
-#include "../qcommon/q_shared.h"
-#include "../qcommon/qcommon.h"
-#include "sys_local.h"
-
-#include <signal.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
@@ -35,6 +29,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <sys/time.h>
 #include <pwd.h>
 #include <libgen.h>
+
+#include "../qcommon/q_shared.h"
+#include "../qcommon/qcommon.h"
 
 // Used to determine where to store user-specific files
 static char homePath[ MAX_OSPATH ] = { 0 };
@@ -231,10 +228,7 @@ char *Sys_Cwd( void )
 {
 	static char cwd[MAX_OSPATH];
 
-	char *result = getcwd( cwd, sizeof( cwd ) - 1 );
-	if( result != cwd )
-		return NULL;
-
+	getcwd( cwd, sizeof( cwd ) - 1 );
 	cwd[MAX_OSPATH-1] = 0;
 
 	return cwd;
@@ -467,9 +461,6 @@ void Sys_Sleep( int msec )
 {
 	fd_set fdset;
 
-	if( msec == 0 )
-		return;
-
 	FD_ZERO(&fdset);
 	FD_SET(fileno(stdin), &fdset);
 	if( msec < 0 )
@@ -484,62 +475,4 @@ void Sys_Sleep( int msec )
 		timeout.tv_usec = (msec%1000)*1000;
 		select((fileno(stdin) + 1), &fdset, NULL, NULL, &timeout);
 	}
-}
-
-/*
-==============
-Sys_ErrorDialog
-
-Display an error message
-==============
-*/
-void Sys_ErrorDialog( const char *error )
-{
-	char buffer[ 1024 ];
-	unsigned int size;
-	fileHandle_t f;
-	const char *fileName = "crashlog.txt";
-
-	Sys_Print( va( "%s\n", error ) );
-
-	// Write console log to file
-	f = FS_FOpenFileWrite( fileName );
-	if( !f )
-	{
-		Com_Printf( "ERROR: couldn't open %s\n", fileName );
-		return;
-	}
-
-	while( ( size = CON_LogRead( buffer, sizeof( buffer ) ) ) > 0 )
-		FS_Write( buffer, size, f );
-
-	FS_FCloseFile( f );
-}
-
-/*
-==============
-Sys_GLimpInit
-
-Unix specific GL implementation initialisation
-==============
-*/
-void Sys_GLimpInit( void )
-{
-	// NOP
-}
-
-/*
-==============
-Sys_PlatformInit
-
-Unix specific initialisation
-==============
-*/
-void Sys_PlatformInit( void )
-{
-	signal( SIGHUP, Sys_SigHandler );
-	signal( SIGQUIT, Sys_SigHandler );
-	signal( SIGTRAP, Sys_SigHandler );
-	signal( SIGIOT, Sys_SigHandler );
-	signal( SIGBUS, Sys_SigHandler );
 }

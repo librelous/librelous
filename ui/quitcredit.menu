@@ -66,7 +66,6 @@
       group       grpidcredit
       style       WINDOW_STYLE_EMPTY
       rect        320 48 1 1
-      type        ITEM_TYPE_TEXT
       textalign   ALIGN_CENTER
       textscale   0.75
       textstyle   ITEM_TEXTSTYLE_NORMAL
@@ -83,7 +82,6 @@
       group       grpidcredit
       style       WINDOW_STYLE_EMPTY
       rect        10 96 1 1
-      type        ITEM_TYPE_TEXT
       textalign   ALIGN_LEFT
       textscale   0.50
       textstyle   ITEM_TEXTSTYLE_NORMAL
@@ -99,7 +97,6 @@
       group       grpidcredit
       style       WINDOW_STYLE_EMPTY
       rect        630 96 1 1
-      type        ITEM_TYPE_TEXT
       textalign   ALIGN_RIGHT
       textscale   0.50
       textstyle   ITEM_TEXTSTYLE_NORMAL
@@ -116,7 +113,6 @@
       group       grpidcredit
       style       WINDOW_STYLE_EMPTY
       rect        10 128 1 1
-      type        ITEM_TYPE_TEXT
       textalign   ALIGN_LEFT
       textscale   0.50
       textstyle   ITEM_TEXTSTYLE_NORMAL
@@ -132,7 +128,6 @@
       group       grpidcredit
       style       WINDOW_STYLE_EMPTY
       rect        630 128 1 1
-      type        ITEM_TYPE_TEXT
       textalign   ALIGN_RIGHT
       textscale   0.50
       textstyle   ITEM_TEXTSTYLE_NORMAL
@@ -149,7 +144,6 @@
       group       grpidcredit
       style       WINDOW_STYLE_EMPTY
       rect        10 160 1 1
-      type        ITEM_TYPE_TEXT
       textalign   ALIGN_LEFT
       textscale   0.50
       textstyle   ITEM_TEXTSTYLE_NORMAL
@@ -165,7 +159,6 @@
       group       grpidcredit
       style       WINDOW_STYLE_EMPTY
       rect        630 160 1 1
-      type        ITEM_TYPE_TEXT
       textalign   ALIGN_RIGHT
       textscale   0.50
       textstyle   ITEM_TEXTSTYLE_NORMAL
@@ -182,7 +175,6 @@
       group       grpidcredit
       style       WINDOW_STYLE_EMPTY
       rect        10 192 1 1
-      type        ITEM_TYPE_TEXT
       textalign   ALIGN_LEFT
       textscale   0.50
       textstyle   ITEM_TEXTSTYLE_NORMAL
@@ -198,7 +190,6 @@
       group       grpidcredit
       style       WINDOW_STYLE_EMPTY
       rect        630 192 1 1
-      type        ITEM_TYPE_TEXT
       textalign   ALIGN_RIGHT
       textscale   0.50
       textstyle   ITEM_TEXTSTYLE_NORMAL
@@ -215,7 +206,6 @@
       group       grpidcredit
       style       WINDOW_STYLE_EMPTY
       rect        10 224 1 1
-      type        ITEM_TYPE_TEXT
       textalign   ALIGN_LEFT
       textscale   0.50
       textstyle   ITEM_TEXTSTYLE_NORMAL
@@ -231,7 +221,6 @@
       group       grpidcredit
       style       WINDOW_STYLE_EMPTY
       rect        630 224 1 1
-      type        ITEM_TYPE_TEXT
       textalign   ALIGN_RIGHT
       textscale   0.50
       textstyle   ITEM_TEXTSTYLE_NORMAL
@@ -248,7 +237,6 @@
       group       grpidcredit
       style       WINDOW_STYLE_EMPTY
       rect        10 256 1 1
-      type        ITEM_TYPE_TEXT
       textalign   ALIGN_LEFT
       textscale   0.50
       textstyle   ITEM_TEXTSTYLE_NORMAL
@@ -264,7 +252,6 @@
       group       grpidcredit
       style       WINDOW_STYLE_EMPTY
       rect        630 256 1 1
-      type        ITEM_TYPE_TEXT
       textalign   ALIGN_RIGHT
       textscale   0.50
       textstyle   ITEM_TEXTSTYLE_NORMAL
@@ -281,7 +268,6 @@
       group       grpidcredit
       style       WINDOW_STYLE_EMPTY
       rect        10 288 1 1
-      type        ITEM_TYPE_TEXT
       textalign   ALIGN_LEFT
       textscale   0.50
       textstyle   ITEM_TEXTSTYLE_NORMAL
@@ -297,7 +283,6 @@
       group       grpidcredit
       style       WINDOW_STYLE_EMPTY
       rect        630 288 1 1
-      type        ITEM_TYPE_TEXT
       textalign   ALIGN_RIGHT
       textscale   0.50
       textstyle   ITEM_TEXTSTYLE_NORMAL
@@ -314,7 +299,6 @@
       group       grpidcredit
       style       WINDOW_STYLE_EMPTY
       rect        10 320 1 1
-      type        ITEM_TYPE_TEXT
       textalign   ALIGN_LEFT
       textscale   0.50
       textstyle   ITEM_TEXTSTYLE_NORMAL
@@ -330,7 +314,6 @@
       group       grpidcredit
       style       WINDOW_STYLE_EMPTY
       rect        630 320 1 1
-      type        ITEM_TYPE_TEXT
       textalign   ALIGN_RIGHT
       textscale   0.50
       textstyle   ITEM_TEXTSTYLE_NORMAL
@@ -347,7 +330,6 @@
       group       grpidcredit
       style       WINDOW_STYLE_EMPTY
       rect        10 352 1 1
-      type        ITEM_TYPE_TEXT
       textalign   ALIGN_LEFT
       textscale   0.50
       textstyle   ITEM_TEXTSTYLE_NORMAL
@@ -363,7 +345,6 @@
       group       grpidcredit
       style       WINDOW_STYLE_EMPTY
       rect        630 352 1 1
-      type        ITEM_TYPE_TEXT
       textalign   ALIGN_RIGHT
       textscale   0.50
       textstyle   ITEM_TEXTSTYLE_NORMAL
@@ -380,7 +361,6 @@
       group       grpidcredit
       style       WINDOW_STYLE_EMPTY
       rect        10 384 1 1
-      type        ITEM_TYPE_TEXT
       textalign   ALIGN_LEFT
       textscale   0.50
       textstyle   ITEM_TEXTSTYLE_NORMAL
@@ -396,7 +376,6 @@
       group       grpidcredit
       style       WINDOW_STYLE_EMPTY
       rect        630 384 1 1
-      type        ITEM_TYPE_TEXT
       textalign   ALIGN_RIGHT
       textscale   0.50
       textstyle   ITEM_TEXTSTYLE_NORMAL

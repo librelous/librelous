@@ -243,7 +243,7 @@
       group optionsGrp
       type ITEM_TYPE_MULTI
       text "Wallwalking Speed:"
-      cvar "cg_wwSmoothTime"
+      cvarfloat "cg_wwSmoothTime" 300 0 1000
       cvarFloatList { "Medium" 300 "Fast" 150 "Instant" 0 "Slow" 600 }
       rect CONTENT_X (CONTENT_Y+(5*ELEM_H)) CONTENT_W ELEM_H
       textalign ALIGN_RIGHT
@@ -1334,9 +1334,12 @@
     {
       name ghardware
       group optionsGrp
-      type ITEM_TYPE_COMBO
+      type ITEM_TYPE_MULTI
       text "Video Mode:"
-      feeder FEEDER_RESOLUTIONS
+      cvar "r_mode"
+      cvarFloatList { "320x240" 0 "400x300" 1 "512x384" 2 "640x480" 3
+                      "800x600" 4 "960x720" 5 "1024x768" 6 "1152x864" 7
+                      "1280x1024" 8 "1600x1200" 9 "2048x1536" 10 "856x480 wide screen" 11 }
       rect SCONTENT_X (SCONTENT_Y+(2*ELEM_H)) SCONTENT_W ELEM_H
       textalign ALIGN_RIGHT
       textvalign VALIGN_CENTER
@@ -1347,6 +1350,7 @@
       action
       {
         play "sound/misc/menu1.wav";
+        uiScript glCustom
       }
     }
 
@@ -1893,7 +1897,6 @@
       name netsound
       group optionsGrp
       style WINDOW_STYLE_FILLED
-      type ITEM_TYPE_TEXT
       text "Sound"
       rect SCONTENT_X (SCONTENT_Y+(0*ELEM_H)) SCONTENT_W ELEM_H
       textalign ALIGN_CENTER
@@ -2006,7 +2009,6 @@
       name netsound
       group optionsGrp
       style WINDOW_STYLE_FILLED
-      type ITEM_TYPE_TEXT
       text "Network"
       rect SCONTENT_X (SCONTENT_Y+(7*ELEM_H)) SCONTENT_W ELEM_H
       textalign ALIGN_CENTER

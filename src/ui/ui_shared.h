@@ -202,13 +202,8 @@ typedef struct listBoxDef_s
   qboolean notselectable;
   qboolean noscrollbar;
 }
-listBoxDef_t;
 
-typedef struct comboBoxDef_s
-{
-  int cursorPos;
-}
-comboBoxDef_t;
+listBoxDef_t;
 
 typedef struct editFieldDef_s
 {
@@ -250,17 +245,6 @@ modelDef_t;
 #define CVAR_SHOW      0x00000004
 #define CVAR_HIDE      0x00000008
 
-typedef enum
-{
-  TYPE_ANY = -1,
-  TYPE_NONE,
-  TYPE_LIST,
-  TYPE_EDIT,
-  TYPE_MULTI,
-  TYPE_COMBO,
-  TYPE_MODEL
-} itemDataType_t;
-
 typedef struct itemDef_s
 {
   Window window;                 // common positional, border, style, layout info
@@ -291,17 +275,9 @@ typedef struct itemDef_s
   sfxHandle_t focusSound;
   int numColors;                 // number of color ranges
   colorRangeDef_t colorRanges[MAX_COLOR_RANGES];
-  int feederID;                  // where to get data for this item
+  float special;                 // used for feeder id's etc.. diff per type
   int cursorPos;                 // cursor position in characters
-  union
-  {
-    void           *data;
-    listBoxDef_t   *list;
-    editFieldDef_t *edit;
-    multiDef_t     *multi;
-    comboBoxDef_t  *combo;
-    modelDef_t     *model;
-  } typeData;                    // type specific data pointers
+  void *typeData;                 // type specific data ptr's
 }
 itemDef_t;
 
@@ -360,10 +336,7 @@ typedef struct
   vec4_t shadowColor;
   float shadowFadeClamp;
   qboolean fontRegistered;
-  char emoticons[ MAX_EMOTICONS ][ MAX_EMOTICON_NAME_LEN ];
-  qhandle_t emoticonShaders[ MAX_EMOTICONS ];
-  int emoticonWidths[ MAX_EMOTICONS ];
-  int emoticonCount;
+
 }
 cachedAssets_t;
 
@@ -390,7 +363,7 @@ typedef struct
   void ( *addRefEntityToScene ) ( const refEntity_t *re );
   void ( *renderScene ) ( const refdef_t *fd );
   void ( *registerFont ) ( const char *pFontname, int pointSize, fontInfo_t *font );
-  void ( *ownerDrawItem ) ( float x, float y, float w, float h, float text_x, float text_y, int ownerDraw, int ownerDrawFlags, int align, int textalign, int textvalign, float borderSize, float scale, vec4_t color, qhandle_t shader, int textStyle );
+  void ( *ownerDrawItem ) ( float x, float y, float w, float h, float text_x, float text_y, int ownerDraw, int ownerDrawFlags, int align, int textalign, int textvalign, float special, float scale, vec4_t color, qhandle_t shader, int textStyle );
   float ( *getValue ) ( int ownerDraw );
   qboolean ( *ownerDrawVisible ) ( int flags );
   void ( *runScript )( char **p );
@@ -401,12 +374,11 @@ typedef struct
   void ( *setOverstrikeMode )( qboolean b );
   qboolean ( *getOverstrikeMode )( void );
   void ( *startLocalSound )( sfxHandle_t sfx, int channelNum );
-  qboolean ( *ownerDrawHandleKey )( int ownerDraw, int key );
+  qboolean ( *ownerDrawHandleKey )( int ownerDraw, int flags, float *special, int key );
   int ( *feederCount )( float feederID );
   const char *( *feederItemText )( float feederID, int index, int column, qhandle_t *handle );
   qhandle_t ( *feederItemImage )( float feederID, int index );
   void ( *feederSelection )( float feederID, int index );
-  int ( *feederInitialise )( float feederID );
   void ( *keynumToStringBuf )( int keynum, char *buf, int buflen );
   void ( *getBindingBuf )( int keynum, char *buf, int buflen );
   void ( *setBinding )( int keynum, const char *binding );

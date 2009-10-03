@@ -287,9 +287,6 @@ void SV_Startup( void ) {
 	}
 
 	Cvar_Set( "sv_running", "1" );
-	
-	// Join the ipv6 multicast group now that a map is running so clients can scan for us on the local network.
-	NET_JoinMulticast6();
 }
 
 
@@ -610,10 +607,6 @@ void SV_Init (void) {
 	Cvar_Get ("sv_cheats", "1", CVAR_SYSTEMINFO | CVAR_ROM );
 	sv_serverid = Cvar_Get ("sv_serverid", "0", CVAR_SYSTEMINFO | CVAR_ROM );
 	sv_pure = Cvar_Get ("sv_pure", "1", CVAR_SYSTEMINFO );
-#ifdef USE_VOIP
-	sv_voip = Cvar_Get ("sv_voip", "1", CVAR_SYSTEMINFO | CVAR_LATCH);
-	Cvar_CheckRange( sv_voip, 0, 1, qtrue );
-#endif
 	Cvar_Get ("sv_paks", "", CVAR_SYSTEMINFO | CVAR_ROM );
 	Cvar_Get ("sv_pakNames", "", CVAR_SYSTEMINFO | CVAR_ROM );
 	Cvar_Get ("sv_referencedPaks", "", CVAR_SYSTEMINFO | CVAR_ROM );
@@ -627,7 +620,7 @@ void SV_Init (void) {
 	sv_zombietime = Cvar_Get ("sv_zombietime", "2", CVAR_TEMP );
 
 	sv_allowDownload = Cvar_Get ("sv_allowDownload", "0", CVAR_SERVERINFO);
-	Cvar_Get ("sv_dlURL", "http://downloads.tremulous.net", CVAR_SERVERINFO | CVAR_ARCHIVE);
+	Cvar_Get ("sv_dlURL", "", CVAR_SERVERINFO | CVAR_ARCHIVE);
 	sv_master[0] = Cvar_Get ("sv_master1", MASTER_SERVER_NAME, 0 );
 	sv_master[1] = Cvar_Get ("sv_master2", "", CVAR_ARCHIVE );
 	sv_master[2] = Cvar_Get ("sv_master3", "", CVAR_ARCHIVE );
@@ -664,7 +657,7 @@ void SV_FinalMessage( char *message ) {
 				// don't send a disconnect to a local client
 				if ( cl->netchan.remoteAddress.type != NA_LOOPBACK ) {
 					SV_SendServerCommand( cl, "print \"%s\n\"\n", message );
-					SV_SendServerCommand( cl, "disconnect \"%s\"", message );
+					SV_SendServerCommand( cl, "disconnect" );
 				}
 				// force a snapshot to be sent
 				cl->nextSnapshotTime = -1;
@@ -689,8 +682,6 @@ void SV_Shutdown( char *finalmsg ) {
 	}
 
 	Com_Printf( "----- Server Shutdown (%s) -----\n", finalmsg );
-
-	NET_LeaveMulticast6();
 
 	if ( svs.clients && !com_errorEntered ) {
 		SV_FinalMessage( finalmsg );

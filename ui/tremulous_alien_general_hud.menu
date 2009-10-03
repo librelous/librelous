@@ -14,12 +14,13 @@
     aspectBias ASPECT_NONE
 
 #include "ui/tremulous_alien_common_hud.h"
+#include "ui/tremulous_common_hud.h"
 
     //BLOB
     itemDef
     {
       name "blob"
-      rect 497 419 52 18
+      rect 479 419 57 18
       aspectBias ALIGN_RIGHT
       visible MENU_TRUE
       forecolor 1.0 0.0 0.0 0.5

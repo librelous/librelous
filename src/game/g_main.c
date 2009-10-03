@@ -33,6 +33,7 @@ typedef struct
   int     cvarFlags;
   int     modificationCount;  // for tracking changes
   qboolean  trackChange;  // track this variable, and announce if changed
+  qboolean teamShader;        // track and if changed, update shader state
 } cvarTable_t;
 
 gentity_t   g_entities[ MAX_GENTITIES ];
@@ -46,7 +47,6 @@ vmCvar_t  g_friendlyFire;
 vmCvar_t  g_friendlyFireAliens;
 vmCvar_t  g_friendlyFireHumans;
 vmCvar_t  g_friendlyBuildableFire;
-vmCvar_t  g_dretchPunt;
 vmCvar_t  g_password;
 vmCvar_t  g_needpass;
 vmCvar_t  g_maxclients;
@@ -60,6 +60,7 @@ vmCvar_t  g_quadfactor;
 vmCvar_t  g_inactivity;
 vmCvar_t  g_debugMove;
 vmCvar_t  g_debugDamage;
+vmCvar_t  g_debugAlloc;
 vmCvar_t  g_weaponRespawn;
 vmCvar_t  g_weaponTeamRespawn;
 vmCvar_t  g_motd;
@@ -76,10 +77,13 @@ vmCvar_t  g_allowVote;
 vmCvar_t  g_voteLimit;
 vmCvar_t  g_teamAutoJoin;
 vmCvar_t  g_teamForceBalance;
+vmCvar_t  g_banIPs;
+vmCvar_t  g_filterBan;
 vmCvar_t  g_smoothClients;
 vmCvar_t  pmove_fixed;
 vmCvar_t  pmove_msec;
 vmCvar_t  g_rankings;
+vmCvar_t  g_listEntity;
 vmCvar_t  g_minCommandPeriod;
 vmCvar_t  g_minNameChangePeriod;
 vmCvar_t  g_maxNameChanges;
@@ -108,35 +112,23 @@ vmCvar_t  g_markDeconstruct;
 vmCvar_t  g_debugMapRotation;
 vmCvar_t  g_currentMapRotation;
 vmCvar_t  g_currentMap;
-vmCvar_t  g_nextMap;
 vmCvar_t  g_initialMapRotation;
-
-vmCvar_t  g_debugVoices;
-vmCvar_t  g_voiceChats;
 
 vmCvar_t  g_shove;
 
 vmCvar_t  g_mapConfigs;
 vmCvar_t  g_chatTeamPrefix;
 
-vmCvar_t  g_floodMaxDemerits;
-vmCvar_t  g_floodMinTime;
-
 vmCvar_t  g_layouts;
 vmCvar_t  g_layoutAuto;
-
-vmCvar_t  g_emoticonsAllowedInNames;
 
 vmCvar_t  g_admin;
 vmCvar_t  g_adminLog;
 vmCvar_t  g_adminParseSay;
 vmCvar_t  g_adminNameProtect;
 vmCvar_t  g_adminTempBan;
-vmCvar_t  g_adminMaxBan;
 
 vmCvar_t  g_privateMessages;
-vmCvar_t  g_specChat;
-vmCvar_t  g_publicAdminMessages;
 
 vmCvar_t  g_tag;
 
@@ -169,7 +161,6 @@ static cvarTable_t   gameCvarTable[ ] =
   { &g_friendlyFireAliens, "g_friendlyFireAliens", "0", CVAR_ARCHIVE, 0, qtrue  },
   { &g_friendlyFireHumans, "g_friendlyFireHumans", "0", CVAR_ARCHIVE, 0, qtrue  },
   { &g_friendlyBuildableFire, "g_friendlyBuildableFire", "0", CVAR_ARCHIVE, 0, qtrue  },
-  { &g_dretchPunt, "g_dretchPunt", "0", CVAR_ARCHIVE, 0, qtrue  },
 
   { &g_teamAutoJoin, "g_teamAutoJoin", "0", CVAR_ARCHIVE  },
   { &g_teamForceBalance, "g_teamForceBalance", "0", CVAR_ARCHIVE  },
@@ -180,6 +171,9 @@ static cvarTable_t   gameCvarTable[ ] =
   { &g_logFileSync, "g_logFileSync", "0", CVAR_ARCHIVE, 0, qfalse  },
 
   { &g_password, "g_password", "", CVAR_USERINFO, 0, qfalse  },
+
+  { &g_banIPs, "g_banIPs", "", CVAR_ARCHIVE, 0, qfalse  },
+  { &g_filterBan, "g_filterBan", "1", CVAR_ARCHIVE, 0, qfalse  },
 
   { &g_needpass, "g_needpass", "0", CVAR_SERVERINFO | CVAR_ROM, 0, qfalse },
 
@@ -194,6 +188,7 @@ static cvarTable_t   gameCvarTable[ ] =
   { &g_inactivity, "g_inactivity", "0", 0, 0, qtrue },
   { &g_debugMove, "g_debugMove", "0", 0, 0, qfalse },
   { &g_debugDamage, "g_debugDamage", "0", 0, 0, qfalse },
+  { &g_debugAlloc, "g_debugAlloc", "0", 0, 0, qfalse },
   { &g_motd, "g_motd", "", 0, 0, qfalse },
   { &g_blood, "com_blood", "1", 0, 0, qfalse },
 
@@ -202,6 +197,7 @@ static cvarTable_t   gameCvarTable[ ] =
 
   { &g_allowVote, "g_allowVote", "1", CVAR_ARCHIVE, 0, qfalse },
   { &g_voteLimit, "g_voteLimit", "5", CVAR_ARCHIVE, 0, qfalse },
+  { &g_listEntity, "g_listEntity", "0", 0, 0, qfalse },
   { &g_minCommandPeriod, "g_minCommandPeriod", "500", 0, 0, qfalse},
   { &g_minNameChangePeriod, "g_minNameChangePeriod", "5", 0, 0, qfalse},
   { &g_maxNameChanges, "g_maxNameChanges", "5", 0, 0, qfalse},
@@ -222,49 +218,38 @@ static cvarTable_t   gameCvarTable[ ] =
   { &g_alienMaxStage, "g_alienMaxStage", DEFAULT_ALIEN_MAX_STAGE, 0, 0, qfalse  },
   { &g_alienStage2Threshold, "g_alienStage2Threshold", DEFAULT_ALIEN_STAGE2_THRESH, 0, 0, qfalse  },
   { &g_alienStage3Threshold, "g_alienStage3Threshold", DEFAULT_ALIEN_STAGE3_THRESH, 0, 0, qfalse  },
-
+  
   { &g_unlagged, "g_unlagged", "1", CVAR_SERVERINFO | CVAR_ARCHIVE, 0, qfalse  },
 
   { &g_disabledEquipment, "g_disabledEquipment", "", CVAR_ROM, 0, qfalse  },
   { &g_disabledClasses, "g_disabledClasses", "", CVAR_ROM, 0, qfalse  },
   { &g_disabledBuildables, "g_disabledBuildables", "", CVAR_ROM, 0, qfalse  },
 
-  { &g_chatTeamPrefix, "g_chatTeamPrefix", "0", CVAR_ARCHIVE, 0, qfalse  },
-
-  { &g_floodMaxDemerits, "g_floodMaxDemerits", "5000", CVAR_ARCHIVE, 0, qfalse  },
-  { &g_floodMinTime, "g_floodMinTime", "2000", CVAR_ARCHIVE, 0, qfalse  },
+  { &g_chatTeamPrefix, "g_chatTeamPrefix", "0", CVAR_ARCHIVE  },
 
   { &g_markDeconstruct, "g_markDeconstruct", "1", CVAR_SERVERINFO | CVAR_ARCHIVE, 0, qfalse  },
 
   { &g_debugMapRotation, "g_debugMapRotation", "0", 0, 0, qfalse  },
   { &g_currentMapRotation, "g_currentMapRotation", "-1", 0, 0, qfalse  }, // -1 = NOT_ROTATING
   { &g_currentMap, "g_currentMap", "0", 0, 0, qfalse  },
-  { &g_nextMap, "g_nextMap", "", 0 , 0, qtrue  },
   { &g_initialMapRotation, "g_initialMapRotation", "", CVAR_ARCHIVE, 0, qfalse  },
-  { &g_debugVoices, "g_debugVoices", "0", 0, 0, qfalse  },
-  { &g_voiceChats, "g_voiceChats", "1", CVAR_ARCHIVE, 0, qfalse },
   { &g_shove, "g_shove", "0.0", CVAR_ARCHIVE, 0, qfalse  },
   { &g_mapConfigs, "g_mapConfigs", "", CVAR_ARCHIVE, 0, qfalse  },
   { NULL, "g_mapConfigsLoaded", "0", CVAR_ROM, 0, qfalse  },
 
   { &g_layouts, "g_layouts", "", CVAR_LATCH, 0, qfalse  },
   { &g_layoutAuto, "g_layoutAuto", "1", CVAR_ARCHIVE, 0, qfalse  },
-  
-  { &g_emoticonsAllowedInNames, "g_emoticonsAllowedInNames", "1", CVAR_LATCH|CVAR_ARCHIVE, 0, qfalse  },
 
   { &g_admin, "g_admin", "admin.dat", CVAR_ARCHIVE, 0, qfalse  },
   { &g_adminLog, "g_adminLog", "admin.log", CVAR_ARCHIVE, 0, qfalse  },
   { &g_adminParseSay, "g_adminParseSay", "1", CVAR_ARCHIVE, 0, qfalse  },
   { &g_adminNameProtect, "g_adminNameProtect", "1", CVAR_ARCHIVE, 0, qfalse  },
-  { &g_adminTempBan, "g_adminTempBan", "2m", CVAR_ARCHIVE, 0, qfalse  },
-  { &g_adminMaxBan, "g_adminMaxBan", "2w", CVAR_ARCHIVE, 0, qfalse  },
-
+  { &g_adminTempBan, "g_adminTempBan", "120", CVAR_ARCHIVE, 0, qfalse  },
+  
   { &g_privateMessages, "g_privateMessages", "1", CVAR_ARCHIVE, 0, qfalse  },
-  { &g_specChat, "g_specChat", "1", CVAR_ARCHIVE, 0, qfalse  },
-  { &g_publicAdminMessages, "g_publicAdminMessages", "1", CVAR_ARCHIVE, 0, qfalse  },
-
+  
   { &g_tag, "g_tag", "main", CVAR_INIT, 0, qfalse },
-
+  
   { &g_rankings, "g_rankings", "0", 0, 0, qfalse}
 };
 
@@ -276,6 +261,7 @@ void G_RunFrame( int levelTime );
 void G_ShutdownGame( int restart );
 void CheckExitRules( void );
 
+void G_CountSpawns( void );
 void G_CalculateBuildPoints( void );
 
 /*
@@ -341,10 +327,10 @@ void QDECL G_Printf( const char *fmt, ... )
   char    text[ 1024 ];
 
   va_start( argptr, fmt );
-  Q_vsnprintf( text, sizeof( text ), fmt, argptr );
+  vsprintf( text, fmt, argptr );
   va_end( argptr );
 
-  trap_Print( text );
+  trap_Printf( text );
 }
 
 void QDECL G_Error( const char *fmt, ... )
@@ -353,7 +339,7 @@ void QDECL G_Error( const char *fmt, ... )
   char    text[ 1024 ];
 
   va_start( argptr, fmt );
-  Q_vsnprintf( text, sizeof( text ), fmt, argptr );
+  vsprintf( text, fmt, argptr );
   va_end( argptr );
 
   trap_Error( text );
@@ -426,6 +412,10 @@ void G_FindTeams( void )
   G_Printf( "%i teams with %i entities\n", c, c2 );
 }
 
+void G_RemapTeamShaders( void )
+{
+}
+
 
 /*
 =================
@@ -436,6 +426,7 @@ void G_RegisterCvars( void )
 {
   int         i;
   cvarTable_t *cv;
+  qboolean    remapped = qfalse;
 
   for( i = 0, cv = gameCvarTable; i < gameCvarTableSize; i++, cv++ )
   {
@@ -444,7 +435,13 @@ void G_RegisterCvars( void )
 
     if( cv->vmCvar )
       cv->modificationCount = cv->vmCvar->modificationCount;
+
+    if( cv->teamShader )
+      remapped = qtrue;
   }
+
+  if( remapped )
+    G_RemapTeamShaders( );
 
   // check some things
   level.warmupModificationCount = g_warmup.modificationCount;
@@ -459,6 +456,7 @@ void G_UpdateCvars( void )
 {
   int         i;
   cvarTable_t *cv;
+  qboolean    remapped = qfalse;
 
   for( i = 0, cv = gameCvarTable; i < gameCvarTableSize; i++, cv++ )
   {
@@ -477,9 +475,15 @@ void G_UpdateCvars( void )
           // update serverinfo in case this cvar is passed to clients indirectly
           CalculateRanks( );
         }
+
+        if( cv->teamShader )
+          remapped = qtrue;
       }
     }
   }
+
+  if( remapped )
+    G_RemapTeamShaders( );
 }
 
 /*
@@ -498,7 +502,7 @@ void G_MapConfigs( const char *mapname )
 
   trap_SendConsoleCommand( EXEC_APPEND,
     va( "exec \"%s/default.cfg\"\n", g_mapConfigs.string ) );
-
+  
   trap_SendConsoleCommand( EXEC_APPEND,
     va( "exec \"%s/%s.cfg\"\n", g_mapConfigs.string, mapname ) );
 
@@ -523,7 +527,9 @@ void G_InitGame( int levelTime, int randomSeed, int restart )
   G_Printf( "gamename: %s\n", GAME_VERSION );
   G_Printf( "gamedate: %s\n", __DATE__ );
 
-  BG_InitMemory( );
+  G_ProcessIPBans( );
+
+  G_InitMemory( );
 
   // set some level globals
   memset( &level, 0, sizeof( level ) );
@@ -546,19 +552,11 @@ void G_InitGame( int levelTime, int randomSeed, int restart )
     else
     {
       char serverinfo[ MAX_INFO_STRING ];
-      qtime_t qt;
-      int t;
 
       trap_GetServerinfo( serverinfo, sizeof( serverinfo ) );
 
       G_LogPrintf( "------------------------------------------------------------\n" );
       G_LogPrintf( "InitGame: %s\n", serverinfo );
-
-      t = trap_RealTime( &qt );
-      G_LogPrintf("RealTime: %04i/%02i/%02i %02i:%02i:%02i\n",
-            qt.tm_year+1900, qt.tm_mon+1, qt.tm_mday, 
-            qt.tm_hour, qt.tm_min, qt.tm_sec );
-
     }
   }
   else
@@ -574,7 +572,9 @@ void G_InitGame( int levelTime, int randomSeed, int restart )
   // we're done with g_mapConfigs, so reset this for the next map
   trap_Cvar_Set( "g_mapConfigsLoaded", "0" );
 
-  G_admin_readconfig( NULL, 0 );
+  if ( g_admin.string[ 0 ] ) {
+    G_admin_readconfig( NULL, 0 );
+  }
 
   // initialize all entities for this game
   memset( g_entities, 0, MAX_GENTITIES * sizeof( g_entities[ 0 ] ) );
@@ -598,8 +598,6 @@ void G_InitGame( int levelTime, int randomSeed, int restart )
   trap_LocateGameData( level.gentities, level.num_entities, sizeof( gentity_t ),
     &level.clients[ 0 ].ps, sizeof( level.clients[ 0 ] ) );
 
-  level.emoticonCount = BG_LoadEmoticons( level.emoticons, NULL );
-
   trap_SetConfigstring( CS_INTERMISSION, "0" );
 
   // test to see if a custom buildable layout will be loaded
@@ -617,8 +615,8 @@ void G_InitGame( int levelTime, int randomSeed, int restart )
   // general initialization
   G_FindTeams( );
 
-  BG_InitClassConfigs( );
-  BG_InitBuildableConfigs( );
+  BG_InitClassOverrides( );
+  BG_InitBuildableOverrides( );
   G_InitDamageLocations( );
   G_InitMapRotations( );
   G_InitSpawnQueue( &level.alienSpawnQueue );
@@ -627,9 +625,6 @@ void G_InitGame( int levelTime, int randomSeed, int restart )
   if( g_debugMapRotation.integer )
     G_PrintRotations( );
 
-  level.voices = BG_VoiceInit( );
-  BG_PrintVoices( level.voices, g_debugVoices.integer );
-
   //reset stages
   trap_Cvar_Set( "g_alienStage", va( "%d", S1 ) );
   trap_Cvar_Set( "g_humanStage", va( "%d", S1 ) );
@@ -637,6 +632,11 @@ void G_InitGame( int levelTime, int randomSeed, int restart )
   trap_Cvar_Set( "g_humanKills", 0 );
 
   G_Printf( "-----------------------------------\n" );
+
+  G_RemapTeamShaders( );
+
+  // so the server counts the spawns without a client attached
+  G_CountSpawns( );
 
   G_ResetPTRConnections( );
 }
@@ -652,13 +652,10 @@ static void G_ClearVotes( void )
 {
   level.voteTime = 0;
   trap_SetConfigstring( CS_VOTE_TIME, "" );
-  trap_SetConfigstring( CS_VOTE_STRING, "" );
   level.teamVoteTime[ 0 ] = 0;
   trap_SetConfigstring( CS_TEAMVOTE_TIME, "" );
-  trap_SetConfigstring( CS_TEAMVOTE_STRING, "" );
   level.teamVoteTime[ 1 ] = 0;
   trap_SetConfigstring( CS_TEAMVOTE_TIME + 1, "" );
-  trap_SetConfigstring( CS_TEAMVOTE_STRING + 1, "" );
 }
 
 /*
@@ -687,7 +684,7 @@ void G_ShutdownGame( int restart )
   G_admin_namelog_cleanup( );
 
   level.restarted = qfalse;
-  level.surrenderTeam = TEAM_NONE;
+  level.surrenderTeam = PTE_NONE;
   trap_SetConfigstring( CS_WINNER, "" );
 }
 
@@ -701,7 +698,7 @@ void QDECL Com_Error( int level, const char *error, ... )
   char    text[ 1024 ];
 
   va_start( argptr, error );
-  Q_vsnprintf( text, sizeof( text ), error, argptr );
+  vsprintf( text, error, argptr );
   va_end( argptr );
 
   G_Error( "%s", text );
@@ -713,7 +710,7 @@ void QDECL Com_Printf( const char *msg, ... )
   char    text[ 1024 ];
 
   va_start( argptr, msg );
-  Q_vsnprintf( text, sizeof( text ), msg, argptr );
+  vsprintf( text, msg, argptr );
   va_end( argptr );
 
   G_Printf( "%s", text );
@@ -744,9 +741,10 @@ int QDECL SortRanks( const void *a, const void *b )
   // then sort by score
   if( ca->ps.persistant[ PERS_SCORE ] > cb->ps.persistant[ PERS_SCORE ] )
     return -1;
-  if( ca->ps.persistant[ PERS_SCORE ] < cb->ps.persistant[ PERS_SCORE ] )
+  else if( ca->ps.persistant[ PERS_SCORE ] < cb->ps.persistant[ PERS_SCORE ] )
     return 1;
-  return 0;
+  else
+    return 0;
 }
 
 /*
@@ -772,7 +770,7 @@ void G_InitSpawnQueue( spawnQueue_t *sq )
 ============
 G_GetSpawnQueueLength
 
-Return the length of a spawn queue
+Return tha length of a spawn queue
 ============
 */
 int G_GetSpawnQueueLength( spawnQueue_t *sq )
@@ -807,7 +805,8 @@ int G_PopSpawnQueue( spawnQueue_t *sq )
 
     return clientNum;
   }
-  return -1;
+  else
+    return -1;
 }
 
 /*
@@ -944,7 +943,7 @@ G_SpawnClients
 Spawn queued clients
 ============
 */
-void G_SpawnClients( team_t team )
+void G_SpawnClients( pTeam_t team )
 {
   int           clientNum;
   gentity_t     *ent, *spawn;
@@ -952,12 +951,12 @@ void G_SpawnClients( team_t team )
   spawnQueue_t  *sq = NULL;
   int           numSpawns = 0;
 
-  if( team == TEAM_ALIENS )
+  if( team == PTE_ALIENS )
   {
     sq = &level.alienSpawnQueue;
     numSpawns = level.numAlienSpawns;
   }
-  else if( team == TEAM_HUMANS )
+  else if( team == PTE_HUMANS )
   {
     sq = &level.humanSpawnQueue;
     numSpawns = level.numHumanSpawns;
@@ -979,11 +978,43 @@ void G_SpawnClients( team_t team )
 
       ent = &g_entities[ clientNum ];
 
-      ent->client->sess.spectatorState = SPECTATOR_NOT;
+      ent->client->sess.sessionTeam = TEAM_FREE;
       ClientUserinfoChanged( clientNum );
       ClientSpawn( ent, spawn, spawn_origin, spawn_angles );
     }
   }
+}
+
+/*
+============
+G_CountSpawns
+
+Counts the number of spawns for each team
+============
+*/
+void G_CountSpawns( void )
+{
+  int i;
+  gentity_t *ent;
+
+  level.numAlienSpawns = 0;
+  level.numHumanSpawns = 0;
+
+  for( i = 1, ent = g_entities + i ; i < level.num_entities ; i++, ent++ )
+  {
+    if( !ent->inuse )
+      continue;
+
+    if( ent->s.modelindex == BA_A_SPAWN && ent->health > 0 )
+      level.numAlienSpawns++;
+
+    if( ent->s.modelindex == BA_H_SPAWN && ent->health > 0 )
+      level.numHumanSpawns++;
+  }
+
+  //let the client know how many spawns there are
+  trap_SetConfigstring( CS_SPAWNS, va( "%d %d",
+        level.numAlienSpawns, level.numHumanSpawns ) );
 }
 
 /*
@@ -1043,6 +1074,11 @@ void G_CalculateBuildPoints( void )
       }
     }
   }
+  else
+  {
+    localHTP = g_humanBuildPoints.integer;
+    localATP = g_alienBuildPoints.integer;
+  }
 
   level.humanBuildPoints = level.humanBuildPointsPowered = localHTP;
   level.alienBuildPoints = localATP;
@@ -1050,10 +1086,7 @@ void G_CalculateBuildPoints( void )
   level.reactorPresent = qfalse;
   level.overmindPresent = qfalse;
 
-  level.numAlienSpawns = 0;
-  level.numHumanSpawns = 0;
-
-  for( i = MAX_CLIENTS, ent = g_entities + i ; i < level.num_entities ; i++, ent++ )
+  for( i = 1, ent = g_entities + i ; i < level.num_entities ; i++, ent++ )
   {
     if( !ent->inuse )
       continue;
@@ -1065,28 +1098,22 @@ void G_CalculateBuildPoints( void )
 
     if( buildable != BA_NONE )
     {
-      if( ent->spawned && ent->health > 0 )
-      {
-        if( buildable == BA_H_REACTOR )
-          level.reactorPresent = qtrue;
-        else if( buildable == BA_A_OVERMIND )
-          level.overmindPresent = qtrue;
-        else if( buildable == BA_H_SPAWN )
-          level.numHumanSpawns++;
-        else if( buildable == BA_A_SPAWN )
-          level.numAlienSpawns++;
-      }
+      if( buildable == BA_H_REACTOR && ent->spawned && ent->health > 0 )
+        level.reactorPresent = qtrue;
 
-      if( BG_Buildable( buildable )->team == TEAM_HUMANS )
+      if( buildable == BA_A_OVERMIND && ent->spawned && ent->health > 0 )
+        level.overmindPresent = qtrue;
+
+      if( BG_FindTeamForBuildable( buildable ) == BIT_HUMANS )
       {
-        level.humanBuildPoints -= BG_Buildable( buildable )->buildPoints;
+        level.humanBuildPoints -= BG_FindBuildPointsForBuildable( buildable );
 
         if( ent->powered )
-          level.humanBuildPointsPowered -= BG_Buildable( buildable )->buildPoints;
+          level.humanBuildPointsPowered -= BG_FindBuildPointsForBuildable( buildable );
       }
       else
       {
-        level.alienBuildPoints -= BG_Buildable( buildable )->buildPoints;
+        level.alienBuildPoints -= BG_FindBuildPointsForBuildable( buildable );
       }
     }
   }
@@ -1108,9 +1135,38 @@ void G_CalculateBuildPoints( void )
         level.alienBuildPoints, localATP,
         level.humanBuildPoints, localHTP,
         level.humanBuildPointsPowered ) );
-  //let the client know how many spawns there are
-  trap_SetConfigstring( CS_SPAWNS, va( "%d %d",
-        level.numAlienSpawns, level.numHumanSpawns ) );
+
+  //may as well pump the stages here too
+  {
+    float alienPlayerCountMod = level.averageNumAlienClients / PLAYER_COUNT_MOD;
+    float humanPlayerCountMod = level.averageNumHumanClients / PLAYER_COUNT_MOD;
+    int   alienNextStageThreshold, humanNextStageThreshold;
+
+    if( alienPlayerCountMod < 0.1f )
+      alienPlayerCountMod = 0.1f;
+
+    if( humanPlayerCountMod < 0.1f )
+      humanPlayerCountMod = 0.1f;
+
+    if( g_alienStage.integer == S1 && g_alienMaxStage.integer > S1 )
+      alienNextStageThreshold = (int)( ceil( (float)g_alienStage2Threshold.integer * alienPlayerCountMod ) );
+    else if( g_alienStage.integer == S2 && g_alienMaxStage.integer > S2 )
+      alienNextStageThreshold = (int)( ceil( (float)g_alienStage3Threshold.integer * alienPlayerCountMod ) );
+    else
+      alienNextStageThreshold = -1;
+
+    if( g_humanStage.integer == S1 && g_humanMaxStage.integer > S1 )
+      humanNextStageThreshold = (int)( ceil( (float)g_humanStage2Threshold.integer * humanPlayerCountMod ) );
+    else if( g_humanStage.integer == S2 && g_humanMaxStage.integer > S2 )
+      humanNextStageThreshold = (int)( ceil( (float)g_humanStage3Threshold.integer * humanPlayerCountMod ) );
+    else
+      humanNextStageThreshold = -1;
+
+    trap_SetConfigstring( CS_STAGES, va( "%d %d %d %d %d %d",
+          g_alienStage.integer, g_humanStage.integer,
+          g_alienKills.integer, g_humanKills.integer,
+          alienNextStageThreshold, humanNextStageThreshold ) );
+  }
 }
 
 /*
@@ -1120,11 +1176,8 @@ G_CalculateStages
 */
 void G_CalculateStages( void )
 {
-  float         alienPlayerCountMod     = level.averageNumAlienClients / PLAYER_COUNT_MOD;
-  float         humanPlayerCountMod     = level.averageNumHumanClients / PLAYER_COUNT_MOD;
-  int           alienNextStageThreshold, humanNextStageThreshold;
-  static int    lastAlienStageModCount  = 1;
-  static int    lastHumanStageModCount  = 1;
+  float alienPlayerCountMod = level.averageNumAlienClients / PLAYER_COUNT_MOD;
+  float humanPlayerCountMod = level.averageNumHumanClients / PLAYER_COUNT_MOD;
 
   if( alienPlayerCountMod < 0.1f )
     alienPlayerCountMod = 0.1f;
@@ -1136,84 +1189,37 @@ void G_CalculateStages( void )
       (int)( ceil( (float)g_alienStage2Threshold.integer * alienPlayerCountMod ) ) &&
       g_alienStage.integer == S1 && g_alienMaxStage.integer > S1 )
   {
+    G_Checktrigger_stages( PTE_ALIENS, S2 );
     trap_Cvar_Set( "g_alienStage", va( "%d", S2 ) );
     level.alienStage2Time = level.time;
-    lastAlienStageModCount = g_alienStage.modificationCount;
-    G_LogPrintf("Stage: A 2: Aliens reached Stage 2\n");
   }
 
   if( g_alienKills.integer >=
       (int)( ceil( (float)g_alienStage3Threshold.integer * alienPlayerCountMod ) ) &&
       g_alienStage.integer == S2 && g_alienMaxStage.integer > S2 )
   {
+    G_Checktrigger_stages( PTE_ALIENS, S3 );
     trap_Cvar_Set( "g_alienStage", va( "%d", S3 ) );
     level.alienStage3Time = level.time;
-    lastAlienStageModCount = g_alienStage.modificationCount;
-    G_LogPrintf("Stage: A 3: Aliens reached Stage 3\n");
   }
 
   if( g_humanKills.integer >=
       (int)( ceil( (float)g_humanStage2Threshold.integer * humanPlayerCountMod ) ) &&
       g_humanStage.integer == S1 && g_humanMaxStage.integer > S1 )
   {
+    G_Checktrigger_stages( PTE_HUMANS, S2 );
     trap_Cvar_Set( "g_humanStage", va( "%d", S2 ) );
     level.humanStage2Time = level.time;
-    lastHumanStageModCount = g_humanStage.modificationCount;
-    G_LogPrintf("Stage: H 2: Humans reached Stage 2\n");
   }
 
   if( g_humanKills.integer >=
       (int)( ceil( (float)g_humanStage3Threshold.integer * humanPlayerCountMod ) ) &&
       g_humanStage.integer == S2 && g_humanMaxStage.integer > S2 )
   {
+    G_Checktrigger_stages( PTE_HUMANS, S3 );
     trap_Cvar_Set( "g_humanStage", va( "%d", S3 ) );
     level.humanStage3Time = level.time;
-    lastHumanStageModCount = g_humanStage.modificationCount;
-    G_LogPrintf("Stage: H 3: Humans reached Stage 3\n");
   }
-
-  if( g_alienStage.modificationCount > lastAlienStageModCount )
-  {
-    G_Checktrigger_stages( TEAM_ALIENS, g_alienStage.integer );
-
-    if( g_alienStage.integer == S2 )
-      level.alienStage2Time = level.time;
-    else if( g_alienStage.integer == S3 )
-      level.alienStage3Time = level.time;
-
-    lastAlienStageModCount = g_alienStage.modificationCount;
-  }
-
-  if( g_humanStage.modificationCount > lastHumanStageModCount )
-  {
-    G_Checktrigger_stages( TEAM_HUMANS, g_humanStage.integer );
-
-    if( g_humanStage.integer == S2 )
-      level.humanStage2Time = level.time;
-    else if( g_humanStage.integer == S3 )
-      level.humanStage3Time = level.time;
-
-    lastHumanStageModCount = g_humanStage.modificationCount;
-  }
-
-  if( g_alienStage.integer == S1 && g_alienMaxStage.integer > S1 )
-    alienNextStageThreshold = (int)( ceil( (float)g_alienStage2Threshold.integer * alienPlayerCountMod ) );
-  else if( g_alienStage.integer == S2 && g_alienMaxStage.integer > S2 )
-    alienNextStageThreshold = (int)( ceil( (float)g_alienStage3Threshold.integer * alienPlayerCountMod ) );
-  else
-    alienNextStageThreshold = -1;
-
-  if( g_humanStage.integer == S1 && g_humanMaxStage.integer > S1 )
-    humanNextStageThreshold = (int)( ceil( (float)g_humanStage2Threshold.integer * humanPlayerCountMod ) );
-  else if( g_humanStage.integer == S2 && g_humanMaxStage.integer > S2 )
-    humanNextStageThreshold = (int)( ceil( (float)g_humanStage3Threshold.integer * humanPlayerCountMod ) );
-  else
-    humanNextStageThreshold = -1;
-
-  trap_SetConfigstring( CS_STAGES, va( "%d %d %d %d %d %d",
-        g_alienStage.integer, g_humanStage.integer,
-        g_alienKills.integer, g_humanKills.integer,
-        alienNextStageThreshold, humanNextStageThreshold ) );
 }
 
 /*
@@ -1274,6 +1280,7 @@ void CalculateRanks( void )
   int       ff = 0;
 
   level.numConnectedClients = 0;
+  level.numNonSpectatorClients = 0;
   level.numPlayingClients = 0;
   level.numVotingClients = 0;   // don't count bots
   level.numAlienClients = 0;
@@ -1294,29 +1301,30 @@ void CalculateRanks( void )
         continue;
 
       level.numVotingClients++;
-      if( level.clients[ i ].pers.teamSelection != TEAM_NONE )
+      if( level.clients[ i ].pers.teamSelection != PTE_NONE )
       {
         level.numPlayingClients++;
-        if( level.clients[ i ].pers.teamSelection == TEAM_ALIENS )
+        if( level.clients[ i ].sess.sessionTeam != TEAM_SPECTATOR )
+          level.numNonSpectatorClients++;
+
+        if( level.clients[ i ].pers.teamSelection == PTE_ALIENS )
         {
           level.numAlienClients++;
-          if( level.clients[ i ].sess.spectatorState == SPECTATOR_NOT )
+          if( level.clients[ i ].sess.sessionTeam != TEAM_SPECTATOR )
             level.numLiveAlienClients++;
         }
-        else if( level.clients[ i ].pers.teamSelection == TEAM_HUMANS )
+        else if( level.clients[ i ].pers.teamSelection == PTE_HUMANS )
         {
           level.numHumanClients++;
-          if( level.clients[ i ].sess.spectatorState == SPECTATOR_NOT )
+          if( level.clients[ i ].sess.sessionTeam != TEAM_SPECTATOR )
             level.numLiveHumanClients++;
         }
       }
     }
   }
-  level.numNonSpectatorClients = level.numLiveAlienClients +
-    level.numLiveHumanClients;
   level.numteamVotingClients[ 0 ] = level.numHumanClients;
   level.numteamVotingClients[ 1 ] = level.numAlienClients;
-  P[ i ] = '\0';
+  P[ i + 1 ] = '\0';
   trap_Cvar_Set( "P", P );
 
   if( g_friendlyFire.integer )
@@ -1514,14 +1522,10 @@ void ExitLevel( void )
   int       i;
   gclient_t *cl;
 
-  if ( G_MapExists( g_nextMap.string ) )
-    trap_SendConsoleCommand( EXEC_APPEND, va("map %s\n", g_nextMap.string ) );
-  else if( G_MapRotationActive( ) )
+  if( G_MapRotationActive( ) )
     G_AdvanceMapRotation( );
   else
     trap_SendConsoleCommand( EXEC_APPEND, "map_restart\n" );
-
-  trap_Cvar_Set( "g_nextMap", "" );
 
   level.restarted = qtrue;
   level.changemap = NULL;
@@ -1552,56 +1556,15 @@ void ExitLevel( void )
 
 /*
 =================
-G_AdminMessage
-
-Print to all active server admins, and to the logfile, and to the server console
-Prepend *prefix, or '[SERVER]' if no *prefix is given
-=================
-*/
-void QDECL G_AdminMessage( const char *prefix, const char *fmt, ... )
-{
-  va_list argptr;
-  char    string[ 1024 ];
-  char    outstring[ 1024 ];
-  int     i;
-
-  // Format the text
-  va_start( argptr, fmt );
-  Q_vsnprintf( string, sizeof( string ), fmt, argptr );
-  va_end( argptr );
-
-  // If there is no prefix, assume that this function was called directly
-  // and we should add one
-  if( !prefix || !prefix[ 0 ] )
-  {
-    prefix = "[SERVER]:";
-  }
-
-  // Create the final string
-  Com_sprintf( outstring, sizeof( outstring ), "%s " S_COLOR_MAGENTA "%s",
-               prefix, string );
-
-  // Send to all appropriate clients
-  for( i = 0; i < level.maxclients; i++ )
-    if( G_admin_permission( &g_entities[ i ], ADMF_ADMINCHAT ) ) 
-       trap_SendServerCommand( i, va( "chat \"%s\"", outstring ) ); 
-  
-  // Send to the logfile and server console
-  G_LogPrintf("adminmsg: %s\n", outstring );
-}
-
-
-/*
-=================
 G_LogPrintf
 
-Print to the logfile with a time stamp if it is open, and to the server console
+Print to the logfile with a time stamp if it is open
 =================
 */
 void QDECL G_LogPrintf( const char *fmt, ... )
 {
   va_list argptr;
-  char    string[ 1024 ], decoloured[ 1024 ];
+  char    string[ 1024 ];
   int     min, tens, sec;
 
   sec = level.time / 1000;
@@ -1614,7 +1577,7 @@ void QDECL G_LogPrintf( const char *fmt, ... )
   Com_sprintf( string, sizeof( string ), "%3i:%i%i ", min, tens, sec );
 
   va_start( argptr, fmt );
-  Q_vsnprintf( string + 7, sizeof( string ) - 7, fmt, argptr );
+  vsprintf( string +7 , fmt,argptr );
   va_end( argptr );
 
   if( g_dedicated.integer )
@@ -1623,8 +1586,7 @@ void QDECL G_LogPrintf( const char *fmt, ... )
   if( !level.logFile )
     return;
 
-  G_DecolorString( string, decoloured, sizeof( decoloured ) );
-  trap_FS_Write( decoloured, strlen( decoloured ), level.logFile );
+  trap_FS_Write( string, strlen( string ), level.logFile );
 }
 
 /*
@@ -1632,7 +1594,7 @@ void QDECL G_LogPrintf( const char *fmt, ... )
 G_SendGameStat
 =================
 */
-void G_SendGameStat( team_t team )
+void G_SendGameStat( pTeam_t team )
 {
   char      map[ MAX_STRING_CHARS ];
   char      teamChar;
@@ -1645,9 +1607,9 @@ void G_SendGameStat( team_t team )
 
   switch( team )
   {
-    case TEAM_ALIENS: teamChar = 'A'; break;
-    case TEAM_HUMANS: teamChar = 'H'; break;
-    case TEAM_NONE:   teamChar = 'L'; break;
+    case PTE_ALIENS:  teamChar = 'A'; break;
+    case PTE_HUMANS:  teamChar = 'H'; break;
+    case PTE_NONE:    teamChar = 'L'; break;
     default: return;
   }
 
@@ -1682,11 +1644,11 @@ void G_SendGameStat( team_t team )
     else
       ping = cl->ps.ping < 999 ? cl->ps.ping : 999;
 
-    switch( cl->ps.stats[ STAT_TEAM ] )
+    switch( cl->ps.stats[ STAT_PTEAM ] )
     {
-      case TEAM_ALIENS: teamChar = 'A'; break;
-      case TEAM_HUMANS: teamChar = 'H'; break;
-      case TEAM_NONE:   teamChar = 'S'; break;
+      case PTE_ALIENS:  teamChar = 'A'; break;
+      case PTE_HUMANS:  teamChar = 'H'; break;
+      case PTE_NONE:    teamChar = 'S'; break;
       default: return;
     }
 
@@ -1700,10 +1662,10 @@ void G_SendGameStat( team_t team )
 
     entryLength = strlen( entry );
 
-    if( dataLength + entryLength >= BIG_INFO_STRING )
+    if( dataLength + entryLength > MAX_STRING_CHARS )
       break;
 
-    strcpy( data + dataLength, entry );
+    Q_strncpyz( data + dataLength, entry, BIG_INFO_STRING );
     dataLength += entryLength;
   }
 
@@ -1742,7 +1704,7 @@ void LogExit( const char *string )
 
     cl = &level.clients[ level.sortedClients[ i ] ];
 
-    if( cl->ps.stats[ STAT_TEAM ] == TEAM_NONE )
+    if( cl->ps.stats[ STAT_PTEAM ] == PTE_NONE )
       continue;
 
     if( cl->pers.connected == CON_CONNECTING )
@@ -1784,13 +1746,13 @@ wait 10 seconds before going on.
 */
 void CheckIntermissionExit( void )
 {
-  int       ready, notReady;
+  int       ready, notReady, numPlayers;
   int       i;
   gclient_t *cl;
-  clientList_t readyMasks;
+  int       readyMask;
 
   //if no clients are connected, just exit
-  if( level.numConnectedClients == 0 )
+  if( !level.numConnectedClients )
   {
     ExitLevel( );
     return;
@@ -1799,27 +1761,30 @@ void CheckIntermissionExit( void )
   // see which players are ready
   ready = 0;
   notReady = 0;
-  Com_Memset( &readyMasks, 0, sizeof( readyMasks ) );
+  readyMask = 0;
+  numPlayers = 0;
   for( i = 0; i < g_maxclients.integer; i++ )
   {
     cl = level.clients + i;
     if( cl->pers.connected != CON_CONNECTED )
       continue;
 
-    if( cl->ps.stats[ STAT_TEAM ] == TEAM_NONE )
+    if( cl->ps.stats[ STAT_PTEAM ] == PTE_NONE )
       continue;
 
     if( cl->readyToExit )
     {
       ready++;
-      BG_ClientListAdd( &readyMasks, i );
+      if( i < 16 )
+        readyMask |= 1 << i;
     }
     else
       notReady++;
 
+    numPlayers++;
   }
 
-  trap_SetConfigstring( CS_CLIENTS_READY, BG_ClientListString( &readyMasks ) );
+  trap_SetConfigstring( CS_CLIENTS_READY, va( "%d", readyMask ) );
 
   // never exit in less than five seconds
   if( level.time < level.intermissiontime + 5000 )
@@ -1833,14 +1798,14 @@ void CheckIntermissionExit( void )
   }
 
   // if nobody wants to go, clear timer
-  if( ready == 0 && notReady > 0 )
+  if( !ready && numPlayers )
   {
     level.readyToExit = qfalse;
     return;
   }
 
   // if everyone wants to go, go now
-  if( notReady == 0 )
+  if( !notReady )
   {
     ExitLevel( );
     return;
@@ -1913,7 +1878,7 @@ void CheckExitRules( void )
   {
     if( level.time - level.startTime >= g_timelimit.integer * 60000 )
     {
-      level.lastWin = TEAM_NONE;
+      level.lastWin = PTE_NONE;
       trap_SendServerCommand( -1, "print \"Timelimit hit\n\"" );
       trap_SetConfigstring( CS_WINNER, "Stalemate" );
       LogExit( "Timelimit hit." );
@@ -1939,7 +1904,7 @@ void CheckExitRules( void )
         ( level.numLiveAlienClients == 0 ) ) )
   {
     //humans win
-    level.lastWin = TEAM_HUMANS;
+    level.lastWin = PTE_HUMANS;
     trap_SendServerCommand( -1, "print \"Humans win\n\"");
     trap_SetConfigstring( CS_WINNER, "Humans Win" );
     LogExit( "Humans win." );
@@ -1950,7 +1915,7 @@ void CheckExitRules( void )
              ( level.numLiveHumanClients == 0 ) ) )
   {
     //aliens win
-    level.lastWin = TEAM_ALIENS;
+    level.lastWin = PTE_ALIENS;
     trap_SendServerCommand( -1, "print \"Aliens win\n\"");
     trap_SetConfigstring( CS_WINNER, "Aliens Win" );
     LogExit( "Aliens win." );
@@ -2007,9 +1972,9 @@ void G_TeamVote( gentity_t *ent, qboolean voting )
 {
   int cs_offset;
 
-  if( ent->client->pers.teamSelection == TEAM_HUMANS )
+  if( ent->client->pers.teamSelection == PTE_HUMANS )
     cs_offset = 0;
-  else if( ent->client->pers.teamSelection == TEAM_ALIENS )
+  else if( ent->client->pers.teamSelection == PTE_ALIENS )
     cs_offset = 1;
   else
     return;
@@ -2118,7 +2083,6 @@ void CheckVote( void )
 
   level.voteTime = 0;
   trap_SetConfigstring( CS_VOTE_TIME, "" );
-  trap_SetConfigstring( CS_VOTE_STRING, "" );
 }
 
 
@@ -2127,13 +2091,13 @@ void CheckVote( void )
 CheckTeamVote
 ==================
 */
-void CheckTeamVote( team_t team )
+void CheckTeamVote( int team )
 {
   int cs_offset;
 
-  if ( team == TEAM_HUMANS )
+  if ( team == PTE_HUMANS )
     cs_offset = 0;
-  else if ( team == TEAM_ALIENS )
+  else if ( team == PTE_ALIENS )
     cs_offset = 1;
   else
     return;
@@ -2167,7 +2131,6 @@ void CheckTeamVote( team_t team )
 
   level.teamVoteTime[ cs_offset ] = 0;
   trap_SetConfigstring( CS_TEAMVOTE_TIME + cs_offset, "" );
-  trap_SetConfigstring( CS_TEAMVOTE_STRING + cs_offset, "" );
 }
 
 
@@ -2272,6 +2235,7 @@ void G_RunFrame( int levelTime )
   int       i;
   gentity_t *ent;
   int       msec;
+  int       start, end;
 
   // if we are waiting for the level to restart, do nothing
   if( level.restarted )
@@ -2282,12 +2246,16 @@ void G_RunFrame( int levelTime )
   level.time = levelTime;
   msec = level.time - level.previousTime;
 
+  // seed the rng
+  srand( level.framenum );
+
   // get any cvar changes
   G_UpdateCvars( );
 
   //
   // go through all allocated objects
   //
+  start = trap_Milliseconds( );
   ent = &g_entities[ 0 ];
 
   for( i = 0; i < level.num_entities; i++, ent++ )
@@ -2366,6 +2334,9 @@ void G_RunFrame( int levelTime )
 
     G_RunThink( ent );
   }
+  end = trap_Milliseconds();
+
+  start = trap_Milliseconds();
 
   // perform final fixups on the players
   ent = &g_entities[ 0 ];
@@ -2376,13 +2347,16 @@ void G_RunFrame( int levelTime )
       ClientEndFrame( ent );
   }
 
-  // save position information for all active clients
+  // save position information for all active clients 
   G_UnlaggedStore( );
 
+  end = trap_Milliseconds();
+
+  G_CountSpawns( );
   G_CalculateBuildPoints( );
   G_CalculateStages( );
-  G_SpawnClients( TEAM_ALIENS );
-  G_SpawnClients( TEAM_HUMANS );
+  G_SpawnClients( PTE_ALIENS );
+  G_SpawnClients( PTE_HUMANS );
   G_CalculateAvgPlayers( );
   G_UpdateZaps( msec );
 
@@ -2396,10 +2370,18 @@ void G_RunFrame( int levelTime )
   CheckVote( );
 
   // check team votes
-  CheckTeamVote( TEAM_HUMANS );
-  CheckTeamVote( TEAM_ALIENS );
+  CheckTeamVote( PTE_HUMANS );
+  CheckTeamVote( PTE_ALIENS );
 
   // for tracking changes
   CheckCvars( );
+
+  if( g_listEntity.integer )
+  {
+    for( i = 0; i < MAX_GENTITIES; i++ )
+      G_Printf( "%4i: %s\n", i, g_entities[ i ].classname );
+
+    trap_Cvar_Set( "g_listEntity", "0" );
+  }
 }
 

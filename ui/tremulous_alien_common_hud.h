@@ -1,7 +1,6 @@
 #define COMMON_HUD_R 1.0
 #define COMMON_HUD_G 0.0
 #define COMMON_HUD_B 0.0
-#include "ui/tremulous_common_hud.h"
 
 //////////////////
 //STATIC OBJECTS//
@@ -198,20 +197,4 @@ itemDef
   visible MENU_TRUE
   decoration
   ownerdraw CG_PLAYER_ALIEN_SENSE
-}
-
-//SPECTATOR TEXT
-itemDef
-{
-  name "followtext"
-  rect 200 375 240 25
-  foreColor 1 1 1 1
-  aspectBias ALIGN_CENTER
-  textalign ALIGN_CENTER
-  textvalign VALIGN_TOP
-  visible MENU_TRUE
-  decoration
-  textScale .7
-  textStyle ITEM_TEXTSTYLE_SHADOWED
-  ownerdraw CG_FOLLOW
 }

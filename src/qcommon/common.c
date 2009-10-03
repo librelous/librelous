@@ -81,9 +81,7 @@ cvar_t  *sv_packetdelay;
 cvar_t	*com_cameraMode;
 cvar_t	*com_ansiColor;
 cvar_t	*com_unfocused;
-cvar_t	*com_maxfpsUnfocused;
 cvar_t	*com_minimized;
-cvar_t	*com_maxfpsMinimized;
 
 // com_speeds times
 int		time_game;
@@ -246,8 +244,6 @@ void QDECL Com_Error( int code, const char *fmt, ... ) {
 	static int	errorCount;
 	int			currentTime;
 
-	Cvar_Set( "com_errorCode", va( "%i", code ) );
-
 	// when we are running automated scripts, make sure we
 	// know if anything failed
 	if ( com_buildScript && com_buildScript->integer ) {
@@ -271,18 +267,15 @@ void QDECL Com_Error( int code, const char *fmt, ... ) {
 	com_errorEntered = qtrue;
 
 	va_start (argptr,fmt);
-	Q_vsnprintf (com_errorMessage, sizeof(com_errorMessage),fmt,argptr);
+	vsprintf (com_errorMessage,fmt,argptr);
 	va_end (argptr);
 
 	if (code != ERR_DISCONNECT && code != ERR_NEED_CD)
 		Cvar_Set("com_errorMessage", com_errorMessage);
 
 	if (code == ERR_DISCONNECT || code == ERR_SERVERDISCONNECT) {
-		SV_Shutdown( "Server disconnected" );
 		CL_Disconnect( qtrue );
-		VM_Forced_Unload_Start();
 		CL_FlushMemory( );
-		VM_Forced_Unload_Done();
 		// make sure we can get at our local stuff
 		FS_PureServerSetLoadedPaks("", "");
 		com_errorEntered = qfalse;
@@ -291,9 +284,7 @@ void QDECL Com_Error( int code, const char *fmt, ... ) {
 		Com_Printf ("********************\nERROR: %s\n********************\n", com_errorMessage);
 		SV_Shutdown (va("Server crashed: %s",  com_errorMessage));
 		CL_Disconnect( qtrue );
-		VM_Forced_Unload_Start();
 		CL_FlushMemory( );
-		VM_Forced_Unload_Done();
 		FS_PureServerSetLoadedPaks("", "");
 		com_errorEntered = qfalse;
 		longjmp (abortframe, -1);
@@ -301,9 +292,7 @@ void QDECL Com_Error( int code, const char *fmt, ... ) {
 		SV_Shutdown( "Server didn't have CD" );
 		if ( com_cl_running && com_cl_running->integer ) {
 			CL_Disconnect( qtrue );
-			VM_Forced_Unload_Start();
 			CL_FlushMemory( );
-			VM_Forced_Unload_Done();
 			com_errorEntered = qfalse;
 			CL_CDDialog();
 		} else {
@@ -332,9 +321,8 @@ do the apropriate things.
 */
 void Com_Quit_f( void ) {
 	// don't try to shutdown if we are in a recursive error
-	char *p = Cmd_Args( );
 	if ( !com_errorEntered ) {
-		SV_Shutdown (p[0] ? p : "Server quit");
+		SV_Shutdown ("Server quit");
 		CL_Shutdown ();
 		Com_Shutdown ();
 		FS_Shutdown(qtrue);
@@ -474,12 +462,10 @@ qboolean Com_AddStartupCommands( void ) {
 			continue;
 		}
 
-		// set commands already added with Com_StartupVariable
-		if ( !Q_stricmpn( com_consoleLines[i], "set", 3 ) ) {
-			continue;
+		// set commands won't override menu startup
+		if ( Q_stricmpn( com_consoleLines[i], "set", 3 ) ) {
+			added = qtrue;
 		}
-
-		added = qtrue;
 		Cbuf_AddText( com_consoleLines[i] );
 		Cbuf_AddText( "\n" );
 	}
@@ -2430,7 +2416,7 @@ void Com_Init( char *commandLine ) {
 
 	// skip the autogen.cfg if "safe" is on the command line
 	if ( !Com_SafeMode() ) {
-		Cbuf_AddText ("exec " Q3CONFIG_CFG "\n");
+		Cbuf_AddText ("exec autogen.cfg\n");
 	}
 
 	Cbuf_AddText ("exec autoexec.cfg\n");
@@ -2442,11 +2428,9 @@ void Com_Init( char *commandLine ) {
 
   // get dedicated here for proper hunk megs initialization
 #ifdef DEDICATED
-	com_dedicated = Cvar_Get ("dedicated", "1", CVAR_INIT);
-	Cvar_CheckRange( com_dedicated, 1, 2, qtrue );
+	com_dedicated = Cvar_Get ("dedicated", "1", CVAR_ROM);
 #else
 	com_dedicated = Cvar_Get ("dedicated", "0", CVAR_LATCH);
-	Cvar_CheckRange( com_dedicated, 0, 2, qtrue );
 #endif
 	// allocate the stack based hunk allocator
 	Com_InitHunkMemory();
@@ -2483,9 +2467,7 @@ void Com_Init( char *commandLine ) {
 	com_ansiColor = Cvar_Get( "com_ansiColor", "0", CVAR_ARCHIVE );
 
 	com_unfocused = Cvar_Get( "com_unfocused", "0", CVAR_ROM );
-	com_maxfpsUnfocused = Cvar_Get( "com_maxfpsUnfocused", "0", CVAR_ARCHIVE );
 	com_minimized = Cvar_Get( "com_minimized", "0", CVAR_ROM );
-	com_maxfpsMinimized = Cvar_Get( "com_maxfpsMinimized", "0", CVAR_ARCHIVE );
 
 	if ( com_developer && com_developer->integer ) {
 		Cmd_AddCommand ("error", Com_Error_f);
@@ -2495,7 +2477,6 @@ void Com_Init( char *commandLine ) {
 	Cmd_AddCommand ("quit", Com_Quit_f);
 	Cmd_AddCommand ("changeVectors", MSG_ReportChangeVectors_f );
 	Cmd_AddCommand ("writeconfig", Com_WriteConfig_f );
-	Cmd_SetCommandCompletionFunc( "writeconfig", Cmd_CompleteCfgName );
 
 	s = va("%s %s %s", Q3_VERSION, PLATFORM_STRING, __DATE__ );
 	com_version = Cvar_Get ("version", s, CVAR_ROM | CVAR_SERVERINFO );
@@ -2579,7 +2560,7 @@ void Com_WriteConfiguration( void ) {
 	}
 	cvar_modifiedFlags &= ~CVAR_ARCHIVE;
 
-	Com_WriteConfigToFile( Q3CONFIG_CFG );
+	Com_WriteConfigToFile( "autogen.cfg" );
 }
 
 
@@ -2701,30 +2682,12 @@ void Com_Frame( void ) {
 	}
 
 	// we may want to spin here if things are going too fast
-	if ( !com_dedicated->integer && !com_timedemo->integer ) {
-		if( com_minimized->integer && com_maxfpsMinimized->integer > 0 ) {
-			minMsec = 1000 / com_maxfpsMinimized->integer;
-		} else if( com_unfocused->integer && com_maxfpsUnfocused->integer > 0 ) {
-			minMsec = 1000 / com_maxfpsUnfocused->integer;
-		} else if( com_maxfps->integer > 0 ) {
-			minMsec = 1000 / com_maxfps->integer;
-		} else {
-			minMsec = 1;
-		}
+	if ( !com_dedicated->integer && com_maxfps->integer > 0 && !com_timedemo->integer ) {
+		minMsec = 1000 / com_maxfps->integer;
 	} else {
 		minMsec = 1;
 	}
-
-	msec = minMsec;
 	do {
-		int timeRemaining = minMsec - msec;
-
-		// The existing Sys_Sleep implementations aren't really
-		// precise enough to be of use beyond 100fps
-		// FIXME: implement a more precise sleep (RDTSC or something)
-		if( timeRemaining >= 10 )
-			Sys_Sleep( timeRemaining );
-
 		com_frameTime = Com_EventLoop();
 		if ( lastTime > com_frameTime ) {
 			lastTime = com_frameTime;		// possible on first frame
@@ -2984,52 +2947,37 @@ static char *Field_FindFirstSeparator( char *s )
 	return NULL;
 }
 
-/*
-===============
-Field_Complete
-===============
-*/
-static qboolean Field_Complete( void )
-{
-	int completionOffset;
-
-	if( matchCount == 0 )
-		return qtrue;
-
-	completionOffset = strlen( completionField->buffer ) - strlen( completionString );
-
-	Q_strncpyz( &completionField->buffer[ completionOffset ], shortestMatch,
-		sizeof( completionField->buffer ) - completionOffset );
-
-	completionField->cursor = strlen( completionField->buffer );
-
-	if( matchCount == 1 )
-	{
-		Q_strcat( completionField->buffer, sizeof( completionField->buffer ), " " );
-		completionField->cursor++;
-		return qtrue;
-	}
-
-	Com_Printf( "]%s\n", completionField->buffer );
-
-	return qfalse;
-}
-
 #ifndef DEDICATED
 /*
 ===============
 Field_CompleteKeyname
 ===============
 */
-void Field_CompleteKeyname( void )
+static void Field_CompleteKeyname( void )
 {
 	matchCount = 0;
 	shortestMatch[ 0 ] = 0;
 
 	Key_KeynameCompletion( FindMatches );
 
-	if( !Field_Complete( ) )
-		Key_KeynameCompletion( PrintMatches );
+	if( matchCount == 0 )
+		return;
+
+	Q_strncpyz( &completionField->buffer[ strlen( completionField->buffer ) -
+		strlen( completionString ) ], shortestMatch,
+		sizeof( completionField->buffer ) );
+	completionField->cursor = strlen( completionField->buffer );
+
+	if( matchCount == 1 )
+	{
+		Q_strcat( completionField->buffer, sizeof( completionField->buffer ), " " );
+		completionField->cursor++;
+		return;
+	}
+
+	Com_Printf( "]%s\n", completionField->buffer );
+	
+	Key_KeynameCompletion( PrintMatches );
 }
 #endif
 
@@ -3038,7 +2986,7 @@ void Field_CompleteKeyname( void )
 Field_CompleteFilename
 ===============
 */
-void Field_CompleteFilename( const char *dir,
+static void Field_CompleteFilename( const char *dir,
 		const char *ext, qboolean stripExt )
 {
 	matchCount = 0;
@@ -3046,8 +2994,24 @@ void Field_CompleteFilename( const char *dir,
 
 	FS_FilenameCompletion( dir, ext, stripExt, FindMatches );
 
-	if( !Field_Complete( ) )
-		FS_FilenameCompletion( dir, ext, stripExt, PrintMatches );
+	if( matchCount == 0 )
+		return;
+
+	Q_strncpyz( &completionField->buffer[ strlen( completionField->buffer ) -
+		strlen( completionString ) ], shortestMatch,
+		sizeof( completionField->buffer ) );
+	completionField->cursor = strlen( completionField->buffer );
+
+	if( matchCount == 1 )
+	{
+		Q_strcat( completionField->buffer, sizeof( completionField->buffer ), " " );
+		completionField->cursor++;
+		return;
+	}
+
+	Com_Printf( "]%s\n", completionField->buffer );
+	
+	FS_FilenameCompletion( dir, ext, stripExt, PrintMatches );
 }
 
 /*
@@ -3055,10 +3019,11 @@ void Field_CompleteFilename( const char *dir,
 Field_CompleteCommand
 ===============
 */
-void Field_CompleteCommand( char *cmd,
+static void Field_CompleteCommand( char *cmd,
 		qboolean doCommands, qboolean doCvars )
 {
 	int		completionArgument = 0;
+	char	*p;
 
 	// Skip leading whitespace and quotes
 	cmd = Com_SkipCharset( cmd, " \"" );
@@ -3100,7 +3065,6 @@ void Field_CompleteCommand( char *cmd,
 	if( completionArgument > 1 )
 	{
 		const char *baseCmd = Cmd_Argv( 0 );
-		char *p;
 
 #ifndef DEDICATED
 		// This should always be true
@@ -3109,9 +3073,84 @@ void Field_CompleteCommand( char *cmd,
 #endif
 
 		if( ( p = Field_FindFirstSeparator( cmd ) ) )
-			Field_CompleteCommand( p + 1, qtrue, qtrue ); // Compound command
+		{
+			// Compound command
+			Field_CompleteCommand( p + 1, qtrue, qtrue );
+		}
 		else
-			Cmd_CompleteArgument( baseCmd, cmd, completionArgument ); 
+		{
+			// FIXME: all this junk should really be associated with the respective
+			// commands, instead of being hard coded here
+			if( ( !Q_stricmp( baseCmd, "map" ) ||
+						!Q_stricmp( baseCmd, "devmap" ) ||
+						!Q_stricmp( baseCmd, "spmap" ) ||
+						!Q_stricmp( baseCmd, "spdevmap" ) ) &&
+					completionArgument == 2 )
+			{
+				Field_CompleteFilename( "maps", "bsp", qtrue );
+			}
+			else if( ( !Q_stricmp( baseCmd, "exec" ) ||
+						!Q_stricmp( baseCmd, "writeconfig" ) ) &&
+					completionArgument == 2 )
+			{
+				Field_CompleteFilename( "", "cfg", qfalse );
+			}
+			else if( !Q_stricmp( baseCmd, "condump" ) &&
+					completionArgument == 2 )
+			{
+				Field_CompleteFilename( "", "txt", qfalse );
+			}
+			else if( ( !Q_stricmp( baseCmd, "toggle" ) ||
+						!Q_stricmp( baseCmd, "vstr" ) ||
+						!Q_stricmp( baseCmd, "set" ) ||
+						!Q_stricmp( baseCmd, "seta" ) ||
+						!Q_stricmp( baseCmd, "setu" ) ||
+						!Q_stricmp( baseCmd, "sets" ) ) &&
+					completionArgument == 2 )
+			{
+				// Skip "<cmd> "
+				p = Com_SkipTokens( cmd, 1, " " );
+
+				if( p > cmd )
+					Field_CompleteCommand( p, qfalse, qtrue );
+			}
+#ifndef DEDICATED
+			else if( !Q_stricmp( baseCmd, "demo" ) && completionArgument == 2 )
+			{
+				char demoExt[ 16 ];
+
+				Com_sprintf( demoExt, sizeof( demoExt ), ".dm_%d", PROTOCOL_VERSION );
+				Field_CompleteFilename( "demos", demoExt, qtrue );
+			}
+			else if( !Q_stricmp( baseCmd, "rcon" ) && completionArgument == 2 )
+			{
+				// Skip "rcon "
+				p = Com_SkipTokens( cmd, 1, " " );
+
+				if( p > cmd )
+					Field_CompleteCommand( p, qtrue, qtrue );
+			}
+			else if( !Q_stricmp( baseCmd, "bind" ) )
+			{
+				if( completionArgument == 2 )
+				{
+					// Skip "bind "
+					p = Com_SkipTokens( cmd, 1, " " );
+
+					if( p > cmd )
+						Field_CompleteKeyname( );
+				}
+				else if( completionArgument >= 3 )
+				{
+					// Skip "bind <key> "
+					p = Com_SkipTokens( cmd, 2, " " );
+
+					if( p > cmd )
+						Field_CompleteCommand( p, qtrue, qtrue );
+				}
+			}
+#endif
+		}
 	}
 	else
 	{
@@ -3130,15 +3169,30 @@ void Field_CompleteCommand( char *cmd,
 		if( doCvars )
 			Cvar_CommandCompletion( FindMatches );
 
-		if( !Field_Complete( ) )
-		{
-			// run through again, printing matches
-			if( doCommands )
-				Cmd_CommandCompletion( PrintMatches );
+		if( matchCount == 0 )
+			return; // no matches
 
-			if( doCvars )
-				Cvar_CommandCompletion( PrintCvarMatches );
+		Q_strncpyz( &completionField->buffer[ strlen( completionField->buffer ) -
+			strlen( completionString ) ], shortestMatch,
+			sizeof( completionField->buffer ) );
+
+		completionField->cursor = strlen( completionField->buffer );
+
+		if( matchCount == 1 )
+		{
+			Q_strcat( completionField->buffer, sizeof( completionField->buffer ), " " );
+			completionField->cursor++;
+			return;
 		}
+
+		Com_Printf( "]%s\n", completionField->buffer );
+
+		// run through again, printing matches
+		if( doCommands )
+			Cmd_CommandCompletion( PrintMatches );
+
+		if( doCvars )
+			Cvar_CommandCompletion( PrintCvarMatches );
 	}
 }
 

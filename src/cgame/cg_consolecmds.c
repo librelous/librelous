@@ -29,6 +29,21 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
 
+void CG_TargetCommand_f( void )
+{
+  int   targetNum;
+  char  test[ 4 ];
+
+  targetNum = CG_CrosshairPlayer( );
+  if( !targetNum )
+    return;
+
+  trap_Argv( 1, test, 4 );
+  trap_SendConsoleCommand( va( "gc %i %i", targetNum, atoi( test ) ) );
+}
+
+
+
 /*
 =================
 CG_SizeUp_f
@@ -173,44 +188,14 @@ static void CG_TellAttacker_f( void )
   trap_SendClientCommand( command );
 }
 
-
-void CG_ClientList_f( void )
+typedef struct
 {
-  clientInfo_t *ci;
-  int i;
-  int count = 0;
-
-  for( i = 0; i < MAX_CLIENTS; i++ ) 
-  {
-    ci = &cgs.clientinfo[ i ];
-    if( !ci->infoValid ) 
-      continue;
-
-    switch( ci->team ) 
-    {
-      case TEAM_ALIENS:
-        Com_Printf( "%2i ^1A   ^7%s^7\n", i, ci->name );
-        break;
-      case TEAM_HUMANS:
-        Com_Printf( "%2i ^4H   ^7%s^7\n", i, ci->name );
-        break;
-      default:
-        Com_Printf( "%2i ^3S   ^7%s^7\n", i, ci->name );
-        break;
-    }
-    count++;
-  }
-  Com_Printf( "Listed %2i clients\n", count );
-}
-
-static void CG_UIMenu_f( void )
-{
-  trap_SendConsoleCommand( va( "menu %s\n", CG_Argv( 1 ) ) );
-}
+  char  *cmd;
+  void  (*function)( void );
+} consoleCommand_t;
 
 static consoleCommand_t commands[ ] =
 {
-  { "ui_menu", CG_UIMenu_f },
   { "testgun", CG_TestGun_f },
   { "testmodel", CG_TestModel_f },
   { "nextframe", CG_TestModelNextFrame_f },
@@ -229,11 +214,11 @@ static consoleCommand_t commands[ ] =
   { "weapon", CG_Weapon_f },
   { "tell_target", CG_TellTarget_f },
   { "tell_attacker", CG_TellAttacker_f },
+  { "tcmd", CG_TargetCommand_f },
   { "testPS", CG_TestPS_f },
   { "destroyTestPS", CG_DestroyTestPS_f },
   { "testTS", CG_TestTS_f },
   { "destroyTestTS", CG_DestroyTestTS_f },
-  { "clientlist", CG_ClientList_f },
 };
 
 
@@ -248,9 +233,18 @@ Cmd_Argc() / Cmd_Argv()
 qboolean CG_ConsoleCommand( void )
 {
   const char  *cmd;
+  const char  *arg1;
   int         i;
 
   cmd = CG_Argv( 0 );
+
+  // ugly hacky special case
+  if( !Q_stricmp( cmd, "ui_menu" ) )
+  {
+    arg1 = CG_Argv( 1 );
+    trap_SendConsoleCommand( va( "menu %s\n", arg1 ) );
+    return qtrue;
+  }
 
   for( i = 0; i < sizeof( commands ) / sizeof( commands[ 0 ] ); i++ )
   {
@@ -291,11 +285,6 @@ void CG_InitConsoleCommands( void )
   trap_AddCommand( "messagemode4" );
   trap_AddCommand( "say" );
   trap_AddCommand( "say_team" );
-  trap_AddCommand( "vsay" );
-  trap_AddCommand( "vsay_team" );
-  trap_AddCommand( "vsay_local" );
-  trap_AddCommand( "m" );
-  trap_AddCommand( "mt" );
   trap_AddCommand( "tell" );
   trap_AddCommand( "give" );
   trap_AddCommand( "god" );
@@ -304,22 +293,28 @@ void CG_InitConsoleCommands( void )
   trap_AddCommand( "team" );
   trap_AddCommand( "follow" );
   trap_AddCommand( "levelshot" );
+  trap_AddCommand( "addbot" );
   trap_AddCommand( "setviewpos" );
   trap_AddCommand( "callvote" );
   trap_AddCommand( "vote" );
   trap_AddCommand( "callteamvote" );
   trap_AddCommand( "teamvote" );
+  trap_AddCommand( "stats" );
   trap_AddCommand( "class" );
   trap_AddCommand( "build" );
   trap_AddCommand( "buy" );
   trap_AddCommand( "sell" );
   trap_AddCommand( "reload" );
-  trap_AddCommand( "boost" );
   trap_AddCommand( "itemact" );
   trap_AddCommand( "itemdeact" );
   trap_AddCommand( "itemtoggle" );
   trap_AddCommand( "destroy" );
   trap_AddCommand( "deconstruct" );
-  trap_AddCommand( "ignore" );
-  trap_AddCommand( "unignore" );
+  trap_AddCommand( "menu" );
+  trap_AddCommand( "ui_menu" );
+  trap_AddCommand( "mapRotation" );
+  trap_AddCommand( "stopMapRotation" );
+  trap_AddCommand( "advanceMapRotation" );
+  trap_AddCommand( "alienWin" );
+  trap_AddCommand( "humanWin" );
 }

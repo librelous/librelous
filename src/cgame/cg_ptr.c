@@ -42,15 +42,12 @@ int CG_ReadPTRCode( void )
 
   // load the file
   len = trap_FS_FOpenFile( PTRC_FILE, &f, FS_READ );
-  if( len < 0 )
+  if( len <= 0 )
     return 0;
 
   // should never happen - malformed write
-  if( len == 0 || len >= sizeof( text ) - 1 )
-  {
-    trap_FS_FCloseFile( f );
+  if( len >= sizeof( text ) - 1 )
     return 0;
-  }
 
   trap_FS_Read( text, len, f );
   text[ len ] = 0;

@@ -27,17 +27,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // q_shared.h -- included first by ALL program modules.
 // A user mod should never modify this file
 
-#define PRODUCT_NAME              "tremulous"
+#define PRODUCT_NAME            "tremulous"
+#define PRODUCT_VERSION         "1.1.0"
 
-#ifdef _MSC_VER
-# define PRODUCT_VERSION          "1.1.0"
+#ifdef SVN_VERSION
+# define Q3_VERSION PRODUCT_NAME " " SVN_VERSION
+#else
+# define Q3_VERSION PRODUCT_NAME " " PRODUCT_VERSION
 #endif
 
 #define CLIENT_WINDOW_TITLE       "Tremulous " PRODUCT_VERSION
 #define CLIENT_WINDOW_MIN_TITLE   "Tremulous"
-#define Q3_VERSION                 PRODUCT_NAME " " PRODUCT_VERSION
-
-#define GAMENAME_FOR_MASTER       "Tremulous"
 
 #define MAX_TEAMNAME 32
 
@@ -90,13 +90,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
  **********************************************************************/
 
-#ifdef Q3_VM
-
 #include "../game/bg_lib.h"
 
-typedef int intptr_t;
-
-#else
+#ifndef Q3_VM
 
 #include <assert.h>
 #include <math.h>
@@ -108,47 +104,33 @@ typedef int intptr_t;
 #include <ctype.h>
 #include <limits.h>
 
-// vsnprintf is ISO/IEC 9899:1999
-// abstracting this to make it portable
-#ifdef _WIN32
-  #define Q_vsnprintf _vsnprintf
-  #define Q_snprintf _snprintf
-#else
-  #define Q_vsnprintf vsnprintf
-  #define Q_snprintf snprintf
 #endif
-
-#ifdef _MSC_VER
-  #include <io.h>
-
-  typedef __int64 int64_t;
-  typedef __int32 int32_t;
-  typedef __int16 int16_t;
-  typedef __int8 int8_t;
-  typedef unsigned __int64 uint64_t;
-  typedef unsigned __int32 uint32_t;
-  typedef unsigned __int16 uint16_t;
-  typedef unsigned __int8 uint8_t;
-#else
-  #include <stdint.h>
-#endif
-
-#endif
-
 
 #include "q_platform.h"
 
 //=============================================================
 
+#ifdef Q3_VM
+   typedef int intptr_t;
+#else
+  #ifndef _MSC_VER
+    #include <stdint.h>
+  #else
+    #include <io.h>
+    typedef __int64 int64_t;
+    typedef __int32 int32_t;
+    typedef __int16 int16_t;
+    typedef __int8 int8_t;
+    typedef unsigned __int64 uint64_t;
+    typedef unsigned __int32 uint32_t;
+    typedef unsigned __int16 uint16_t;
+    typedef unsigned __int8 uint8_t;
+  #endif
+#endif
+
 typedef unsigned char 		byte;
 
 typedef enum {qfalse, qtrue}	qboolean;
-
-typedef union {
-	float f;
-	int i;
-	unsigned int ui;
-} floatint_t;
 
 typedef int		qhandle_t;
 typedef int		sfxHandle_t;
@@ -470,10 +452,7 @@ typedef struct {
 #define Vector4Copy(a,b)		((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2],(b)[3]=(a)[3])
 #define Vector4Add(a,b,c)    ((c)[0]=(a)[0]+(b)[0],(c)[1]=(a)[1]+(b)[1],(c)[2]=(a)[2]+(b)[2],(c)[3]=(a)[3]+(b)[3])
 
-#define SnapVector(v) ( (v)[0] = (int)(v)[0],\
-                        (v)[1] = (int)(v)[1],\
-                        (v)[2] = (int)(v)[2] )
-
+#define	SnapVector(v) {v[0]=((int)(v[0]));v[1]=((int)(v[1]));v[2]=((int)(v[2]));}
 // just in case you do't want to use the macros
 vec_t _DotProduct( const vec3_t v1, const vec3_t v2 );
 void _VectorSubtract( const vec3_t veca, const vec3_t vecb, vec3_t out );
@@ -657,11 +636,11 @@ vec_t DistanceBetweenLineSegments(
     float *s, float *t );
 
 #ifndef MAX
-#define MAX(x,y) ((x)>(y)?(x):(y))
+#define MAX(x,y) (x)>(y)?(x):(y)
 #endif
 
 #ifndef MIN
-#define MIN(x,y) ((x)<(y)?(x):(y))
+#define MIN(x,y) (x)<(y)?(x):(y)
 #endif
 
 //=============================================
@@ -712,7 +691,6 @@ void SkipRestOfLine ( char **data );
 void Parse1DMatrix (char **buf_p, int x, float *m);
 void Parse2DMatrix (char **buf_p, int y, int x, float *m);
 void Parse3DMatrix (char **buf_p, int z, int y, int x, float *m);
-int Com_HexStrToInt( const char *str );
 
 void	QDECL Com_sprintf (char *dest, int size, const char *fmt, ...) __attribute__ ((format (printf, 3, 4)));
 
@@ -741,8 +719,6 @@ int Q_isprint( int c );
 int Q_islower( int c );
 int Q_isupper( int c );
 int Q_isalpha( int c );
-qboolean Q_isanumber( const char *s );
-qboolean Q_isintegral( float f );
 
 // portable case insensitive compare
 int		Q_stricmp (const char *s1, const char *s2);
@@ -761,8 +737,6 @@ void	Q_strcat( char *dest, int size, const char *src );
 int Q_PrintStrlen( const char *string );
 // removes color sequences from string
 char *Q_CleanStr( char *string );
-// Count the number of char tocount encountered in string
-int Q_CountChar(const char *string, char tocount);
 
 //=============================================
 
@@ -851,19 +825,15 @@ default values.
 
 // nothing outside the Cvar_*() functions should modify these fields!
 typedef struct cvar_s {
-	char			*name;
-	char			*string;
-	char			*resetString;		// cvar_restart will reset to this value
-	char			*latchedString;		// for CVAR_LATCH vars
-	int				flags;
+	char		*name;
+	char		*string;
+	char		*resetString;		// cvar_restart will reset to this value
+	char		*latchedString;		// for CVAR_LATCH vars
+	int			flags;
 	qboolean	modified;			// set each time the cvar is changed
-	int				modificationCount;	// incremented each time the cvar is changed
-	float			value;				// atof( string )
-	int				integer;			// atoi( string )
-	qboolean	validate;
-	qboolean	integral;
-	float			min;
-	float			max;
+	int			modificationCount;	// incremented each time the cvar is changed
+	float		value;				// atof( string )
+	int			integer;			// atoi( string )
 	struct cvar_s *next;
 	struct cvar_s *hashNext;
 } cvar_t;
@@ -1082,8 +1052,6 @@ typedef struct playerState_s {
 	int			torsoTimer;		// don't change low priority animations until this runs out
 	int			torsoAnim;		// mask off ANIM_TOGGLEBIT
 
-	int			weaponAnim;		// mask off ANIM_TOGGLEBIT
-
 	int			movementDir;	// a number 0 to 7 that represents the reletive angle
 								// of movement to the view angle (axial and diagonals)
 								// when at rest, the value will remain unchanged
@@ -1240,7 +1208,6 @@ typedef struct entityState_s {
 	int		weapon;			// determines weapon and flash model, etc
 	int		legsAnim;		// mask off ANIM_TOGGLEBIT
 	int		torsoAnim;		// mask off ANIM_TOGGLEBIT
-	int		weaponAnim;		// mask off ANIM_TOGGLEBIT
 
 	int		generic1;
 } entityState_t;
@@ -1351,17 +1318,5 @@ typedef enum {
 #define SAY_ALL		0
 #define SAY_TEAM	1
 #define SAY_TELL	2
-
-#define MAX_EMOTICON_NAME_LEN 16
-#define MAX_EMOTICONS 64
-
-// flags for com_downloadPrompt
-#define DLP_TYPE_MASK 0x0f
-#define DLP_IGNORE    0x01 // don't download anything
-#define DLP_CURL      0x02 // download via HTTP redirect
-#define DLP_UDP       0x04 // download from server
-#define DLP_SHOW      0x10 // prompt needs to be shown
-#define DLP_PROMPTED  0x20 // prompt has been processed by client
-#define DLP_STALE     0x40 // prompt is not being shown by UI VM
 
 #endif	// __Q_SHARED_H

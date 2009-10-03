@@ -63,9 +63,6 @@ The activator is given this many points.
 */
 void Use_Target_Score( gentity_t *ent, gentity_t *other, gentity_t *activator )
 {
-  if( !activator )
-    return;
-
   AddScore( activator, ent->count );
 }
 
@@ -86,7 +83,7 @@ If "private", only the activator gets the message.  If no checks, all clients ge
 */
 void Use_Target_Print( gentity_t *ent, gentity_t *other, gentity_t *activator )
 {
-  if( activator && activator->client && ( ent->spawnflags & 4 ) )
+  if( activator->client && ( ent->spawnflags & 4 ) )
   {
     trap_SendServerCommand( activator-g_entities, va( "cp \"%s\"", ent->message ) );
     return;
@@ -95,9 +92,9 @@ void Use_Target_Print( gentity_t *ent, gentity_t *other, gentity_t *activator )
   if( ent->spawnflags & 3 )
   {
     if( ent->spawnflags & 1 )
-      G_TeamCommand( TEAM_HUMANS, va( "cp \"%s\"", ent->message ) );
+      G_TeamCommand( PTE_HUMANS, va( "cp \"%s\"", ent->message ) );
     if( ent->spawnflags & 2 )
-      G_TeamCommand( TEAM_ALIENS, va( "cp \"%s\"", ent->message ) );
+      G_TeamCommand( PTE_ALIENS, va( "cp \"%s\"", ent->message ) );
 
     return;
   }
@@ -138,7 +135,7 @@ void Use_Target_Speaker( gentity_t *ent, gentity_t *other, gentity_t *activator 
   else
   {
     // normal sound
-    if( ent->spawnflags & 8 && activator )
+    if( ent->spawnflags & 8 )
       G_AddEvent( activator, EV_GENERAL_SOUND, ent->noise_index );
     else if( ent->spawnflags & 4 )
       G_AddEvent( ent, EV_GLOBAL_SOUND, ent->noise_index );
@@ -199,7 +196,7 @@ void target_teleporter_use( gentity_t *self, gentity_t *other, gentity_t *activa
 {
   gentity_t *dest;
 
-  if( !activator || !activator->client )
+  if( !activator->client )
     return;
 
   dest =  G_PickTarget( self->target );
@@ -234,12 +231,12 @@ if RANDOM is checked, only one of the targets will be fired, not all of them
 */
 void target_relay_use( gentity_t *self, gentity_t *other, gentity_t *activator )
 {
-  if( ( self->spawnflags & 1 ) && activator && activator->client &&
-      activator->client->ps.stats[ STAT_TEAM ] != TEAM_HUMANS )
+  if( ( self->spawnflags & 1 ) && activator->client &&
+      activator->client->ps.stats[ STAT_PTEAM ] != PTE_HUMANS )
     return;
 
-  if( ( self->spawnflags & 2 ) && activator && activator->client &&
-      activator->client->ps.stats[ STAT_TEAM ] != TEAM_ALIENS )
+  if( ( self->spawnflags & 2 ) && activator->client &&
+      activator->client->ps.stats[ STAT_PTEAM ] != PTE_ALIENS )
     return;
 
   if( self->spawnflags & 4 )
@@ -269,9 +266,6 @@ Kills the activator.
 */
 void target_kill_use( gentity_t *self, gentity_t *other, gentity_t *activator )
 {
-  if( !activator )
-    return;
-
   G_Damage( activator, NULL, NULL, NULL, NULL, 100000, DAMAGE_NO_PROTECTION, MOD_TELEFRAG );
 }
 
@@ -452,7 +446,7 @@ target_hurt_use
 void target_hurt_use( gentity_t *self, gentity_t *other, gentity_t *activator )
 {
   // hurt the activator
-  if( !activator || !activator->takedamage )
+  if( !activator->takedamage )
     return;
 
   G_Damage( activator, self, self, NULL, NULL, self->damage, 0, MOD_TRIGGER_HURT );

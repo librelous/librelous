@@ -145,11 +145,9 @@ void Cbuf_ExecuteText (int exec_when, const char *text)
 	{
 	case EXEC_NOW:
 		if (text && strlen(text) > 0) {
-			Com_DPrintf(S_COLOR_YELLOW "EXEC_NOW %s\n", text);
 			Cmd_ExecuteString (text);
 		} else {
 			Cbuf_Execute();
-			Com_DPrintf(S_COLOR_YELLOW "EXEC_NOW %s\n", cmd_text.data);
 		}
 		break;
 	case EXEC_INSERT:
@@ -240,10 +238,7 @@ Cmd_Exec_f
 ===============
 */
 void Cmd_Exec_f( void ) {
-	union {
-		char	*c;
-		void	*v;
-	} f;
+	char	*f;
 	int		len;
 	char	filename[MAX_QPATH];
 
@@ -253,17 +248,17 @@ void Cmd_Exec_f( void ) {
 	}
 
 	Q_strncpyz( filename, Cmd_Argv(1), sizeof( filename ) );
-	COM_DefaultExtension( filename, sizeof( filename ), ".cfg" );
-	len = FS_ReadFile( filename, &f.v);
-	if (!f.c) {
+	COM_DefaultExtension( filename, sizeof( filename ), ".cfg" ); 
+	len = FS_ReadFile( filename, (void **)&f);
+	if (!f) {
 		Com_Printf ("couldn't exec %s\n",Cmd_Argv(1));
 		return;
 	}
 	Com_Printf ("execing %s\n",Cmd_Argv(1));
 	
-	Cbuf_InsertText (f.c);
+	Cbuf_InsertText (f);
 
-	FS_FreeFile (f.v);
+	FS_FreeFile (f);
 }
 
 
@@ -317,7 +312,6 @@ typedef struct cmd_function_s
 	struct cmd_function_s	*next;
 	char					*name;
 	xcommand_t				function;
-	completionFunc_t	complete;
 } cmd_function_t;
 
 
@@ -469,22 +463,6 @@ https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=543
 char *Cmd_Cmd(void)
 {
 	return cmd.cmd;
-}
-
-/*
-   Replace command separators with space to prevent interpretation
-   This is a hack to protect buggy qvms
-   https://bugzilla.icculus.org/show_bug.cgi?id=3593
-*/
-void Cmd_Args_Sanitize( void ) {
-	int i;
-	for ( i = 1 ; i < cmd.argc ; i++ ) {
-		char* c = cmd.argv[i];
-		while ((c = strpbrk(c, "\n\r;"))) {
-			*c = ' ';
-			++c;
-		}
-	}
 }
 
 /*
@@ -643,24 +621,8 @@ void	Cmd_AddCommand( const char *cmd_name, xcommand_t function ) {
 	cmd = S_Malloc (sizeof(cmd_function_t));
 	cmd->name = CopyString( cmd_name );
 	cmd->function = function;
-	cmd->complete = NULL;
 	cmd->next = cmd_functions;
 	cmd_functions = cmd;
-}
-
-/*
-============
-Cmd_SetCommandCompletionFunc
-============
-*/
-void Cmd_SetCommandCompletionFunc( const char *command, completionFunc_t complete ) {
-	cmd_function_t	*cmd;
-
-	for( cmd = cmd_functions; cmd; cmd = cmd->next ) {
-		if( !Q_stricmp( command, cmd->name ) ) {
-			cmd->complete = complete;
-		}
-	}
 }
 
 /*
@@ -701,21 +663,6 @@ void	Cmd_CommandCompletion( void(*callback)(const char *s) ) {
 	
 	for (cmd=cmd_functions ; cmd ; cmd=cmd->next) {
 		callback( cmd->name );
-	}
-}
-
-/*
-============
-Cmd_CompleteArgument
-============
-*/
-void Cmd_CompleteArgument( const char *command, char *args, int argNum ) {
-	cmd_function_t	*cmd;
-
-	for( cmd = cmd_functions; cmd; cmd = cmd->next ) {
-		if( !Q_stricmp( command, cmd->name ) && cmd->complete ) {
-			cmd->complete( args, argNum );
-		}
 	}
 }
 
@@ -810,17 +757,6 @@ void Cmd_List_f (void)
 }
 
 /*
-==================
-Cmd_CompleteCfgName
-==================
-*/
-void Cmd_CompleteCfgName( char *args, int argNum ) {
-	if( argNum == 2 ) {
-		Field_CompleteFilename( "", "cfg", qfalse );
-	}
-}
-
-/*
 ============
 Cmd_Init
 ============
@@ -828,9 +764,7 @@ Cmd_Init
 void Cmd_Init (void) {
 	Cmd_AddCommand ("cmdlist",Cmd_List_f);
 	Cmd_AddCommand ("exec",Cmd_Exec_f);
-	Cmd_SetCommandCompletionFunc( "exec", Cmd_CompleteCfgName );
 	Cmd_AddCommand ("vstr",Cmd_Vstr_f);
-	Cmd_SetCommandCompletionFunc( "vstr", Cvar_CompleteCvarName );
 	Cmd_AddCommand ("echo",Cmd_Echo_f);
 	Cmd_AddCommand ("wait", Cmd_Wait_f);
 }

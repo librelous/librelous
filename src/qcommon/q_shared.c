@@ -206,11 +206,16 @@ qint64 Long64NoSwap (qint64 ll)
 	return ll;
 }
 
+typedef union {
+    float	f;
+    unsigned int i;
+} _FloatByteUnion;
+
 float FloatSwap (const float *f) {
-	floatint_t out;
+	_FloatByteUnion out;
 
 	out.f = *f;
-	out.ui = LongSwap(out.ui);
+	out.i = LongSwap(out.i);
 
 	return out.f;
 }
@@ -291,7 +296,7 @@ void COM_ParseError( char *format, ... )
 	static char string[4096];
 
 	va_start (argptr, format);
-	Q_vsnprintf (string, sizeof(string), format, argptr);
+	vsprintf (string, format, argptr);
 	va_end (argptr);
 
 	Com_Printf("ERROR: %s, line %d: %s\n", com_parsename, com_lines, string);
@@ -303,7 +308,7 @@ void COM_ParseWarning( char *format, ... )
 	static char string[4096];
 
 	va_start (argptr, format);
-	Q_vsnprintf (string, sizeof(string), format, argptr);
+	vsprintf (string, format, argptr);
 	va_end (argptr);
 
 	Com_Printf("WARNING: %s, line %d: %s\n", com_parsename, com_lines, string);
@@ -357,48 +362,48 @@ int COM_Compress( char *data_p ) {
 					in++;
 				if ( *in ) 
 					in += 2;
-				// record when we hit a newline
-			} else if ( c == '\n' || c == '\r' ) {
-				newline = qtrue;
-				in++;
-				// record when we hit whitespace
-			} else if ( c == ' ' || c == '\t') {
-				whitespace = qtrue;
-				in++;
-				// an actual token
+                        // record when we hit a newline
+                        } else if ( c == '\n' || c == '\r' ) {
+                            newline = qtrue;
+                            in++;
+                        // record when we hit whitespace
+                        } else if ( c == ' ' || c == '\t') {
+                            whitespace = qtrue;
+                            in++;
+                        // an actual token
 			} else {
-				// if we have a pending newline, emit it (and it counts as whitespace)
-				if (newline) {
-					*out++ = '\n';
-					newline = qfalse;
-					whitespace = qfalse;
-				} if (whitespace) {
-					*out++ = ' ';
-					whitespace = qfalse;
-				}
-
-				// copy quoted strings unmolested
-				if (c == '"') {
-					*out++ = c;
-					in++;
-					while (1) {
-						c = *in;
-						if (c && c != '"') {
-							*out++ = c;
-							in++;
-						} else {
-							break;
-						}
-					}
-					if (c == '"') {
-						*out++ = c;
-						in++;
-					}
-				} else {
-					*out = c;
-					out++;
-					in++;
-				}
+                            // if we have a pending newline, emit it (and it counts as whitespace)
+                            if (newline) {
+                                *out++ = '\n';
+                                newline = qfalse;
+                                whitespace = qfalse;
+                            } if (whitespace) {
+                                *out++ = ' ';
+                                whitespace = qfalse;
+                            }
+                            
+                            // copy quoted strings unmolested
+                            if (c == '"') {
+                                    *out++ = c;
+                                    in++;
+                                    while (1) {
+                                        c = *in;
+                                        if (c && c != '"') {
+                                            *out++ = c;
+                                            in++;
+                                        } else {
+                                            break;
+                                        }
+                                    }
+                                    if (c == '"') {
+                                        *out++ = c;
+                                        in++;
+                                    }
+                            } else {
+                                *out = c;
+                                out++;
+                                in++;
+                            }
 			}
 		}
 	}
@@ -508,6 +513,62 @@ char *COM_ParseExt( char **data_p, qboolean allowLineBreaks )
 	return com_token;
 }
 
+
+#if 0
+// no longer used
+/*
+===============
+COM_ParseInfos
+===============
+*/
+int COM_ParseInfos( char *buf, int max, char infos[][MAX_INFO_STRING] ) {
+	char	*token;
+	int		count;
+	char	key[MAX_TOKEN_CHARS];
+
+	count = 0;
+
+	while ( 1 ) {
+		token = COM_Parse( &buf );
+		if ( !token[0] ) {
+			break;
+		}
+		if ( strcmp( token, "{" ) ) {
+			Com_Printf( "Missing { in info file\n" );
+			break;
+		}
+
+		if ( count == max ) {
+			Com_Printf( "Max infos exceeded\n" );
+			break;
+		}
+
+		infos[count][0] = 0;
+		while ( 1 ) {
+			token = COM_ParseExt( &buf, qtrue );
+			if ( !token[0] ) {
+				Com_Printf( "Unexpected end of info file\n" );
+				break;
+			}
+			if ( !strcmp( token, "}" ) ) {
+				break;
+			}
+			Q_strncpyz( key, token, sizeof( key ) );
+
+			token = COM_ParseExt( &buf, qfalse );
+			if ( !token[0] ) {
+				strcpy( token, "<NULL>" );
+			}
+			Info_SetValueForKey( infos[count], key, token );
+		}
+		count++;
+	}
+
+	return count;
+}
+#endif
+
+
 /*
 ==================
 COM_MatchToken
@@ -609,44 +670,6 @@ void Parse3DMatrix (char **buf_p, int z, int y, int x, float *m) {
 	COM_MatchToken( buf_p, ")" );
 }
 
-/*
-===================
-Com_HexStrToInt
-===================
-*/
-int Com_HexStrToInt( const char *str )
-{
-	if ( !str || !str[ 0 ] )
-		return -1;
-
-	// check for hex code
-	if( str[ 0 ] == '0' && str[ 1 ] == 'x' )
-	{
-		int i, n = 0;
-
-		for( i = 2; i < strlen( str ); i++ )
-		{
-			char digit;
-
-			n *= 16;
-
-			digit = tolower( str[ i ] );
-
-			if( digit >= '0' && digit <= '9' )
-				digit -= '0';
-			else if( digit >= 'a' && digit <= 'f' )
-				digit = digit - 'a' + 10;
-			else
-				return -1;
-
-			n += digit;
-		}
-
-		return n;
-	}
-
-	return -1;
-}
 
 /*
 ============================================================================
@@ -702,29 +725,6 @@ char* Q_strrchr( const char* string, int c )
 		sp = s;
 
 	return sp;
-}
-
-qboolean Q_isanumber( const char *s )
-{
-#ifdef Q3_VM
-	//FIXME: implement
-	return qfalse;
-#else
-	char *p;
-	double d;
-
-	if( *s == '\0' )
-		return qfalse;
-
-	d = strtod( s, &p );
-
-	return *p == '\0';
-#endif
-}
-
-qboolean Q_isintegral( float f )
-{
-	return (int)f == f;
 }
 
 /*
@@ -922,18 +922,6 @@ char *Q_CleanStr( char *string ) {
 	return string;
 }
 
-int Q_CountChar(const char *string, char tocount)
-{
-	int count;
-	
-	for(count = 0; *string; string++)
-	{
-		if(*string == tocount)
-			count++;
-	}
-	
-	return count;
-}
 
 void QDECL Com_sprintf( char *dest, int size, const char *fmt, ...) {
 	int		len;
@@ -941,7 +929,7 @@ void QDECL Com_sprintf( char *dest, int size, const char *fmt, ...) {
 	char	bigbuffer[32000];	// big, but small enough to fit in PPC stack
 
 	va_start (argptr,fmt);
-	len = Q_vsnprintf (bigbuffer, sizeof(bigbuffer), fmt,argptr);
+	len = vsprintf (bigbuffer,fmt,argptr);
 	va_end (argptr);
 	if ( len >= sizeof( bigbuffer ) ) {
 		Com_Error( ERR_FATAL, "Com_sprintf: overflowed bigbuffer" );
@@ -964,19 +952,20 @@ va
 
 does a varargs printf into a temp buffer, so I don't need to have
 varargs versions of all text functions.
+FIXME: make this buffer size safe someday
 ============
 */
 char	* QDECL va( char *format, ... ) {
 	va_list		argptr;
-	static char string[2][32000]; // in case va is called by nested functions
-	static int	index = 0;
-	char		*buf;
+	static char		string[2][32000];	// in case va is called by nested functions
+	static int		index = 0;
+	char	*buf;
 
 	buf = string[index & 1];
 	index++;
 
 	va_start (argptr, format);
-	Q_vsnprintf (buf, sizeof(*string), format, argptr);
+	vsprintf (buf, format,argptr);
 	va_end (argptr);
 
 	return buf;
@@ -1156,8 +1145,7 @@ void Info_RemoveKey( char *s, const char *key ) {
 
 		if (!strcmp (key, pkey) )
 		{
-			memmove(start, s, strlen(s) + 1); // remove this part
-			
+			strcpy (start, s);	// remove this part
 			return;
 		}
 
@@ -1234,22 +1222,12 @@ can mess up the server's parsing
 ==================
 */
 qboolean Info_Validate( const char *s ) {
-	const char* ch = s;
-
-	while ( *ch != '\0' )
-	{
-		if( !Q_isprint( *ch ) )
-			return qfalse;
-
-		if( *ch == '\"' )
-			return qfalse;
-
-		if( *ch == ';' )
-			return qfalse;
-
-		++ch;
+	if ( strchr( s, '\"' ) ) {
+		return qfalse;
 	}
-
+	if ( strchr( s, ';' ) ) {
+		return qfalse;
+	}
 	return qtrue;
 }
 

@@ -262,9 +262,6 @@ typedef enum {
 	K_EURO,
 	K_UNDO,
 
-	// Pseudo-key that brings the console down
-	K_CONSOLE,
-
 	MAX_KEYS
 } keyNum_t;
 
