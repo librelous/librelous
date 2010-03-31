@@ -22,7 +22,7 @@
 
   menuDef
   {
-    name "tremulous_teamselect"
+    name "Librelous_teamselect"
     visible MENU_FALSE
     fullscreen MENU_FALSE
     outOfBoundsClick
@@ -67,7 +67,7 @@
       {
         play "sound/misc/menu1.wav";
         uiScript JoinTeam;
-        close tremulous_teamselect
+        close Librelous_teamselect
       }
     }
 
@@ -109,7 +109,7 @@
       {
         play "sound/misc/menu1.wav";
         uiScript JoinTeam;
-        close tremulous_teamselect
+        close Librelous_teamselect
       }
     }
 
@@ -129,7 +129,7 @@
       action
       {
         play "sound/misc/menu3.wav";
-        close tremulous_teamselect
+        close Librelous_teamselect
       }
     }
   }

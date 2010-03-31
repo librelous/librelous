@@ -22,7 +22,7 @@
 
   menuDef
   {
-    name "tremulous_humanbuild"
+    name "Librelous_humanbuild"
     visible MENU_FALSE
     fullscreen MENU_FALSE
     outOfBoundsClick
@@ -67,7 +67,7 @@
       {
         play "sound/misc/menu1.wav";
         uiScript BuildHumanBuildable;
-        close tremulous_humanbuild
+        close Librelous_humanbuild
       }
     }
 
@@ -108,7 +108,7 @@
       {
         play "sound/misc/menu1.wav";
         uiScript BuildHumanBuildable;
-        close tremulous_humanbuild
+        close Librelous_humanbuild
       }
     }
 
@@ -128,7 +128,7 @@
       action
       {
         play "sound/misc/menu3.wav";
-        close tremulous_humanbuild
+        close Librelous_humanbuild
       }
     }
   }

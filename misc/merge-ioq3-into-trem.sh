@@ -39,4 +39,4 @@ rm -rf code/cgame/ code/game/ code/ui/ code/q3_ui/
 mv code src
 
 cd ..
-svn_load_dirs svn://svn.icculus.org/tremulous/ -t upstream/$IOQ3VERSION upstream/current $IOQ3VERSION/
+svn_load_dirs svn://svn.icculus.org/Librelous/ -t upstream/$IOQ3VERSION upstream/current $IOQ3VERSION/

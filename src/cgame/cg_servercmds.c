@@ -3,20 +3,20 @@
 Copyright (C) 1999-2005 Id Software, Inc.
 Copyright (C) 2000-2009 Darklegion Development
 
-This file is part of Tremulous.
+This file is part of Librelous.
 
-Tremulous is free software; you can redistribute it
+Librelous is free software; you can redistribute it
 and/or modify it under the terms of the GNU General Public License as
 published by the Free Software Foundation; either version 2 of the License,
 or (at your option) any later version.
 
-Tremulous is distributed in the hope that it will be
+Librelous is distributed in the hope that it will be
 useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with Tremulous; if not, write to the Free Software
+along with Librelous; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
@@ -427,45 +427,45 @@ void CG_Menu( int menu, int arg )
   switch( cg.snap->ps.stats[ STAT_TEAM ] )
   {
     case TEAM_ALIENS:
-      dialog = "menu tremulous_alien_dialog\n";
+      dialog = "menu Librelous_alien_dialog\n";
       break;
     case TEAM_HUMANS:
-      dialog = "menu tremulous_human_dialog\n";
+      dialog = "menu Librelous_human_dialog\n";
       break;
     default:
-      dialog = "menu tremulous_default_dialog\n";
+      dialog = "menu Librelous_default_dialog\n";
   }
   cmd = dialog;
 
   switch( menu )
   {
     case MN_TEAM:
-      cmd       = "menu tremulous_teamselect\n";
+      cmd       = "menu Librelous_teamselect\n";
       type      = DT_INTERACTIVE;
       break;
 
     case MN_A_CLASS:
-      cmd       = "menu tremulous_alienclass\n";
+      cmd       = "menu Librelous_alienclass\n";
       type      = DT_INTERACTIVE;
       break;
 
     case MN_H_SPAWN:
-      cmd       = "menu tremulous_humanitem\n";
+      cmd       = "menu Librelous_humanitem\n";
       type      = DT_INTERACTIVE;
       break;
 
     case MN_A_BUILD:
-      cmd       = "menu tremulous_alienbuild\n";
+      cmd       = "menu Librelous_alienbuild\n";
       type      = DT_INTERACTIVE;
       break;
 
     case MN_H_BUILD:
-      cmd       = "menu tremulous_humanbuild\n";
+      cmd       = "menu Librelous_humanbuild\n";
       type      = DT_INTERACTIVE;
       break;
 
     case MN_H_ARMOURY:
-      cmd       = "menu tremulous_humanarmoury\n";
+      cmd       = "menu Librelous_humanarmoury\n";
       type      = DT_INTERACTIVE;
       break;
 
@@ -811,7 +811,7 @@ void CG_Menu( int menu, int arg )
          va( "%d %d", cg.snap->ps.stats[ STAT_CLASS ],
                       cg.snap->ps.persistant[ PERS_CREDIT ] ) );
 
-      cmd       = "menu tremulous_alienupgrade\n";
+      cmd       = "menu Librelous_alienupgrade\n";
       type      = DT_INTERACTIVE;
       break;
 

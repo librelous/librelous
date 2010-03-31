@@ -53,7 +53,7 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_ICON1               ICON    DISCARDABLE     "misc/tremulous.ico"
+IDI_ICON1               ICON    DISCARDABLE     "misc/Librelous.ico"
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -63,7 +63,7 @@ IDI_ICON1               ICON    DISCARDABLE     "misc/tremulous.ico"
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDS_STRING1             "Tremulous"
+    IDS_STRING1             "Librelous"
 END
 
 #endif    // English (U.S.) resources

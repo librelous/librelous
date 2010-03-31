@@ -26,7 +26,7 @@
 
   menuDef
   {
-    name "tremulous_humanarmoury"
+    name "Librelous_humanarmoury"
     visible MENU_FALSE
     fullscreen MENU_FALSE
     outOfBoundsClick
@@ -162,7 +162,7 @@
       action
       {
         play "sound/misc/menu4.wav";
-        close tremulous_humanarmoury
+        close Librelous_humanarmoury
       }
     }
 

@@ -5,7 +5,7 @@
     "not a complete list. In general, all things have been tweaked for balance in "
     "some way.\n\n"
     "We hope you enjoy playing. Your support gives us valuable data and "
-    "feedback as we work to bring you Tremulous 1.2. Please report all bugs. Thank "
+    "feedback as we work to bring you Librelous 1.2. Please report all bugs. Thank "
     "you."
   }
   "Alien Healing"
@@ -68,7 +68,7 @@
   }
   "Lag Correction"
   {
-    "While the Tremulous implementation of Neil Toronto's unlagged is "
+    "While the Librelous implementation of Neil Toronto's unlagged is "
     "becoming widely accepted, we also implement client-side improvements "
     "not possible in 1.1 servers. For those who insist on leading their "
     "attacks, setting cg_unlagged to 0 will disable backward reconcilliation "

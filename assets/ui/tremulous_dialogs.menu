@@ -17,7 +17,7 @@
 
   menuDef
   {
-    name "tremulous_default_dialog"
+    name "Librelous_default_dialog"
     visible MENU_FALSE
     fullscreen MENU_FALSE
     outOfBoundsClick
@@ -91,7 +91,7 @@
       action
       {
         play "sound/misc/menu1.wav";
-        close tremulous_default_dialog
+        close Librelous_default_dialog
       }
     }
   }

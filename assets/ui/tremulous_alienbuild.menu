@@ -22,7 +22,7 @@
 
   menuDef
   {
-    name "tremulous_alienbuild"
+    name "Librelous_alienbuild"
     visible MENU_FALSE
     fullscreen MENU_FALSE
     outOfBoundsClick
@@ -67,7 +67,7 @@
       {
         play "sound/misc/menu1.wav";
         uiScript BuildAlienBuildable;
-        close tremulous_alienbuild
+        close Librelous_alienbuild
       }
     }
 
@@ -109,7 +109,7 @@
       {
         play "sound/misc/menu1.wav";
         uiScript BuildAlienBuildable;
-        close tremulous_alienbuild
+        close Librelous_alienbuild
       }
     }
 
@@ -129,7 +129,7 @@
       action
       {
         play "sound/misc/menu3.wav";
-        close tremulous_alienbuild
+        close Librelous_alienbuild
       }
     }
   }

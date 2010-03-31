@@ -22,7 +22,7 @@
 
   menuDef
   {
-    name "tremulous_alienupgrade"
+    name "Librelous_alienupgrade"
     visible MENU_TRUE
     fullscreen MENU_FALSE
     outOfBoundsClick
@@ -67,7 +67,7 @@
       {
         play "sound/misc/menu1.wav";
         uiScript UpgradeToNewClass;
-        close tremulous_alienupgrade
+        close Librelous_alienupgrade
       }
     }
 
@@ -109,7 +109,7 @@
       {
         play "sound/misc/menu1.wav";
         uiScript UpgradeToNewClass;
-        close tremulous_alienupgrade
+        close Librelous_alienupgrade
       }
     }
 
@@ -129,7 +129,7 @@
       action
       {
         play "sound/misc/menu3.wav";
-        close tremulous_alienupgrade
+        close Librelous_alienupgrade
       }
     }
   }

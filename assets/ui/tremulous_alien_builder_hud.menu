@@ -13,7 +13,7 @@
     rect 0 0 W H
     aspectBias ASPECT_NONE
 
-#include "ui/tremulous_alien_common_hud.h"
+#include "ui/Librelous_alien_common_hud.h"
 
     //BUILD TIMER
     itemDef

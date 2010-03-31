@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="tremulous"
+	Name="Librelous"
 	ProjectGUID="{0D5316E4-B20F-4E09-8989-3B9064358F0C}"
-	RootNamespace="tremulous"
+	RootNamespace="Librelous"
 	Keyword="MakeFileProj"
 	>
 	<Platforms>
@@ -26,7 +26,7 @@
 				BuildCommandLine="make -C ../../ debug"
 				ReBuildCommandLine="make -C ../../ clean-debug debug"
 				CleanCommandLine="make -C ../../ clean-debug"
-				Output="$(Outdir)/tremulous.x86.exe"
+				Output="$(Outdir)/Librelous.x86.exe"
 				PreprocessorDefinitions=""
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -46,7 +46,7 @@
 				BuildCommandLine="make -C ../../ release"
 				ReBuildCommandLine="make -C ../../ clean-release release"
 				CleanCommandLine="make -C ../../ clean-release"
-				Output="$(Outdir)/tremulous.x86.exe"
+				Output="$(Outdir)/Librelous.x86.exe"
 				PreprocessorDefinitions=""
 				IncludeSearchPath=""
 				ForcedIncludes=""

@@ -41,7 +41,7 @@
 
 // Types of messages (with samples):
 
-// "heartbeat Tremulous\n"
+// "heartbeat Librelous\n"
 #define S2M_HEARTBEAT "heartbeat"
 
 // "gamestat <data>"

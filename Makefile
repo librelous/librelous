@@ -1,5 +1,5 @@
 #
-# Tremulous Makefile
+# Librelous Makefile
 #
 # GNU Make required
 #
@@ -82,7 +82,7 @@ endif
 export CROSS_COMPILING
 
 ifndef COPYDIR
-COPYDIR="/usr/local/games/tremulous"
+COPYDIR="/usr/local/games/Librelous"
 endif
 
 ifndef COPYBINDIR
@@ -725,7 +725,7 @@ ifeq ($(PLATFORM),sunos)
   CC=gcc
   INSTALL=ginstall
   MKDIR=gmkdir
-  COPYDIR="/usr/local/share/games/tremulous"
+  COPYDIR="/usr/local/share/games/Librelous"
 
   ifneq (,$(findstring i86pc,$(shell uname -m)))
     ARCH=x86
@@ -816,9 +816,9 @@ ifneq ($(BUILD_SERVER),0)
 endif
 
 ifneq ($(BUILD_CLIENT),0)
-  TARGETS += $(B)/tremulous$(FULLBINEXT)
+  TARGETS += $(B)/Librelous$(FULLBINEXT)
   ifneq ($(BUILD_CLIENT_SMP),0)
-    TARGETS += $(B)/tremulous-smp$(FULLBINEXT)
+    TARGETS += $(B)/Librelous-smp$(FULLBINEXT)
   endif
 endif
 
@@ -976,7 +976,7 @@ endif
 # an informational message, then start building
 targets: makedirs
 	@echo ""
-	@echo "Building Tremulous in $(B):"
+	@echo "Building Librelous in $(B):"
 	@echo "  PLATFORM: $(PLATFORM)"
 	@echo "  ARCH: $(ARCH)"
 	@echo "  VERSION: $(VERSION)"
@@ -1454,13 +1454,13 @@ Q3POBJ += \
 Q3POBJ_SMP += \
   $(B)/clientsmp/sdl_glimp.o
 
-$(B)/tremulous$(FULLBINEXT): $(Q3OBJ) $(Q3POBJ) $(LIBSDLMAIN)
+$(B)/Librelous$(FULLBINEXT): $(Q3OBJ) $(Q3POBJ) $(LIBSDLMAIN)
 	$(echo_cmd) "LD $@"
 	$(Q)$(CC) $(CLIENT_CFLAGS) $(CFLAGS) $(CLIENT_LDFLAGS) $(LDFLAGS) \
 		-o $@ $(Q3OBJ) $(Q3POBJ) \
 		$(LIBSDLMAIN) $(CLIENT_LIBS) $(LIBS)
 
-$(B)/tremulous-smp$(FULLBINEXT): $(Q3OBJ) $(Q3POBJ_SMP) $(LIBSDLMAIN)
+$(B)/Librelous-smp$(FULLBINEXT): $(Q3OBJ) $(Q3POBJ_SMP) $(LIBSDLMAIN)
 	$(echo_cmd) "LD $@"
 	$(Q)$(CC) $(CLIENT_CFLAGS) $(CFLAGS) $(CLIENT_LDFLAGS) $(LDFLAGS) $(THREAD_LDFLAGS) \
 		-o $@ $(Q3OBJ) $(Q3POBJ_SMP) \
@@ -1574,7 +1574,7 @@ $(B)/tremded$(FULLBINEXT): $(Q3DOBJ)
 
 
 #############################################################################
-## TREMULOUS CGAME
+## Librelous CGAME
 #############################################################################
 
 CGOBJ_ = \
@@ -1625,7 +1625,7 @@ $(B)/base/vm/cgame.qvm: $(CGVMOBJ) $(CGDIR)/cg_syscalls.asm $(Q3ASM)
 
 
 #############################################################################
-## TREMULOUS GAME
+## Librelous GAME
 #############################################################################
 
 GOBJ_ = \
@@ -1674,7 +1674,7 @@ $(B)/base/vm/game.qvm: $(GVMOBJ) $(GDIR)/g_syscalls.asm $(Q3ASM)
 
 
 #############################################################################
-## TREMULOUS UI
+## Librelous UI
 #############################################################################
 
 UIOBJ_ = \
@@ -1864,10 +1864,10 @@ distclean: clean toolsclean
 	@rm -rf $(BUILD_DIR)
 
 dist:
-	rm -rf tremulous-$(SVN_VERSION)
-	svn export . tremulous-$(SVN_VERSION)
-	tar --owner=root --group=root --force-local -cjf tremulous-$(SVN_VERSION).tar.bz2 tremulous-$(SVN_VERSION)
-	rm -rf tremulous-$(SVN_VERSION)
+	rm -rf Librelous-$(SVN_VERSION)
+	svn export . Librelous-$(SVN_VERSION)
+	tar --owner=root --group=root --force-local -cjf Librelous-$(SVN_VERSION).tar.bz2 Librelous-$(SVN_VERSION)
+	rm -rf Librelous-$(SVN_VERSION)
 
 #############################################################################
 # DEPENDENCIES

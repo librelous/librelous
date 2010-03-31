@@ -1,5 +1,5 @@
 /* XPM */
-static char * tremulous_xpm[] = {
+static char * Librelous_xpm[] = {
 "48 48 39 1",
 " 	c None",
 ".	c #0F0F0F",

@@ -22,7 +22,7 @@
 
   menuDef
   {
-    name "tremulous_alienclass"
+    name "Librelous_alienclass"
     visible MENU_TRUE
     fullscreen MENU_FALSE
     outOfBoundsClick
@@ -67,7 +67,7 @@
       {
         play "sound/misc/menu1.wav";
         uiScript SpawnAsAlienClass;
-        close tremulous_alienclass
+        close Librelous_alienclass
       }
     }
 
@@ -108,8 +108,8 @@
       action
       {
         play "sound/misc/menu4.wav";
-        close tremulous_alienclass;
-        open tremulous_teamselect
+        close Librelous_alienclass;
+        open Librelous_teamselect
       }
     }
 
@@ -130,7 +130,7 @@
       {
         play "sound/misc/menu1.wav";
         uiScript SpawnAsAlienClass;
-        close tremulous_alienclass
+        close Librelous_alienclass
       }
     }
 
@@ -150,7 +150,7 @@
       action
       {
         play "sound/misc/menu3.wav";
-        close tremulous_alienclass
+        close Librelous_alienclass
       }
     }
   }

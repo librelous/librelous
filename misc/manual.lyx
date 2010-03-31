@@ -30,7 +30,7 @@
 
 \layout Title
 
-TREMULOUS 1.1.0
+Librelous 1.1.0
 \layout Standard
 
 
@@ -44,15 +44,15 @@ TREMULOUS 1.1.0
 Introduction
 \layout Standard
 
-Tremulous is a first person shooter featuring two opposing teams, humans
+Librelous is a first person shooter featuring two opposing teams, humans
  and aliens.
  Both teams are able to build structures such as spawn points, which are
  vital to their victory.
- The goal of Tremulous is to eliminate the opposing team and all of their
+ The goal of Librelous is to eliminate the opposing team and all of their
  spawn points.
 \layout Standard
 
-Each team in Tremulous differs fundamentally from the other.
+Each team in Librelous differs fundamentally from the other.
  The aliens are class based, with two classes initially available: the alien
  team's builder, known as the Granger, and the Dretch, the weakest offensive
  alien.
@@ -65,7 +65,7 @@ Each team in Tremulous differs fundamentally from the other.
  used for building structures.
 \layout Standard
 
-During a game of Tremulous, each team occupies one of three stages of developmen
+During a game of Librelous, each team occupies one of three stages of developmen
 t.
  These stages are reached by accruing more than a specific total number
  of kills by the whole team.
@@ -86,7 +86,7 @@ Section
 
 \end_inset 
 
- describes some technical aspects of how Tremulous works.
+ describes some technical aspects of how Librelous works.
  It is not necessary to read this section in order to play the game.
 \layout Section
 
@@ -6853,7 +6853,7 @@ The file
 \emph on 
 maprotation.cfg
 \emph default 
- is used to describe up to 16 map rotations which may be used by a Tremulous
+ is used to describe up to 16 map rotations which may be used by a Librelous
  server.
  In its most simple form, the syntax is as follows:
 \layout LyX-Code
@@ -7114,7 +7114,7 @@ random
 Server Administration System (g_admin)
 \layout Standard
 
-The Tremulous game code has a built-in administration system which can work
+The Librelous game code has a built-in administration system which can work
  outside of traditional server console/rcon admin commands.
  Instead of passwords, administration rights are granted on a unique player
  identifier called cl_guid.
@@ -7159,7 +7159,7 @@ admin.dat
 \end_inset 
 
 ).
- Then connect to the server with your Tremulous client, then run the following
+ Then connect to the server with your Librelous client, then run the following
  command in your client console:
 \layout LyX-Code
 
@@ -8372,5 +8372,5 @@ babyomen, Carc, djbob, Grim, Grytviken, Gumby, heimdall, Hellbringer, Hentai,
 \align center 
 
 \noun on 
-Tremulous is copyright darklegion development 2005-2006
+Librelous is copyright darklegion development 2005-2006
 \the_end

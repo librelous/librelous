@@ -156,7 +156,7 @@
     * Reworked how weapon changes are performed, fixing bugs in the
     process
     * Fixed the issue where the Mac qvm JIT compiler would not compile
-    Tremulous
+    Librelous
     * Reimplemented how buildables play damage sounds to not use the
     event system
     * Reworked the ammo/clips packing system to remove the confusion of
@@ -171,5 +171,5 @@
     * Fixed a bug where locational damage could sometimes scale damage
     to 0
     * Added G_ClosestEnt
-    * Moved build directory from tremulous to tremulous-dev
+    * Moved build directory from Librelous to Librelous-dev
 

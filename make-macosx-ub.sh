@@ -1,15 +1,15 @@
 #!/bin/sh
-APPBUNDLE=Tremulous.app
-BINARY=Tremulous.ub
+APPBUNDLE=Librelous.app
+BINARY=Librelous.ub
 DEDBIN=Tremded.ub
 PKGINFO=APPLTREM
-ICNS=misc/Tremulous.icns
+ICNS=misc/Librelous.icns
 DESTDIR=build/release-darwin-ub
 BASEDIR=base
 
 BIN_OBJ="
-	build/release-darwin-ppc/tremulous.ppc
-	build/release-darwin-x86/tremulous.x86
+	build/release-darwin-ppc/Librelous.ppc
+	build/release-darwin-x86/Librelous.x86
 "
 BIN_DEDOBJ="
 	build/release-darwin-ppc/tremded.ppc
@@ -26,7 +26,7 @@ BASE_OBJ="
 
 cd `dirname $0`
 if [ ! -f Makefile ]; then
-	echo "This script must be run from the Tremulous build directory";
+	echo "This script must be run from the Librelous build directory";
 	exit 1
 fi
 
@@ -124,7 +124,7 @@ fi
 if [ ! -d $DESTDIR/$APPBUNDLE/Contents/Resources ]; then
 	mkdir -p $DESTDIR/$APPBUNDLE/Contents/Resources
 fi
-cp $ICNS $DESTDIR/$APPBUNDLE/Contents/Resources/Tremulous.icns || exit 1;
+cp $ICNS $DESTDIR/$APPBUNDLE/Contents/Resources/Librelous.icns || exit 1;
 echo $PKGINFO > $DESTDIR/$APPBUNDLE/Contents/PkgInfo
 echo "
 	<?xml version=\"1.0\" encoding=\"UTF-8\"?>
@@ -140,13 +140,13 @@ echo "
 		<key>CFBundleGetInfoString</key>
 		<string>$Q3_VERSION</string>
 		<key>CFBundleIconFile</key>
-		<string>Tremulous.icns</string>
+		<string>Librelous.icns</string>
 		<key>CFBundleIdentifier</key>
-		<string>net.tremulous</string>
+		<string>net.Librelous</string>
 		<key>CFBundleInfoDictionaryVersion</key>
 		<string>6.0</string>
 		<key>CFBundleName</key>
-		<string>Tremulous</string>
+		<string>Librelous</string>
 		<key>CFBundlePackageType</key>
 		<string>APPL</string>
 		<key>CFBundleShortVersionString</key>

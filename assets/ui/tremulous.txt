@@ -1,20 +1,20 @@
 // menu defs
 //
 {
-  loadMenu { "ui/tremulous_teamselect.menu" }
-  loadMenu { "ui/tremulous_alienclass.menu" }
-  loadMenu { "ui/tremulous_humanitem.menu" }
+  loadMenu { "ui/Librelous_teamselect.menu" }
+  loadMenu { "ui/Librelous_alienclass.menu" }
+  loadMenu { "ui/Librelous_humanitem.menu" }
 
-  loadMenu { "ui/tremulous_alienbuild.menu" }
-  loadMenu { "ui/tremulous_humanbuild.menu" }
+  loadMenu { "ui/Librelous_alienbuild.menu" }
+  loadMenu { "ui/Librelous_humanbuild.menu" }
 
-  loadMenu { "ui/tremulous_humanarmoury.menu" }
+  loadMenu { "ui/Librelous_humanarmoury.menu" }
 
-  loadMenu { "ui/tremulous_dialogs.menu" }
-  loadMenu { "ui/tremulous_humandialogs.menu" }
-  loadMenu { "ui/tremulous_aliendialogs.menu" }
+  loadMenu { "ui/Librelous_dialogs.menu" }
+  loadMenu { "ui/Librelous_humandialogs.menu" }
+  loadMenu { "ui/Librelous_aliendialogs.menu" }
 
-  loadMenu { "ui/tremulous_alienupgrade.menu" }
+  loadMenu { "ui/Librelous_alienupgrade.menu" }
 
   loadMenu { "ui/ptrc.menu" }
   loadMenu { "ui/say.menu" }
